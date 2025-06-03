@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div>MotorRec</div>
+  <div>TaH.vue</div>
 </template>
 
 <style lang='scss' scoped>

@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div>超时未归还</div>
+  <div>超时记录</div>
 </template>
 
 <style lang='scss' scoped>

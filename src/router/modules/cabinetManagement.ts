@@ -3,32 +3,40 @@ export default {
   redirect: "/cabinet-management",
   meta: {
     icon: "ri/information-line",
-    title: "箱柜管理",
+    title: "系统设置",
     rank: 11
   },
   children: [
     {
       path: "/cabinet-management/cabinet",
-      name: "CabinetInfo",
+      name: "cabinet",
       component: () => import("@/views/cabinet-management/cabinet.vue"),
       meta: {
         title: "柜子管理",
       }
     },
     {
-      path: "/cabinet-management/boxsSet",
-      name: "BoxsSet",
-      component: () => import("@/views/cabinet-management/boxsSet.vue"),
+      path: "/cabinet-management/user",
+      name: "user",
+      component: () => import("@/views/cabinet-management/user.vue"),
       meta: {
-        title: "箱格分配",
+        title: "用户管理",
       }
     },
     {
-      path: "/cabinet-management/RFIDSet",
-      name: "RFIDSet",
-      component: () => import("@/views/cabinet-management/RFIDSet.vue"),
+      path: "/cabinet-management/goods",
+      name: "goods",
+      component: () => import("@/views/cabinet-management/goods.vue"),
       meta: {
-        title: "RFID配置",
+        title: "物品管理",
+      }
+    },
+    {
+      path: "/cabinet-management/TaH",
+      name: "TaH",
+      component: () => import("@/views/cabinet-management/TaH.vue"),
+      meta: {
+        title: "温湿度设置",
       }
     }
   ]

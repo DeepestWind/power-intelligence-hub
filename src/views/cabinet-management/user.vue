@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div>mBind.vue</div>
+  <div>user.vue</div>
 </template>
 
 <style lang='scss' scoped>
