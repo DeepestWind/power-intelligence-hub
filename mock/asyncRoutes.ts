@@ -12,8 +12,7 @@ const permissionRouter = {
     title: "权限管理",
     icon: "ep:lollipop",
     rank: 10
-  }
-  ,
+  },
   children: [
     {
       path: "/permission/page/index",

@@ -24,27 +24,18 @@ export default {
       }
     },
     {
-      path: "/business-management/return",
+      path: "/business-management/adjustment",
       name: "Adjustment",
-      component: () => import("@/views/business-management/return.vue"),
+      component: () => import("@/views/business-management/adjustment.vue"),
       meta: {
-        title: "归还记录",
+        title: "存件调整",
       }
-    }, 
-      {
-      path: "/business-management/timeout",
-      name: "Timeout",
-      component: () => import("@/views/business-management/timeout.vue"),
+    }, {
+      path: "/business-management/doExcept",
+      name: "DoExcept",
+      component: () => import("@/views/business-management/doExcept.vue"),
       meta: {
-        title: "超时记录",
-      }
-    },
-    {
-      path: "/business-management/remove",
-      name: "Remove",
-      component: () => import("@/views/business-management/remove.vue"),
-      meta: {
-        title: "下架记录",
+        title: "反馈信息",
       }
     }, {
       path: "/business-management/useRec",
@@ -61,6 +52,13 @@ export default {
         title: "在库分析",
       }
     },
-
+    {
+      path: "/business-management/timeout",
+      name: "Timeout",
+      component: () => import("@/views/business-management/timeout.vue"),
+      meta: {
+        title: "超时未归还",
+      }
+    }
   ]
 } satisfies RouteConfigsTable;
