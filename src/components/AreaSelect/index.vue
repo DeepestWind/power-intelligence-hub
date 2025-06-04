@@ -1,84 +1,49 @@
 <template>
   <el-tree
     class="area-tree"
-    :data="data"
+    :data="areaData"
     :props="defaultProps"
     @node-click="handleNodeClick"
+    :default-expand-all="false"
+    :expand-on-click-node="true"
   />
 </template>
 
 <script lang="ts" setup>
-interface Tree {
-  label: string
-  children?: Tree[]
-}
+import { ref, computed, onMounted } from 'vue';
+import { useAreaStore } from '@/store/modules/area';
+import type { AreaNode } from '@/utils/area';
 
-const handleNodeClick = (data: Tree) => {
-  console.log(data)
-}
+// 使用 area store
+const areaStore = useAreaStore();
 
-const data: Tree[] = [
-  {
-    label: 'Level one 1',
-    children: [
-      {
-        label: 'Level two 1-1',
-        children: [
-          {
-            label: 'Level three 1-1-1',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Level one 2',
-    children: [
-      {
-        label: 'Level two 2-1',
-        children: [
-          {
-            label: 'Level three 2-1-1',
-          },
-        ],
-      },
-      {
-        label: 'Level two 2-2',
-        children: [
-          {
-            label: 'Level three 2-2-1',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Level one 3',
-    children: [
-      {
-        label: 'Level two 3-1',
-        children: [
-          {
-            label: 'Level three 3-1-1',
-          },
-        ],
-      },
-      {
-        label: 'Level two 3-2',
-        children: [
-          {
-            label: 'Level three 3-2-1',
-          },
-        ],
-      },
-    ],
-  },
-]
+// 计算属性获取区域数据
+const areaData = computed(() => areaStore.getCurrentAreaData);
+
+const handleNodeClick = (data: AreaNode) => {
+  console.log('点击节点:', data);
+  areaStore.setSelectedArea(data);
+};
 
 const defaultProps = {
   children: 'children',
   label: 'label',
-}
+};
+
+// 模拟从登录接口获取用户类型数据
+onMounted(() => {
+  // 这里应该从用户登录状态或API获取真实的用户类型数据
+  // 现在先用模拟数据测试
+  
+  // 示例1: 省级用户 - 显示某个省的所有数据
+  // areaStore.setUserType({ type: 'province', code: '110000' }); // 北京市
+  
+  // 示例2: 市级用户 - 显示某个市及其父省
+  // areaStore.setUserType({ type: 'city', code: '110100' }); // 北京市区
+  
+  // 示例3: 区级用户 - 显示某个区及其父级
+  areaStore.setUserType({ type: 'district', code: '110101' }); // 东城区
+});
 </script>
 
 <style scoped>

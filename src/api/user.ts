@@ -3,6 +3,8 @@ import { http } from "@/utils/http";
 export type UserResult = {
   success: boolean;
   data: {
+    areaCode: any;
+    userType: any;
     /** 头像 */
     avatar: string;
     /** 用户名 */

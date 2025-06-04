@@ -65,16 +65,28 @@ export const useUserStore = defineStore("pure-user", {
     },
     /** 登入 */
     async loginByUsername(data) {
-      return new Promise<UserResult>((resolve, reject) => {
-        getLogin(data)
-          .then(data => {
-            if (data?.success) setToken(data.data);
-            resolve(data);
-          })
-          .catch(error => {
-            reject(error);
-          });
+  return new Promise<UserResult>((resolve, reject) => {
+    getLogin(data)
+      .then(async data => {
+        if (data?.success) {
+          setToken(data.data);
+          
+          // 假设后端返回的用户信息包含区域权限
+          if (data.data.userType && data.data.areaCode) {
+            const { useAreaStore } = await import('@/store/modules/area');
+            const areaStore = useAreaStore();
+            areaStore.setUserType({
+              type: data.data.userType, // 'province' | 'city' | 'district'
+              code: data.data.areaCode   // 对应的区域代码
+            });
+          }
+        }
+        resolve(data);
+      })
+      .catch(error => {
+        reject(error);
       });
+  });
     },
     /** 前端登出（不调用接口） */
     logOut() {
