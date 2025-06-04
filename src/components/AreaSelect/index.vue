@@ -36,13 +36,13 @@ onMounted(() => {
   // 现在先用模拟数据测试
   
   // 示例1: 省级用户 - 显示某个省的所有数据
-  // areaStore.setUserType({ type: 'province', code: '110000' }); // 北京市
+  //areaStore.setUserType({ type: 'province', code: '010000' }); // 北京市
   
   // 示例2: 市级用户 - 显示某个市及其父省
-  // areaStore.setUserType({ type: 'city', code: '110100' }); // 北京市区
+  // areaStore.setUserType({ type: 'city', code: '010100' }); // 北京市区
   
   // 示例3: 区级用户 - 显示某个区及其父级
-  areaStore.setUserType({ type: 'district', code: '110101' }); // 东城区
+  areaStore.setUserType({ type: 'district', code: '330101' }); // 东城区
 });
 </script>
 
@@ -51,4 +51,5 @@ onMounted(() => {
   width: 100%;
   max-width: none;
 }
+
 </style>

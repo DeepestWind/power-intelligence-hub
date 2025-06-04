@@ -20,7 +20,7 @@ export default {
     {
       path: "/organizational-structure/customerUser",
       name: "UserInfo",
-      component: () => import("@/views/organizational-structure/customerUser.vue"),
+      component: () => import("@/views/organizational-structure/userManager.vue"),
       meta: {
         title: "所辖用户",
         // showParent: true
