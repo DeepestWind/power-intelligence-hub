@@ -59,9 +59,9 @@ importers:
       pinyin-pro:
         specifier: ^3.26.0
         version: 3.26.0
-      pure-admin-thin:
-        specifier: 'file:'
-        version: file:(typescript@5.8.3)
+      pnpm:
+        specifier: ^10.11.1
+        version: 10.11.1
       qs:
         specifier: ^6.14.0
         version: 6.14.0
@@ -2850,6 +2850,11 @@ packages:
   pkg-types@2.1.0:
     resolution: {integrity: sha512-wmJwA+8ihJixSoHKxZJRBQG1oY8Yr9pGLzRmSsNms0iNWyHHAlZCa7mmKiFR10YPZuz/2k169JiS/inOjBCZ2A==}
 
+  pnpm@10.11.1:
+    resolution: {integrity: sha512-5Rm592OYadyNXDxd/vc7PwkQlLCgBtcxc1PHKxJOgOGv1ClzLihwWta/oe6HnB/ORsEozOvTGSEB9D3WfGZ5Eg==}
+    engines: {node: '>=18.12'}
+    hasBin: true
+
   popmotion@11.0.5:
     resolution: {integrity: sha512-la8gPM1WYeFznb/JqF4GiTkRRPZsfaj2+kCxqQgr2MJylMmIKUwBfWW8Wa5fml/8gmtlD5yI01MP1QCZPWmppA==}
 
@@ -3104,10 +3109,6 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
-
-  'pure-admin-thin@file:':
-    resolution: {directory: '', type: directory}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=22.0.0, pnpm: '>=9'}
 
   qs@6.14.0:
     resolution: {integrity: sha512-YWWTjgABSKcvs/nWBi9PycY/JiPJqOD4JA6o9Sej2AtvSGarXxKC3OQSk4pAarbdQlKAh5D4FCQkJNkW+GAn3w==}
@@ -6378,6 +6379,8 @@ snapshots:
       exsolve: 1.0.5
       pathe: 2.0.3
 
+  pnpm@10.11.1: {}
+
   popmotion@11.0.5:
     dependencies:
       framesync: 6.1.2
@@ -6605,38 +6608,6 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
-
-  pure-admin-thin@file:(typescript@5.8.3):
-    dependencies:
-      '@pureadmin/descriptions': 1.2.1(echarts@5.6.0)(element-plus@2.9.8(vue@3.5.13(typescript@5.8.3)))(typescript@5.8.3)
-      '@pureadmin/table': 3.2.1(element-plus@2.9.8(vue@3.5.13(typescript@5.8.3)))(typescript@5.8.3)
-      '@pureadmin/utils': 2.6.0(echarts@5.6.0)(vue@3.5.13(typescript@5.8.3))
-      '@vueuse/core': 13.1.0(vue@3.5.13(typescript@5.8.3))
-      '@vueuse/motion': 3.0.3(vue@3.5.13(typescript@5.8.3))
-      animate.css: 4.1.1
-      axios: 1.9.0
-      dayjs: 1.11.13
-      echarts: 5.6.0
-      element-plus: 2.9.8(vue@3.5.13(typescript@5.8.3))
-      js-cookie: 3.0.5
-      localforage: 1.10.0
-      mitt: 3.0.1
-      nprogress: 0.2.0
-      path-browserify: 1.0.1
-      pinia: 3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))
-      pinyin-pro: 3.26.0
-      qs: 6.14.0
-      responsive-storage: 2.2.0
-      sortablejs: 1.15.6
-      vue: 3.5.13(typescript@5.8.3)
-      vue-router: 4.5.0(vue@3.5.13(typescript@5.8.3))
-      vue-tippy: 6.7.0(vue@3.5.13(typescript@5.8.3))
-      vue-types: 6.0.0(vue@3.5.13(typescript@5.8.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-      - debug
-      - magicast
-      - typescript
 
   qs@6.14.0:
     dependencies:

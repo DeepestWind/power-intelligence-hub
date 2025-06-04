@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div>goods.vue</div>
+  <div>RFIDSet.vue</div>
 </template>
 
 <style lang='scss' scoped>

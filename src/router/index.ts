@@ -40,6 +40,9 @@ import {
 // import test from "./modules/test";
 import department from "./modules/organizationalStructure";
 import cabinetManagement from "./modules/cabinetManagement"; 
+import bns from "./modules/bns";
+import itemsOrTools from "./modules/itemsOrTools";
+import sysManagement from "./modules/sysMangement";
 import businessManagement from "./modules/businessManagement";
 
 /** 自动导入全部静态路由，无需再手动引入！匹配 src/router/modules 目录（任何嵌套级别）中具有 .ts 扩展名的所有文件，除了 remaining.ts 文件
