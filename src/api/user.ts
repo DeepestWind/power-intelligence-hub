@@ -34,12 +34,12 @@ export type RefreshTokenResult = {
 
 /** 登录 */
 export const getLogin = (data?: object) => {
-  return http.request<UserResult>("post", "/api/login", { data });
+  return http.request<UserResult>("post", "/api/auth/login", { data });
 };
 
 /** 刷新`token` */
 export const refreshTokenApi = (data?: object) => {
-  return http.request<RefreshTokenResult>("post", "/api/refresh-token", {
+  return http.request<RefreshTokenResult>("post", "/api/auth/refresh-token", {
     data
   });
 };
