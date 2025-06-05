@@ -1,16 +1,21 @@
 import { defineStore } from "pinia";
-import type { UserType, AreaNode } from "@/utils/area";
+import type { AreaNode } from "@/utils/area";
 import { getAreaDataByUserType } from "@/utils/area";
+import { storageLocal } from "@pureadmin/utils";
+import { areaKey } from "@/utils/auth";
+import { store } from "@/store";
 
 interface AreaState {
-  userType: UserType | null;
+  areaType: any;
+  areaCode: any;
   areaData: AreaNode[];
   selectedArea: AreaNode | null;
 }
 
 export const useAreaStore = defineStore("area", {
   state: (): AreaState => ({
-    userType: null,
+    areaType: storageLocal().getItem<AreaState>(areaKey)?.areaType ?? "",
+    areaCode: storageLocal().getItem<AreaState>(areaKey)?.areaCode ?? "",
     areaData: [],
     selectedArea: null
   }),
@@ -20,25 +25,42 @@ export const useAreaStore = defineStore("area", {
     getCurrentAreaData: state => state.areaData,
 
     // 获取当前用户类型
-    getCurrentUserType: state => state.userType,
+    getCurrentAreaType: state => state.areaType,
+    getCurrentAreaCode: state => state.areaCode,
 
     // 判断是否有区域数据
     hasAreaData: state => state.areaData.length > 0
   },
 
   actions: {
+    SET_AreaType(areaType: any) {
+      this.areaType = areaType;
+    },
+    SET_AreaCode(areaCode: any) {
+      this.areaCode = areaCode;
+    },
+
     // 设置用户类型并加载对应数据
-    setUserType(userType: UserType) {
-      this.userType = userType;
-      this.loadAreaData();
+    setUserType(areaType, areaCode) {
+      function setAreaKey() {
+        useAreaStoreHook().SET_AreaType(areaType);
+        useAreaStoreHook().SET_AreaCode(areaCode);
+        storageLocal().setItem(areaKey, {
+          areaType,
+          areaCode
+        });
+      }
+
+      setAreaKey();
+      console.log(this.areaCode);
+      this.loadAreaData(areaType, areaCode);
     },
 
     // 加载区域数据
-    loadAreaData() {
-      console.log(this.userType);
-      if (!this.userType) return;
+    loadAreaData(type, code) {
+      if (!this.areaCode) return;
       try {
-        this.areaData = getAreaDataByUserType(this.userType);
+        this.areaData = getAreaDataByUserType(type, code);
       } catch (error) {
         console.error("加载区域数据失败:", error);
         this.areaData = [];
@@ -52,9 +74,13 @@ export const useAreaStore = defineStore("area", {
 
     // 清空数据
     clearAreaData() {
-      this.userType = null;
+      this.areaType = null;
+      this.areaCode = null;
       this.areaData = [];
       this.selectedArea = null;
     }
   }
 });
+export function useAreaStoreHook() {
+  return useAreaStore(store);
+}

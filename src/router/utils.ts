@@ -76,15 +76,13 @@ function filterChildrenTree(data: RouteComponent[]) {
 function isOneOfArray(a: Array<string>, b: Array<string>) {
   return Array.isArray(a) && Array.isArray(b)
     ? intersection(a, b).length > 0
-      ? true
-      : false
     : true;
 }
 
 /** 从localStorage里取出当前登录用户的角色roles，过滤无权限的菜单 */
 function filterNoPermissionTree(data: RouteComponent[]) {
   const currentRoles =
-    storageLocal().getItem<UserInfo<number>>(userKey)?.roles ?? [];
+    storageLocal().getItem<UserInfo<number>>(userKey)?.userType ?? [];
   const newTree = cloneDeep(data).filter((v: any) =>
     isOneOfArray(v.meta?.roles, currentRoles)
   );

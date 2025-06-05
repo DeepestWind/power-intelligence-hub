@@ -85,11 +85,7 @@ export const useUserStore = defineStore("pure-user", {
                   data.extra.userVo.city,
                   data.extra.userVo.district
                 );
-                console.log(data.extra.userVo.adminLevel);
-                areaStore.setUserType({
-                  type: data.extra.userVo.adminLevel, // 'province' | 'city' | 'district'
-                  code: areaCode // 对应的区域代码
-                });
+                areaStore.setUserType(data.extra.userVo.adminLevel, areaCode);
               }
             }
             resolve(data);

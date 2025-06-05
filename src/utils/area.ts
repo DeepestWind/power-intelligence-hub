@@ -6,11 +6,6 @@ export interface AreaNode {
   children?: AreaNode[];
 }
 
-export interface UserType {
-  type: 3 | 2 | 1;
-  code: string; // 对应的区域代码
-}
-
 /**
  * 根据省、市、区名称生成区域代码
  * @param allData 区域数据列表
@@ -86,15 +81,16 @@ export const transformPcaToTree = (): AreaNode[] => {
 };
 
 // 根据用户类型和代码获取对应的数据
-export const getAreaDataByUserType = (userType: UserType): AreaNode[] => {
+export const getAreaDataByUserType = (areaType, areaCode): AreaNode[] => {
   const allData = transformPcaToTree();
-  switch (userType.type) {
+  console.log(areaCode);
+  switch (areaType) {
     case 3:
-      return getProvinceData(allData, userType.code);
+      return getProvinceData(allData, areaCode);
     case 2:
-      return getCityData(allData, userType.code);
+      return getCityData(allData, areaCode);
     case 1:
-      return getDistrictData(allData, userType.code);
+      return getDistrictData(allData, areaCode);
     default:
       return [];
   }
