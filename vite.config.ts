@@ -27,8 +27,8 @@ export default ({ mode }: ConfigEnv): UserConfigExport => {
       proxy: {
         // 第一个代理后端地址
         "/api": {
-          target: "http://127.0.0.1:4523/m1/6506970-6207460-default/",
-          //target: "http://10.12.42.83:8080/",
+          //target: "http://127.0.0.1:4523/m1/6506970-6207460-default/",
+          target: "http://10.12.42.83:8080/",
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, "")
         }
