@@ -1,6 +1,6 @@
-import { defineStore } from 'pinia';
-import type { UserType, AreaNode } from '@/utils/area';
-import { getAreaDataByUserType } from '@/utils/area';
+import { defineStore } from "pinia";
+import type { UserType, AreaNode } from "@/utils/area";
+import { getAreaDataByUserType } from "@/utils/area";
 
 interface AreaState {
   userType: UserType | null;
@@ -8,7 +8,7 @@ interface AreaState {
   selectedArea: AreaNode | null;
 }
 
-export const useAreaStore = defineStore('area', {
+export const useAreaStore = defineStore("area", {
   state: (): AreaState => ({
     userType: null,
     areaData: [],
@@ -17,13 +17,13 @@ export const useAreaStore = defineStore('area', {
 
   getters: {
     // 获取当前用户可访问的区域数据
-    getCurrentAreaData: (state) => state.areaData,
-    
+    getCurrentAreaData: state => state.areaData,
+
     // 获取当前用户类型
-    getCurrentUserType: (state) => state.userType,
-    
+    getCurrentUserType: state => state.userType,
+
     // 判断是否有区域数据
-    hasAreaData: (state) => state.areaData.length > 0
+    hasAreaData: state => state.areaData.length > 0
   },
 
   actions: {
@@ -35,13 +35,12 @@ export const useAreaStore = defineStore('area', {
 
     // 加载区域数据
     loadAreaData() {
+      console.log(this.userType);
       if (!this.userType) return;
-      
       try {
         this.areaData = getAreaDataByUserType(this.userType);
-        console.log('加载区域数据成功:', this.areaData);
       } catch (error) {
-        console.error('加载区域数据失败:', error);
+        console.error("加载区域数据失败:", error);
         this.areaData = [];
       }
     },

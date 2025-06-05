@@ -31,7 +31,7 @@ import {
   createRouter
 } from "vue-router";
 import {
-  type DataInfo,
+  type UserInfo,
   userKey,
   removeToken,
   multipleTabsKey
@@ -39,7 +39,7 @@ import {
 
 // import test from "./modules/test";
 import department from "./modules/organizationalStructure";
-import cabinetManagement from "./modules/cabinetManagement"; 
+import cabinetManagement from "./modules/cabinetManagement";
 import bns from "./modules/bns";
 import itemsOrTools from "./modules/itemsOrTools";
 import businessManagement from "./modules/businessManagement";
@@ -125,7 +125,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       handleAliveRoute(to);
     }
   }
-  const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
+  const userInfo = storageLocal().getItem<UserInfo<number>>(userKey);
   NProgress.start();
   const externalLink = isUrl(to?.name as string);
   if (!externalLink) {

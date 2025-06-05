@@ -1,4 +1,6 @@
 import { defineStore } from "pinia";
+import { generateAreaCode, transformPcaToTree } from "@/utils/area";
+
 import {
   type userType,
   store,
@@ -9,26 +11,27 @@ import {
 } from "../utils";
 import {
   type UserResult,
-  type RefreshTokenResult,
-  getLogin,
-  refreshTokenApi
+  // type RefreshTokenResult,
+  getLogin
+  // refreshTokenApi
 } from "@/api/user";
 import { useMultiTagsStoreHook } from "./multiTags";
-import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
+import { type UserInfo, setToken, removeToken, userKey } from "@/utils/auth";
 
 export const useUserStore = defineStore("pure-user", {
   state: (): userType => ({
     // 头像
-    avatar: storageLocal().getItem<DataInfo<number>>(userKey)?.avatar ?? "",
+    id: storageLocal().getItem<UserInfo<number>>(userKey)?.id ?? "",
     // 用户名
-    username: storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "",
-    // 昵称
-    nickname: storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "",
+    userName: storageLocal().getItem<UserInfo<number>>(userKey)?.userName ?? "",
+    //部门
+    department:
+      storageLocal().getItem<UserInfo<number>>(userKey)?.department ?? "",
+    // 卡号
+    employeeId:
+      storageLocal().getItem<UserInfo<number>>(userKey)?.employeeId ?? "",
     // 页面级别权限
-    roles: storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [],
-    // 按钮级别权限
-    permissions:
-      storageLocal().getItem<DataInfo<number>>(userKey)?.permissions ?? [],
+    userType: storageLocal().getItem<UserInfo<number>>(userKey)?.userType ?? "",
     // 是否勾选了登录页的免登录
     isRemembered: false,
     // 登录页的免登录存储几天，默认7天
@@ -36,24 +39,24 @@ export const useUserStore = defineStore("pure-user", {
   }),
   actions: {
     /** 存储头像 */
-    SET_AVATAR(avatar: string) {
-      this.avatar = avatar;
+    SET_ID(id: any) {
+      this.id = id;
     },
     /** 存储用户名 */
-    SET_USERNAME(username: string) {
-      this.username = username;
+    SET_USERNAME(userName: any) {
+      this.userName = userName;
     },
     /** 存储昵称 */
-    SET_NICKNAME(nickname: string) {
-      this.nickname = nickname;
+    SET_department(department: any) {
+      this.department = department;
     },
-    /** 存储角色 */
-    SET_ROLES(roles: Array<string>) {
-      this.roles = roles;
+    /** 存储卡号 */
+    SET_employeeId(employeeId: any) {
+      this.employeeId = employeeId;
     },
-    /** 存储按钮级别权限 */
-    SET_PERMS(permissions: Array<string>) {
-      this.permissions = permissions;
+    /** 存储级别权限 */
+    SET_userType(userType: any) {
+      this.userType = userType;
     },
     /** 存储是否勾选了登录页的免登录 */
     SET_ISREMEMBERED(bool: boolean) {
@@ -65,54 +68,62 @@ export const useUserStore = defineStore("pure-user", {
     },
     /** 登入 */
     async loginByUsername(data) {
-  return new Promise<UserResult>((resolve, reject) => {
-    getLogin(data)
-      .then(async data => {
-        if (data?.success) {
-          setToken(data.data);
-          
-          // 假设后端返回的用户信息包含区域权限
-          if (data.data.userType && data.data.areaCode) {
-            const { useAreaStore } = await import('@/store/modules/area');
-            const areaStore = useAreaStore();
-            areaStore.setUserType({
-              type: data.data.userType, // 'province' | 'city' | 'district'
-              code: data.data.areaCode   // 对应的区域代码
-            });
-          }
-        }
-        resolve(data);
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
-    },
-    /** 前端登出（不调用接口） */
-    logOut() {
-      this.username = "";
-      this.roles = [];
-      this.permissions = [];
-      removeToken();
-      useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
-      resetRouter();
-      router.push("/login");
-    },
-    /** 刷新`token` */
-    async handRefreshToken(data) {
-      return new Promise<RefreshTokenResult>((resolve, reject) => {
-        refreshTokenApi(data)
-          .then(data => {
-            if (data) {
-              setToken(data.data);
-              resolve(data);
+      return new Promise<UserResult>((resolve, reject) => {
+        getLogin(data)
+          .then(async data => {
+            if (data?.code == 200) {
+              setToken(data.extra.userVo, data.data);
+
+              // 假设后端返回的用户信息包含区域权限
+              if (data.extra.userVo.adminLevel) {
+                const { useAreaStore } = await import("@/store/modules/area");
+                const areaStore = useAreaStore();
+                const allData = transformPcaToTree();
+                const areaCode = generateAreaCode(
+                  allData,
+                  data.extra.userVo.province,
+                  data.extra.userVo.city,
+                  data.extra.userVo.district
+                );
+                console.log(data.extra.userVo.adminLevel);
+                areaStore.setUserType({
+                  type: data.extra.userVo.adminLevel, // 'province' | 'city' | 'district'
+                  code: areaCode // 对应的区域代码
+                });
+              }
             }
+            resolve(data);
           })
           .catch(error => {
             reject(error);
           });
       });
+    },
+    /** 前端登出（不调用接口） */
+    logOut() {
+      this.userName = "";
+      this.userType = "";
+      this.employeeId = "";
+      removeToken();
+      useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
+      resetRouter();
+      router.push("/login");
     }
+    /** 刷新`token` */
+    // async handRefreshToken(data) {
+    //   return new Promise<RefreshTokenResult>((resolve, reject) => {
+    //     refreshTokenApi(data)
+    //       .then(data => {
+    //         if (data) {
+    //           setToken(data.data);
+    //           resolve(data);
+    //         }
+    //       })
+    //       .catch(error => {
+    //         reject(error);
+    //       });
+    //   });
+    // }
   }
 });
 
