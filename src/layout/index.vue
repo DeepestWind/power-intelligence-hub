@@ -231,5 +231,6 @@ const LayHeader = defineComponent({
 
 .re-screen {
   margin-top: 12px;
+
 }
 </style>
