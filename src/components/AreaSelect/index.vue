@@ -39,7 +39,10 @@ onMounted(() => {
   // areaStore.setUserType({ type: 'city', code: '010100' }); // 北京市区
   // 示例3: 区级用户 - 显示某个区及其父级
   // areaStore.setUserType({ type: "district", code: "330101" }); // 东城区
-  areaStore.loadAreaData();
+  const areatype = areaStore.getCurrentAreaType;
+  const areacode = areaStore.getCurrentAreaCode;
+console.log(areacode);
+  areaStore.loadAreaData(areatype,areacode);
 });
 </script>
 

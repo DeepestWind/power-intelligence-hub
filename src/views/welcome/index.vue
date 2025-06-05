@@ -9,7 +9,7 @@ defineOptions({
 
 <template>
   <div class="app-container">
-      <AreaSelect />
+    <AreaSelect />
   </div>
 </template>
 

@@ -20,6 +20,7 @@ export interface UserInfo<T> {
 }
 
 export const userKey = "user-info";
+export const areaKey = "user-area";
 export const TokenKey = "authorized-token";
 /**
  * 通过`multiple-tabs`是否在`cookie`中，判断用户是否已经登录系统，
