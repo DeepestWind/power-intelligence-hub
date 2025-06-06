@@ -37,8 +37,8 @@ dataThemeChange(overallStyle.value);
 const { title } = useNav();
 
 const ruleForm = reactive({
-  username: "admin",
-  password: "admin123"
+  employeeId: "111",
+  password: "12345"
 });
 
 const onLogin = async (formEl: FormInstance | undefined) => {
@@ -48,7 +48,7 @@ const onLogin = async (formEl: FormInstance | undefined) => {
       loading.value = true;
       useUserStoreHook()
         .loginByUsername({
-          username: ruleForm.username,
+          employeeId: ruleForm.employeeId,
           password: ruleForm.password
         })
         .then(res => {
@@ -127,10 +127,10 @@ useEventListener(document, "keydown", ({ code }) => {
                     trigger: 'blur'
                   }
                 ]"
-                prop="username"
+                prop="employeeId"
               >
                 <el-input
-                  v-model="ruleForm.username"
+                  v-model="ruleForm.employeeId"
                   clearable
                   placeholder="账号"
                   :prefix-icon="useRenderIcon(User)"
