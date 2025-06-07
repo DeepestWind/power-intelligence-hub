@@ -38,11 +38,6 @@ import {
 } from "@/utils/auth";
 
 // import test from "./modules/test";
-import department from "./modules/organizationalStructure";
-import cabinetManagement from "./modules/cabinetManagement";
-import bns from "./modules/bns";
-import itemsOrTools from "./modules/itemsOrTools";
-import businessManagement from "./modules/businessManagement";
 import systemRouter from "./modules/system"; 
 import deviceRouter from "./modules/device";
 
