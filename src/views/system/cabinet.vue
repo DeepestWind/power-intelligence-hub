@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
-import ResizablePanel from "@/components/ResizeablePanel/index.vue";
+//import ResizablePanel from "@/components/ResizeablePanel/index.vue"; 已弃用
 
 defineOptions({
   name: "CabinetManagement"
@@ -65,6 +65,11 @@ const mockData: CabinetData[] = [
     createTime: '2024-01-17 09:15:00'
   }
 ];
+
+// 从api获取数据
+const getCabinetListApi = async (params: any) => {
+
+};
 
 // 获取柜子列表（修改函数名和注释）
 const getCabinetList = async () => {
@@ -175,15 +180,9 @@ onMounted(() => {
 
 <template>
   <div class="cabinet-management-container">
-    <ResizablePanel 
-      :initial-width="200"
-      :min-width="150" 
-      :max-width="400"
-      @resize="handlePanelResize"
-    >
-      <AreaSelect />
-    </ResizablePanel>
-    
+    <div>
+    <AreaSelect />
+    </div>
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域（修改为柜子相关字段） -->

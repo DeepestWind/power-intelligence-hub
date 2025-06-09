@@ -48,7 +48,12 @@ console.log(areacode);
 
 <style scoped>
 .area-tree {
-  width: 100%;
-  max-width: none;
+  min-width: 200px !important;
+  width: auto;
+  border-right: 1px solid #e4e7ed;
+  padding: 10px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+
 }
 </style>
