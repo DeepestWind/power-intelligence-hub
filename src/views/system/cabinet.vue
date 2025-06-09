@@ -317,7 +317,7 @@ onMounted(() => {
   height: calc(100vh - 80px);
   
   .sidebar {
-    width: 300px;
+    width: 200px;
     border-right: 1px solid #e4e7ed;
     padding: 10px;
     overflow-y: auto;
