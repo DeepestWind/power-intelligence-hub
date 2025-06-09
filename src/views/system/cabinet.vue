@@ -1,8 +1,9 @@
 <script setup lang='ts'>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
+import ResizablePanel from "@/components/ResizeablePanel/index.vue";
 
 defineOptions({
   name: "CabinetManagement"
@@ -159,6 +160,13 @@ const handleSizeChange = (size: number) => {
   getCabinetList();
 };
 
+// 面板大小改变回调
+const handlePanelResize = (width: number) => {
+  console.log('Panel width changed to:', width);
+  // 可以在这里保存用户的布局偏好到 localStorage
+  localStorage.setItem('cabinet-sidebar-width', width.toString());
+};
+
 // 生命周期（修改函数调用）
 onMounted(() => {
   getCabinetList();
@@ -167,9 +175,15 @@ onMounted(() => {
 
 <template>
   <div class="cabinet-management-container">
-    <div class="sidebar">
+    <ResizablePanel 
+      :initial-width="200"
+      :min-width="150" 
+      :max-width="400"
+      @resize="handlePanelResize"
+    >
       <AreaSelect />
-    </div>
+    </ResizablePanel>
+    
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域（修改为柜子相关字段） -->
@@ -316,14 +330,6 @@ onMounted(() => {
   display: flex;
   height: calc(100vh - 80px);
   
-  .sidebar {
-    width: 200px;
-    border-right: 1px solid #e4e7ed;
-    padding: 10px;
-    overflow-y: auto;
-    background-color: #fafafa;
-  }
-  
   .content {
     flex: 1;
     padding: 20px;
@@ -367,6 +373,16 @@ onMounted(() => {
 // 覆盖 AreaSelect 组件内部的样式
 :deep(.area-tree) {
   background-color: transparent;
+  
+  .el-tree-node__content {
+    overflow: hidden;
+    
+    .el-tree-node__label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }
 
 // 表格样式调整

@@ -21,8 +21,8 @@ defineOptions({
 }
 
 :deep(.el-tree) {
-  max-width: 300px !important;
-  width: 200px;
+  min-width: 200px !important;
+  width: auto;
   border-right: 1px solid #e4e7ed;
   padding: 10px;
   height: calc(100vh - 80px);
