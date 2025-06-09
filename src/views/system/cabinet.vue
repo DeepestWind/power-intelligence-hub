@@ -9,15 +9,31 @@ defineOptions({
   name: "CabinetManagement"
 });
 
-// 柜子数据接口（修改为柜子相关字段）
+// 柜子数据接口（根据API返回数据调整）
 interface CabinetData {
   id: number;
   cabinetCode: string;
   cabinetName: string;
-  region: string;
+  province: string;
+  city: string;
+  district: string;
   address: string;
-  onlineStatus: boolean;
-  createTime: string;
+  onlineStatus: number | null; // 1-在线, 0-离线, null-未知
+  createTime?: string;
+  updatedTime?: string;
+}
+
+// API响应接口
+interface ApiResponse {
+  code: number;
+  msg: string;
+  data: {
+    records: CabinetData[];
+    total: number;
+    current: number;
+    size: number;
+    pages: number;
+  };
 }
 
 // 响应式数据
@@ -27,71 +43,166 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 搜索表单（修改为柜子相关字段）
+// 搜索表单（修改为新的字段）
 const searchForm = ref({
   cabinetCode: '',
   cabinetName: '',
-  region: '',
+  province: '',
+  city: '',
+  district: '',
   onlineStatus: ''
 });
 
-// 模拟数据（修改为柜子数据）
+// 模拟数据（根据API返回格式调整）
 const mockData: CabinetData[] = [
   {
     id: 1,
-    cabinetCode: 'CAB001',
-    cabinetName: 'A区1号柜',
-    region: '浙江省杭州市西湖区',
-    address: '西湖大道123号',
-    onlineStatus: true,
-    createTime: '2024-01-15 10:30:00'
+    cabinetCode: 'Code1',
+    cabinetName: '智能柜',
+    province: '浙江省',
+    city: '杭州市',
+    district: '西湖区',
+    address: '浙江工业大学',
+    onlineStatus: 1,
+    createTime: '2025-06-09T16:49:40',
+    updatedTime: '2025-06-09T16:49:40'
   },
   {
     id: 2,
-    cabinetCode: 'CAB002',
-    cabinetName: 'B区2号柜',
-    region: '浙江省杭州市上城区',
-    address: '延安路456号',
-    onlineStatus: false,
-    createTime: '2024-01-16 14:20:00'
-  },
-  {
-    id: 3,
-    cabinetCode: 'CAB003',
-    cabinetName: 'C区3号柜',
-    region: '浙江省杭州市拱墅区',
-    address: '运河路789号',
-    onlineStatus: true,
-    createTime: '2024-01-17 09:15:00'
+    cabinetCode: 'Cod2',
+    cabinetName: '智能柜',
+    province: '浙江省',
+    city: '杭州市',
+    district: '西湖区',
+    address: '浙江工业',
+    onlineStatus: null,
+    createTime: '2025-06-09T17:29:41',
+    updatedTime: '2025-06-09T17:30:13'
   }
 ];
 
-// 从api获取数据
-const getCabinetListApi = async (params: any) => {
+// 新增设备相关数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('新增设备');
+const isEdit = ref(false);
 
+// 设备表单数据
+const deviceForm = ref({
+  cabinetCode: '',
+  cabinetName: '',
+  province: '',
+  city: '',
+  district: '',
+  address: '',
+  maxTemperature: null,
+  minTemperature: null,
+  maxHumidity: null,
+  minHumidity: null,
+  operationMode: 0,
+  maxTemperatureDifference: null
+});
+// 表单验证规则
+const deviceFormRules = {
+  cabinetCode: [
+    { required: true, message: '请输入设备编号', trigger: 'blur' },
+    { min: 2, max: 20, message: '设备编号长度为2-20个字符', trigger: 'blur' }
+  ],
+  cabinetName: [
+    { required: true, message: '请输入设备名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '设备名称长度为2-50个字符', trigger: 'blur' }
+  ],
+  province: [
+    { required: true, message: '请输入省份', trigger: 'blur' }
+  ],
+  city: [
+    { required: true, message: '请输入城市', trigger: 'blur' }
+  ],
+  district: [
+    { required: true, message: '请输入区域', trigger: 'blur' }
+  ],
+  address: [
+    { required: true, message: '请输入具体地址', trigger: 'blur' }
+  ]
+};
+const deviceFormRef = ref();
+
+// 从api获取数据
+const getCabinetListApi = async (params: any = {}) => {
+  try {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    
+    // 添加分页参数
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.size) queryParams.append('size', params.size.toString());
+    
+    // 添加搜索参数
+    if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+    // 最终生成类似: /api/power/cabinet/page?cabinetCode=2
+    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.district) queryParams.append('district', params.district);
+    if (params.onlineStatus !== '' && params.onlineStatus !== undefined) {
+      queryParams.append('onlineStatus', params.onlineStatus);
+    }
+    
+    // 构建完整的URL
+    const baseUrl = `/api/power/cabinet/page`;
+    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+    
+    console.log('API请求URL:', url); // 添加日志查看请求URL
+    
+    // 发送GET请求
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 如果需要认证，添加token
+        // 'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: ApiResponse = await response.json();
+    return data;
+    
+  } catch (error) {
+    console.error('API请求失败:', error);
+    throw error;
+  }
 };
 
-// 获取柜子列表（修改函数名和注释）
+// 获取柜子列表
 const getCabinetList = async () => {
   loading.value = true;
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // 调用真实的API
+    const response = await getCabinetListApi({
+      page: currentPage.value,
+      size: pageSize.value,
+      ...searchForm.value
+    });
     
-    // 这里应该调用真实的API
-    // const response = await getCabinetListApi({
-    //   page: currentPage.value,
-    //   size: pageSize.value,
-    //   ...searchForm.value
-    // });
-    
-    // 模拟数据
-    tableData.value = mockData;
-    total.value = mockData.length;
+    // 处理API响应
+    if (response.code === 200) {
+      tableData.value = response.data.records;
+      total.value = response.data.total;
+      console.log('获取到的柜子数据:', tableData.value);
+    } else {
+      ElMessage.error(response.msg || '获取数据失败');
+    }
     
   } catch (error) {
-    ElMessage.error('获取柜子列表失败');
-    console.error(error);
+    ElMessage.error('获取柜子列表失败，请检查网络连接');
+    console.error('获取柜子列表错误:', error);
+    
+    // 失败时显示模拟数据作为备用
+    //tableData.value = mockData;
+    //total.value = mockData.length;
   } finally {
     loading.value = false;
   }
@@ -103,33 +214,151 @@ const handleSearch = () => {
   getCabinetList();
 };
 
-// 重置搜索（修改为柜子字段）
+// 重置搜索
 const handleReset = () => {
   searchForm.value = {
     cabinetCode: '',
     cabinetName: '',
-    region: '',
+    province: '',
+    city: '',
+    district: '',
     onlineStatus: ''
   };
   handleSearch();
 };
 
+// 打开新增设备弹窗
+const handleAddDevice = () => {
+  dialogTitle.value = '新增设备';
+  isEdit.value = false;
+  resetDeviceForm();
+  dialogVisible.value = true;
+};
+// 重置表单
+const resetDeviceForm = () => {
+  deviceForm.value = {
+    cabinetCode: '',
+    cabinetName: '',
+    province: '',
+    city: '',
+    district: '',
+    address: '',
+    maxTemperature: null,
+    minTemperature: null,
+    maxHumidity: null,
+    minHumidity: null,
+    operationMode: 0,
+    maxTemperatureDifference: null
+  };
+  if (deviceFormRef.value) {
+    deviceFormRef.value.clearValidate();
+  }
+};
+// 取消操作
+const handleCancel = () => {
+  dialogVisible.value = false;
+  resetDeviceForm();
+};
+// 确认提交
+const handleConfirm = async () => {
+  if (!deviceFormRef.value) return;
+  
+  try {
+    await deviceFormRef.value.validate();
+    
+    if (isEdit.value) {
+      // 编辑设备
+      await updateDevice();
+    } else {
+      // 新增设备
+      await addDevice();
+    }
+    
+    dialogVisible.value = false;
+    resetDeviceForm();
+    getCabinetList(); // 刷新列表
+    
+  } catch (error) {
+    console.error('表单验证失败:', error);
+  }
+};
+// 新增设备API调用
+const addDevice = async () => {
+  try {
+    // 这里调用新增设备的API
+    // const response = await addDeviceApi(deviceForm.value);
+    
+    ElMessage.success('设备新增成功');
+    console.log('新增设备数据:', deviceForm.value);
+    
+  } catch (error) {
+    ElMessage.error('设备新增失败');
+    console.error('新增设备错误:', error);
+    throw error;
+  }
+};
+// 更新设备API调用
+const updateDevice = async () => {
+  try {
+    // 这里调用更新设备的API
+    // const response = await updateDeviceApi(deviceForm.value);
+    
+    ElMessage.success('设备更新成功');
+    console.log('更新设备数据:', deviceForm.value);
+    
+  } catch (error) {
+    ElMessage.error('设备更新失败');
+    console.error('更新设备错误:', error);
+    throw error;
+  }
+};
+
+
 // 查看柜子详情（修改注释）
-const handleView = (row: CabinetData) => {
-  ElMessage.info(`查看柜子: ${row.cabinetName}`);
-  // 这里可以打开详情弹窗或跳转到详情页
-};
+// const handleView = (row: CabinetData) => {
+//   ElMessage.info(`查看柜子: ${row.cabinetName}`);
+//   // 这里可以打开详情弹窗或跳转到详情页
+// };
 
-// 编辑柜子（修改注释）
-const handleEdit = (row: CabinetData) => {
-  ElMessage.info(`编辑柜子: ${row.cabinetName}`);
-  // 这里可以打开编辑弹窗
-};
+// // 编辑柜子（修改注释）
+// const handleEdit = (row: CabinetData) => {
+//   ElMessage.info(`编辑柜子: ${row.cabinetName}`);
+//   // 这里可以打开编辑弹窗
+// };
 
-// 柜子配置（修改注释）
-const handleSetting = (row: CabinetData) => {
-  ElMessage.info(`配置柜子: ${row.cabinetName}`);
-  // 这里可以打开配置弹窗
+// // 柜子配置（修改注释）
+// const handleSetting = (row: CabinetData) => {
+//   ElMessage.info(`配置柜子: ${row.cabinetName}`);
+//   // 这里可以打开配置弹窗
+// };
+
+// 一键开柜
+const handleOpenCabinet = async (row: CabinetData) => {
+  // 检查设备在线状态
+  if (row.onlineStatus !== 1) {
+    ElMessage.warning('设备离线，无法执行开柜操作');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要对设备 "${row.cabinetName}" 执行一键开柜操作吗？`,
+      '开柜确认',
+      {
+        confirmButtonText: '确定开柜',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    // 这里调用开柜API
+    // await openCabinetApi(row.id);
+    
+    ElMessage.success('开柜命令已发送，请检查设备状态');
+    
+  } catch {
+    ElMessage.info('已取消开柜操作');
+  }
 };
 
 // 删除柜子（修改注释和提示文本）
@@ -188,28 +417,44 @@ onMounted(() => {
         <!-- 搜索区域（修改为柜子相关字段） -->
         <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
-            <el-form-item label="柜子编号">
+            <el-form-item label="设备编号">
               <el-input 
                 v-model="searchForm.cabinetCode" 
-                placeholder="请输入柜子编号" 
+                placeholder="请输入设备编号" 
                 clearable
                 style="width: 200px"
               />
             </el-form-item>
-            <el-form-item label="柜子名称">
+            <el-form-item label="设备名称">
               <el-input 
                 v-model="searchForm.cabinetName" 
-                placeholder="请输入柜子名称" 
+                placeholder="请输入设备名称" 
                 clearable
                 style="width: 200px"
               />
             </el-form-item>
-            <el-form-item label="地区">
+            <el-form-item label="省份">
               <el-input 
-                v-model="searchForm.region" 
-                placeholder="请输入地区" 
+                v-model="searchForm.province" 
+                placeholder="请输入省份" 
                 clearable
-                style="width: 200px"
+                style="width: 150px"
+              />
+            </el-form-item>
+            <el-form-item label="城市">
+              <el-input 
+                v-model="searchForm.city" 
+                placeholder="请输入城市" 
+                clearable
+                style="width: 150px"
+              />
+            </el-form-item>
+            <el-form-item label="区域">
+              <el-input 
+                v-model="searchForm.district" 
+                placeholder="请输入区域" 
+                clearable
+                style="width: 150px"
               />
             </el-form-item>
             <el-form-item label="在线状态">
@@ -219,8 +464,9 @@ onMounted(() => {
                 clearable
                 style="width: 120px"
               >
-                <el-option label="在线" value="true" />
-                <el-option label="离线" value="false" />
+                <el-option label="在线" value="1" />
+                <el-option label="离线" value="0" />
+                <el-option label="未知" value="null" />
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -238,9 +484,9 @@ onMounted(() => {
         <el-card class="table-card">
           <template #header>
             <div class="card-header">
-              <span class="title">柜子列表</span>
-              <el-button type="primary" size="small">
-                新增柜子
+              <span class="title">设备列表</span>
+              <el-button type="primary" size="small" @click="handleAddDevice">
+                新增设备
               </el-button>
             </div>
           </template>
@@ -252,47 +498,33 @@ onMounted(() => {
             stripe
             border
           >
-            <el-table-column prop="cabinetCode" label="柜子编号" width="120" />
-            <el-table-column prop="cabinetName" label="柜子名称" width="150" />
-            <el-table-column prop="region" label="地区" width="200" />
-            <el-table-column prop="address" label="具体地址" min-width="200" />
-            <el-table-column label="在线状态" width="100" align="center">
+            <el-table-column prop="cabinetCode" label="设备编号" min-width="100" />
+            <el-table-column prop="cabinetName" label="设备名称" min-width="100" />
+            <el-table-column label="省市区" min-width="170">
               <template #default="{ row }">
-                <el-tag :type="row.onlineStatus ? 'success' : 'danger'">
-                  {{ row.onlineStatus ? '在线' : '离线' }}
+                {{ `${row.province}${row.city}${row.district}` }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="address" label="具体地址" min-width="220" show-overflow-tooltip />
+            <el-table-column label="在线状态" min-width="100" align="center">
+              <template #default="{ row }">
+                <el-tag 
+                  :type="row.onlineStatus === 1 ? 'success' : row.onlineStatus === 0 ? 'danger' : 'info'"
+                >
+                  {{ row.onlineStatus === 1 ? '在线' : row.onlineStatus === 0 ? '离线' : '未知' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="创建时间" width="180">
-              <template #default="{ row }">
-                {{ row.createTime }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" min-width="300" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
                   size="small" 
-                  :icon="View"
-                  @click="handleView(row)"
-                >
-                  查看
-                </el-button>
-                <el-button 
-                  type="success" 
-                  size="small" 
-                  :icon="Edit"
-                  @click="handleEdit(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button 
-                  type="warning" 
-                  size="small" 
                   :icon="Setting"
-                  @click="handleSetting(row)"
+                  @click="handleOpenCabinet(row)"
+                  :disabled="row.onlineStatus !== 1"
                 >
-                  配置
+                  一键开柜
                 </el-button>
                 <el-button 
                   type="danger" 
@@ -321,6 +553,166 @@ onMounted(() => {
         </el-card>
       </div>
     </div>
+    
+    <!-- 新增/编辑设备弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="600px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+    >
+      <el-form
+        ref="deviceFormRef"
+        :model="deviceForm"
+        :rules="deviceFormRules"
+        label-width="120px"
+        label-position="right"
+      >
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="设备编号" prop="cabinetCode">
+              <el-input
+                v-model="deviceForm.cabinetCode"
+                placeholder="请输入设备编号"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="设备名称" prop="cabinetName">
+              <el-input
+                v-model="deviceForm.cabinetName"
+                placeholder="请输入设备名称"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="省份" prop="province">
+              <el-input
+                v-model="deviceForm.province"
+                placeholder="请输入省份"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="城市" prop="city">
+              <el-input
+                v-model="deviceForm.city"
+                placeholder="请输入城市"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="区域" prop="district">
+              <el-input
+                v-model="deviceForm.district"
+                placeholder="请输入区域"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="具体地址" prop="address">
+          <el-input
+            v-model="deviceForm.address"
+            placeholder="请输入具体地址"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="最高温度">
+              <el-input-number
+                v-model="deviceForm.maxTemperature"
+                :min="-50"
+                :max="100"
+                :precision="2"
+                placeholder="最高温度"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="最低温度">
+              <el-input-number
+                v-model="deviceForm.minTemperature"
+                :min="-50"
+                :max="100"
+                :precision="2"
+                placeholder="最低温度"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="最高湿度">
+              <el-input-number
+                v-model="deviceForm.maxHumidity"
+                :min="0"
+                :max="100"
+                :precision="2"
+                placeholder="最高湿度"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="最低湿度">
+              <el-input-number
+                v-model="deviceForm.minHumidity"
+                :min="0"
+                :max="100"
+                :precision="2"
+                placeholder="最低湿度"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="运行模式">
+              <el-select v-model="deviceForm.operationMode" style="width: 100%">
+                <el-option label="自动模式" :value="0" />
+                <el-option label="手动模式" :value="1" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="最大温差">
+              <el-input-number
+                v-model="deviceForm.maxTemperatureDifference"
+                :min="0"
+                :max="50"
+                :precision="2"
+                placeholder="最大温差"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>    
   </div>
 </template>
 
