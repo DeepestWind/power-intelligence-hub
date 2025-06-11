@@ -1,14 +1,23 @@
 <template>
+  <div class="area-select-container">
+    <!-- 当前选中区域显示 -->
+    <div v-if="selectedArea" class="current-area">
+      <el-tag type="primary" size="small">
+        当前选中: {{ selectedArea.label }}
+      </el-tag>
+    </div>  
   <el-tree
     class="area-tree"
     :data="areaData"
     :props="defaultProps"
     :default-expand-all="false"
     :expand-on-click-node="true"
+    :highlight-current="true"
     @node-click="handleNodeClick"
     v-loading="loading"
     element-loading-text="加载地区数据..."
   />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -29,9 +38,19 @@ const areaData = computed(() => areaStore.getCurrentAreaData);
 const userAreaType = computed(() => areaStore.getCurrentAreaType);
 const userAreaCode = computed(() => areaStore.getCurrentAreaCode);
 
+// 添加选中区域的计算属性
+const selectedArea = computed(() => areaStore.selectedArea);
+
+// 添加 emit 定义
+const emit = defineEmits<{
+  areaSearch: [area: AreaNode] // 定义区域搜索事件
+}>();
+
 const handleNodeClick = (data: AreaNode) => {
   areaStore.setSelectedArea(data);
   console.log('选中的地区:', data);
+  // 发送区域搜索事件给父组件
+  emit('areaSearch', data);
 };
 
 const defaultProps = {

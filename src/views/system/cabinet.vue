@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 //import ResizablePanel from "@/components/ResizeablePanel/index.vue"; 已弃用
+import type { AreaNode } from "@/utils/area";
 
 defineOptions({
   name: "CabinetManagement"
@@ -43,49 +44,79 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
+// 分离区域筛选和表单搜索
+const areaFilter = ref({
+  province: '',
+  city: '',
+  district: ''
+});
 // 搜索表单（修改为新的字段）
 const searchForm = ref({
   cabinetCode: '',
   cabinetName: '',
-  province: '',
-  city: '',
-  district: '',
   onlineStatus: ''
 });
 
-// 模拟数据（根据API返回格式调整）
-const mockData: CabinetData[] = [
-  {
-    id: 1,
-    cabinetCode: 'Code1',
-    cabinetName: '智能柜',
-    province: '浙江省',
-    city: '杭州市',
-    district: '西湖区',
-    address: '浙江工业大学',
-    onlineStatus: 1,
-    createTime: '2025-06-09T16:49:40',
-    updatedTime: '2025-06-09T16:49:40'
-  },
-  {
-    id: 2,
-    cabinetCode: 'Cod2',
-    cabinetName: '智能柜',
-    province: '浙江省',
-    city: '杭州市',
-    district: '西湖区',
-    address: '浙江工业',
-    onlineStatus: null,
-    createTime: '2025-06-09T17:29:41',
-    updatedTime: '2025-06-09T17:30:13'
+// 处理区域搜索事件，左侧areaSelect组件
+const handleAreaSearch = (area: AreaNode) => {
+  // 清空区域筛选
+  areaFilter.value = { province: '', city: '', district: '' };
+  
+  // 设置新的区域筛选
+  fillAreaFilter(area);
+  
+  // 自动执行搜索
+  handleSearch();
+};
+const fillAreaFilter = (area: AreaNode) => {
+  const code = area.code;
+  const label = area.label;
+  
+  if (code.endsWith('0000')) {
+    areaFilter.value.province = label;
+  } else if (code.endsWith('00')) {
+    areaFilter.value.city = label;
+  } else {
+    areaFilter.value.district = label;
   }
-];
+  
+  ElMessage.info(`区域筛选已设置为: ${label}`);
+};
+
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1;
+  getCabinetList();
+};
+
+// 重置搜索
+const handleReset = () => {
+  searchForm.value = {
+    cabinetCode: '',
+    cabinetName: '',
+    onlineStatus: ''
+  };
+  handleSearch();
+};
+// 清空所有筛选条件
+const handleClearAll = () => {
+  searchForm.value = {
+    cabinetCode: '',
+    cabinetName: '',
+    onlineStatus: ''
+  };
+  areaFilter.value = {
+    province: '',
+    city: '',
+    district: ''
+  };
+  handleSearch();
+};
 
 // 新增设备相关数据
 const dialogVisible = ref(false);
 const dialogTitle = ref('新增设备');
 const isEdit = ref(false);
-
 // 设备表单数据
 const deviceForm = ref({
   cabinetCode: '',
@@ -184,6 +215,7 @@ const getCabinetList = async () => {
     const response = await getCabinetListApi({
       page: currentPage.value,
       size: pageSize.value,
+      ...areaFilter.value,
       ...searchForm.value
     });
     
@@ -208,24 +240,6 @@ const getCabinetList = async () => {
   }
 };
 
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getCabinetList();
-};
-
-// 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    province: '',
-    city: '',
-    district: '',
-    onlineStatus: ''
-  };
-  handleSearch();
-};
 
 // 打开新增设备弹窗
 const handleAddDevice = () => {
@@ -474,7 +488,8 @@ onMounted(() => {
 <template>
   <div class="cabinet-management-container">
     <div>
-    <AreaSelect />
+      <!-- 添加事件监听 -->
+      <AreaSelect @area-search="handleAreaSearch" />
     </div>
     <div class="content">
       <div class="main-content">
@@ -495,30 +510,6 @@ onMounted(() => {
                 placeholder="请输入设备名称" 
                 clearable
                 style="width: 200px"
-              />
-            </el-form-item>
-            <el-form-item label="省份">
-              <el-input 
-                v-model="searchForm.province" 
-                placeholder="请输入省份" 
-                clearable
-                style="width: 150px"
-              />
-            </el-form-item>
-            <el-form-item label="城市">
-              <el-input 
-                v-model="searchForm.city" 
-                placeholder="请输入城市" 
-                clearable
-                style="width: 150px"
-              />
-            </el-form-item>
-            <el-form-item label="区域">
-              <el-input 
-                v-model="searchForm.district" 
-                placeholder="请输入区域" 
-                clearable
-                style="width: 150px"
               />
             </el-form-item>
             <el-form-item label="在线状态">
