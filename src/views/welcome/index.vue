@@ -5,11 +5,17 @@ import AreaSelect from "@/components/AreaSelect/index.vue";
 defineOptions({
   name: "Welcome"
 });
+const areaSelectRef = ref();
+
+// 手动刷新地区数据
+const refreshArea = () => {
+  areaSelectRef.value?.refreshAreaData();
+};
 </script>
 
 <template>
   <div class="app-container">
-    <AreaSelect />
+    <AreaSelect ref="areaSelectRef" />
   </div>
 </template>
 

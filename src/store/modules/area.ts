@@ -40,6 +40,12 @@ export const useAreaStore = defineStore("area", {
       this.areaCode = areaCode;
     },
 
+    // 新增：设置区域数据
+    setAreaData(areaData: AreaNode[]) {
+      this.areaData = areaData;
+      console.log('Store中设置区域数据:', areaData);
+    },    
+
     // 设置用户类型并加载对应数据
     setUserType(areaType, areaCode) {
       function setAreaKey() {
@@ -58,9 +64,14 @@ export const useAreaStore = defineStore("area", {
 
     // 加载区域数据
     loadAreaData(type, code) {
-      if (!this.areaCode) return;
+      if (!code) {
+        console.warn('区域代码为空，无法加载数据');
+        return;
+      }
       try {
-        this.areaData = getAreaDataByUserType(type, code);
+        const areaData = getAreaDataByUserType(type, code);
+        this.setAreaData(areaData); // 使用新的 setAreaData 方法
+        console.log('成功加载区域数据:', areaData);
       } catch (error) {
         console.error("加载区域数据失败:", error);
         this.areaData = [];
