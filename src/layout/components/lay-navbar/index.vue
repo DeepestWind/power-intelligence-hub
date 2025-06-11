@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useNav } from "@/layout/hooks/useNav";
 import LaySearch from "../lay-search/index.vue";
-import LayNotice from "../lay-notice/index.vue";
+//import LayNotice from "../lay-notice/index.vue"; //移除通知组件
 import LayNavMix from "../lay-sidebar/NavMix.vue";
 import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vue";
 import LaySidebarBreadCrumb from "../lay-sidebar/components/SidebarBreadCrumb.vue";
@@ -9,6 +10,8 @@ import LaySidebarTopCollapse from "../lay-sidebar/components/SidebarTopCollapse.
 
 import LogoutCircleRLine from "~icons/ri/logout-circle-r-line";
 import Setting from "~icons/ri/settings-3-line";
+
+import { useUserStoreHook } from "@/store/modules/user";// 添加用户store
 
 const {
   layout,
@@ -21,6 +24,24 @@ const {
   avatarsStyle,
   toggleSideBar
 } = useNav();
+
+// 获取用户信息
+const userStore = useUserStoreHook();
+
+// 获取当前登录用户的真实姓名
+const currentUserName = computed(() => {
+  // 使用store中的getter方法获取用户信息
+  const userName = userStore.userName;
+  if (userName) {
+    return userName;
+  }
+  
+  // 如果没有，使用username作为兜底
+  return username || "用户";
+});
+
+
+
 </script>
 
 <template>
@@ -50,13 +71,17 @@ const {
       <LaySearch id="header-search" />
       <!-- 全屏 -->
       <LaySidebarFullScreen id="full-screen" />
-      <!-- 消息通知 -->
-      <LayNotice id="header-notice" />
+      <!-- 移除消息通知 -->
+      <!-- <LayNotice id="header-notice" /> -->
+
       <!-- 退出登录 -->
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover select-none">
           <img :src="userAvatar" :style="avatarsStyle" />
-          <p v-if="username" class="dark:text-white">{{ username }}</p>
+          <!-- 在头像右侧显示用户信息 -->
+          <div class="user-info">
+            <div class="user-name">{{ currentUserName }}</div>
+          </div>
         </span>
         <template #dropdown>
           <el-dropdown-menu class="logout">
@@ -121,20 +146,68 @@ const {
     .el-dropdown-link {
       display: flex;
       align-items: center;
-      justify-content: space-around;
       height: 48px;
-      padding: 10px;
+      padding: 8px 12px;
       color: #000000d9;
       cursor: pointer;
+      border-radius: 6px;
+      transition: background-color 0.2s;
 
-      p {
-        font-size: 14px;
+      &:hover {
+        background-color: #f5f5f5;
       }
 
       img {
-        width: 22px;
-        height: 22px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
+        border: 2px solid #e5e7eb;
+        margin-right: 8px;
+      }
+
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+
+        .user-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: #1f2937;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+        }
+
+        .user-role {
+          font-size: 12px;
+          color: #6366f1;
+          font-weight: 400;
+          line-height: 1.2;
+          margin-top: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+        }
+      }
+    }
+
+    .set-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-left: 8px;
+
+      &:hover {
+        background-color: #f5f5f5;
       }
     }
   }
@@ -146,12 +219,31 @@ const {
 }
 
 .logout {
-  width: 120px;
+  min-width: 120px;
 
   ::v-deep(.el-dropdown-menu__item) {
     display: inline-flex;
     flex-wrap: wrap;
     min-width: 100%;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .navbar {
+    .center-title {
+      display: none;
+    }
+    
+    .vertical-header-right {
+      .el-dropdown-link {
+        .user-info {
+          .user-role {
+            display: none; // 小屏幕隐藏角色信息
+          }
+        }
+      }
+    }
   }
 }
 </style>
