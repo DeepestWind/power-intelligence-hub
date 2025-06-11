@@ -94,12 +94,12 @@ const deviceForm = ref({
   city: '',
   district: '',
   address: '',
-  maxTemperature: null,
-  minTemperature: null,
-  maxHumidity: null,
-  minHumidity: null,
-  operationMode: 0,
-  maxTemperatureDifference: null
+  // maxTemperature: null,//此处默认
+  // minTemperature: null,//此处默认
+  // maxHumidity: null,//此处默认
+  // minHumidity: null,//此处默认
+  // operationMode: 0,//此处默认
+  // maxTemperatureDifference: null//此处默认
 });
 // 表单验证规则
 const deviceFormRules = {
@@ -234,7 +234,7 @@ const handleAddDevice = () => {
   resetDeviceForm();
   dialogVisible.value = true;
 };
-// 重置表单
+// 重置表单，取消新增设备时使用
 const resetDeviceForm = () => {
   deviceForm.value = {
     cabinetCode: '',
@@ -243,12 +243,12 @@ const resetDeviceForm = () => {
     city: '',
     district: '',
     address: '',
-    maxTemperature: null,
-    minTemperature: null,
-    maxHumidity: null,
-    minHumidity: null,
-    operationMode: 0,
-    maxTemperatureDifference: null
+    // maxTemperature: null,
+    // minTemperature: null,
+    // maxHumidity: null,
+    // minHumidity: null,
+    // operationMode: 0,
+    // maxTemperatureDifference: null
   };
   if (deviceFormRef.value) {
     deviceFormRef.value.clearValidate();
@@ -275,7 +275,7 @@ const handleConfirm = async () => {
     }
     
     dialogVisible.value = false;
-    resetDeviceForm();
+    resetDeviceForm();// 重置表单
     getCabinetList(); // 刷新列表
     
   } catch (error) {
@@ -286,13 +286,55 @@ const handleConfirm = async () => {
 const addDevice = async () => {
   try {
     // 这里调用新增设备的API
-    // const response = await addDeviceApi(deviceForm.value);
+    // 构建请求体数据
+    const requestData = {
+      cabinetCode: deviceForm.value.cabinetCode,
+      cabinetName: deviceForm.value.cabinetName,
+      province: deviceForm.value.province,
+      city: deviceForm.value.city,
+      district: deviceForm.value.district,
+      address: deviceForm.value.address,
+      onlineStatus: 0, // 新增时默认在线状态为离线
+      createTime: new Date().toISOString(),
+      updatedTime: new Date().toISOString()
+      // maxTemperature: deviceForm.value.maxTemperature,
+      // minTemperature: deviceForm.value.minTemperature,
+      // maxHumidity: deviceForm.value.maxHumidity,
+      // minHumidity: deviceForm.value.minHumidity,
+      // operationMode: deviceForm.value.operationMode,
+      // maxTemperatureDifference: deviceForm.value.maxTemperatureDifference
+    };
     
-    ElMessage.success('设备新增成功');
-    console.log('新增设备数据:', deviceForm.value);
+    console.log('发送新增设备请求:', requestData);
+
+    // 发送POST请求到后端API
+    const response = await fetch('/api/power/cabinet/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // 如果需要认证，添加token
+        // 'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // 处理API响应
+    if (result.code === 200) {
+      ElMessage.success('设备新增成功');
+      console.log('新增设备成功:', result);
+    } else {
+      ElMessage.error(result.msg || '设备新增失败');
+      throw new Error(result.msg || '设备新增失败');
+    }
     
   } catch (error) {
-    ElMessage.error('设备新增失败');
+    ElMessage.error('设备新增失败，请检查网络连接');
     console.error('新增设备错误:', error);
     throw error;
   }
@@ -314,23 +356,6 @@ const updateDevice = async () => {
 };
 
 
-// 查看柜子详情（修改注释）
-// const handleView = (row: CabinetData) => {
-//   ElMessage.info(`查看柜子: ${row.cabinetName}`);
-//   // 这里可以打开详情弹窗或跳转到详情页
-// };
-
-// // 编辑柜子（修改注释）
-// const handleEdit = (row: CabinetData) => {
-//   ElMessage.info(`编辑柜子: ${row.cabinetName}`);
-//   // 这里可以打开编辑弹窗
-// };
-
-// // 柜子配置（修改注释）
-// const handleSetting = (row: CabinetData) => {
-//   ElMessage.info(`配置柜子: ${row.cabinetName}`);
-//   // 这里可以打开配置弹窗
-// };
 
 // 一键开柜
 const handleOpenCabinet = async (row: CabinetData) => {
@@ -361,24 +386,63 @@ const handleOpenCabinet = async (row: CabinetData) => {
   }
 };
 
+// 删除柜子API调用
+const deleteCabinetApi = async (id: number) => {
+  try {
+    const response = await fetch(`/api/power/cabinet/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        // 如果需要认证，添加token
+        // 'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+    
+  } catch (error) {
+    console.error('删除设备API请求失败:', error);
+    throw error;
+  }
+};
 // 删除柜子（修改注释和提示文本）
 const handleDelete = async (row: CabinetData) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除柜子 "${row.cabinetName}" 吗？`,
+      `确定要删除设备 "${row.cabinetName}" 吗？删除后无法恢复！`,
       '删除确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning'
       }
     );
     
-    // 这里调用删除API
-    ElMessage.success('删除成功');
-    getCabinetList();
-  } catch {
-    ElMessage.info('已取消删除');
+    // 调用删除API
+    const result = await deleteCabinetApi(row.id);
+    
+    // 处理API响应
+    if (result.code === 200) {
+      ElMessage.success('设备删除成功');
+      console.log('删除设备成功:', result);
+      // 刷新列表
+      getCabinetList();
+    } else {
+      ElMessage.error(result.msg || '设备删除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') { // 用户取消删除时不显示错误信息
+      ElMessage.error('设备删除失败，请检查网络连接');
+      console.error('删除设备错误:', error);
+    } else {
+      ElMessage.info('已取消删除');
+    }
   }
 };
 
@@ -394,7 +458,7 @@ const handleSizeChange = (size: number) => {
   getCabinetList();
 };
 
-// 面板大小改变回调
+// 面板大小改变回调，已弃用
 const handlePanelResize = (width: number) => {
   console.log('Panel width changed to:', width);
   // 可以在这里保存用户的布局偏好到 localStorage
@@ -591,7 +655,7 @@ onMounted(() => {
         </el-row>
         
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="省份" prop="province">
               <el-input
                 v-model="deviceForm.province"
@@ -600,7 +664,7 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="城市" prop="city">
               <el-input
                 v-model="deviceForm.city"
@@ -609,7 +673,7 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="区域" prop="district">
               <el-input
                 v-model="deviceForm.district"
@@ -628,7 +692,7 @@ onMounted(() => {
           />
         </el-form-item>
         
-        <el-row :gutter="20">
+        <!-- <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="最高温度">
               <el-input-number
@@ -703,7 +767,7 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
       </el-form>
       
       <template #footer>
@@ -733,6 +797,13 @@ onMounted(() => {
         
         .search-form {
           .el-form-item {
+            margin-bottom: 18px; // 设置换行时的行距
+            margin-right: 12px;  // 设置同行表单项之间的间距
+          }
+          
+          // 最后一行不需要底部间距
+          .el-form-item:last-child,
+          .el-form-item:nth-last-child(-n+2) { // 最后两个表单项（按钮）
             margin-bottom: 0;
           }
         }
