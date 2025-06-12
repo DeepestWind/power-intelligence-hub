@@ -3,6 +3,8 @@ import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting, Plus } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
+import type { AreaNode } from "@/utils/area"; // 添加类型导入
+import { useAreaStore } from "@/store/modules/area";
 
 defineOptions({
   name: "ItemsManagement"
@@ -47,6 +49,20 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
+// 初始化 areaStore
+const areaStore = useAreaStore();
+
+// const emit = defineEmits<{
+//   areaSearch: [area: AreaNode] // 注意这里是 areaSearch，不是 area-search
+// }>();
+// const handleNodeClick = (data: AreaNode) => {
+//   areaStore.setSelectedArea(data);
+//   console.log('选中的地区:', data);
+  
+//   // 发送区域搜索事件给父组件
+//   emit('areaSearch', data); // 确保这里调用了 emit
+// };
+
 // 搜索表单
 const searchForm = ref({
   cabinetCode: '',
@@ -54,12 +70,44 @@ const searchForm = ref({
   materialCode: '',
   materialName: '',
   rfid: '',
-  province: '',
-  city: '',
-  district: '',
   experimentDate: '',
   isDelete: ''
 });
+// 分离区域筛选和表单搜索
+const areaFilter = ref({
+  province: '',
+  city: '',
+  district: ''
+});
+
+// 处理区域搜索事件，左侧areaSelect组件
+const handleAreaSearch = (area: AreaNode) => {
+  console.log('接收到区域搜索事件:', area);
+  
+  // 清空区域筛选
+  areaFilter.value = { province: '', city: '', district: '' };
+  
+  // 设置新的区域筛选
+  fillAreaFilter(area);
+  
+  // 自动执行搜索
+  handleSearch();
+};
+const fillAreaFilter = (area: AreaNode) => {
+  const code = area.code;
+  const label = area.label;
+  
+  if (code.endsWith('0000')) {
+    areaFilter.value.province = label;
+  } else if (code.endsWith('00')) {
+    areaFilter.value.city = label;
+  } else {
+    areaFilter.value.district = label;
+  }
+  
+  console.log('区域筛选已设置:', areaFilter.value); // 添加调试日志
+  ElMessage.info(`区域筛选已设置为: ${label}`);
+};
 
 // 新增物料相关数据
 const dialogVisible = ref(false);
@@ -183,11 +231,17 @@ const getItemListApi = async (params: any = {}) => {
 const getItemList = async () => {
   loading.value = true;
   try {
-    const response = await getItemListApi({
+    // 合并区域筛选和表单搜索条件
+    const searchParams = {
       page: currentPage.value,
       size: pageSize.value,
-      ...searchForm.value
-    });
+      ...areaFilter.value,  //添加区域筛选条件
+      ...searchForm.value   //表单搜索条件
+    };
+    
+    console.log('物料搜索参数:', searchParams); // 添加日志查看参数
+    
+    const response = await getItemListApi(searchParams);
     
     // 处理API响应
     if (response.code === 200) {
@@ -220,11 +274,27 @@ const handleReset = () => {
     materialCode: '',
     materialName: '',
     rfid: '',
-    province: '',
-    city: '',
-    district: '',
     experimentDate: '',
     isDelete: ''
+  };
+  handleSearch();
+};
+
+// 清空所有搜索条件
+const handleClearAll = () => {
+  searchForm.value = {
+    cabinetCode: '',
+    cabinetName: '',
+    materialCode: '',
+    materialName: '',
+    rfid: '',
+    experimentDate: '',
+    isDelete: ''
+  };
+  areaFilter.value = {
+    province: '',
+    city: '',
+    district: ''
   };
   handleSearch();
 };
@@ -286,7 +356,7 @@ const handleConfirm = async () => {
   }
 };
 
-// 新增物料API调用
+// 物料API调用
 const addItem = async () => {
   try {
     const requestData = {
@@ -460,7 +530,8 @@ onMounted(() => {
 
 <template>
   <div class="items-management-container">
-    <AreaSelect />
+    <!-- 添加事件监听 -->
+    <AreaSelect @area-search="handleAreaSearch" />
     
     <div class="content">
       <div class="main-content">
@@ -507,30 +578,7 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="省份">
-              <el-input 
-                v-model="searchForm.province" 
-                placeholder="请输入省份" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
-            <el-form-item label="城市">
-              <el-input 
-                v-model="searchForm.city" 
-                placeholder="请输入城市" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
-            <el-form-item label="区域">
-              <el-input 
-                v-model="searchForm.district" 
-                placeholder="请输入区域" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
+            <!-- 移除省市区输入框 -->
             <el-form-item label="实验日期">
               <el-date-picker
                 v-model="searchForm.experimentDate"
@@ -562,6 +610,10 @@ onMounted(() => {
               </el-button>
               <el-button @click="handleReset">
                 重置
+              </el-button>
+              <!-- 🔥 修改10：可选择添加清空所有按钮 -->
+              <el-button @click="handleClearAll">
+                清空所有
               </el-button>
             </el-form-item>
           </el-form>

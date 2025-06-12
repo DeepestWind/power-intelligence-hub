@@ -3,11 +3,14 @@ import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting, Plus } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
+import type { AreaNode } from "@/utils/area";
+import { useAreaStore } from "@/store/modules/area";
 
 defineOptions({
   name: "UserManagement"
 });
-
+// 初始化 areaStore
+const areaStore = useAreaStore();
 // 用户数据接口
 interface UserData {
   id: number;
@@ -50,6 +53,13 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
+
+// 区域筛选和表单搜索
+const areaFilter = ref({
+  province: '',
+  city: '',
+  district: ''
+});
 // 搜索表单
 const searchForm = ref({
   userName: '',
@@ -57,11 +67,38 @@ const searchForm = ref({
   employeeId: '',
   userType: '',
   adminLevel: '',
-  province: '',
-  city: '',
-  district: '',
   status: ''
 });
+
+// 处理区域搜索事件，左侧areaSelect组件
+const handleAreaSearch = (area: AreaNode) => {
+  console.log('🎯 user.vue 接收到区域搜索事件:', area);
+  
+  // 清空区域筛选
+  areaFilter.value = { province: '', city: '', district: '' };
+  
+  // 设置新的区域筛选
+  fillAreaFilter(area);
+  
+  // 自动执行搜索
+  handleSearch();
+};
+
+const fillAreaFilter = (area: AreaNode) => {
+  const code = area.code;
+  const label = area.label;
+  
+  if (code.endsWith('0000')) {
+    areaFilter.value.province = label;
+  } else if (code.endsWith('00')) {
+    areaFilter.value.city = label;
+  } else {
+    areaFilter.value.district = label;
+  }
+  
+  console.log('区域筛选已设置:', areaFilter.value);
+  ElMessage.info(`区域筛选已设置为: ${label}`);
+};
 
 // 新增用户相关数据
 const dialogVisible = ref(false);
@@ -192,11 +229,16 @@ const getUserListApi = async (params: any = {}) => {
 const getUserList = async () => {
   loading.value = true;
   try {
-    const response = await getUserListApi({
+    const searchParams = {
       page: currentPage.value,
       size: pageSize.value,
-      ...searchForm.value
-    });
+      ...areaFilter.value,  // 添加区域筛选条件
+      ...searchForm.value   // 表单搜索条件
+    };
+    
+    console.log('用户搜索参数:', searchParams); // 添加日志查看参数
+
+    const response = await getUserListApi(searchParams);
     
     // 处理API响应
     if (response.code === 200) {
@@ -229,10 +271,26 @@ const handleReset = () => {
     employeeId: '',
     userType: '',
     adminLevel: '',
+    status: ''
+  };
+  // 不清空区域筛选，保持用户选择的区域
+  handleSearch();
+};
+
+// 添加清空所有筛选条件函数
+const handleClearAll = () => {
+  searchForm.value = {
+    userName: '',
+    department: '',
+    employeeId: '',
+    userType: '',
+    adminLevel: '',
+    status: ''
+  };
+  areaFilter.value = {
     province: '',
     city: '',
-    district: '',
-    status: ''
+    district: ''
   };
   handleSearch();
 };
@@ -475,7 +533,7 @@ onMounted(() => {
 
 <template>
   <div class="user-management-container">
-    <AreaSelect />
+    <AreaSelect @area-search="handleAreaSearch" />
     
     <div class="content">
       <div class="main-content">
@@ -536,30 +594,8 @@ onMounted(() => {
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="省份">
-              <el-input 
-                v-model="searchForm.province" 
-                placeholder="请输入省份" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
-            <el-form-item label="城市">
-              <el-input 
-                v-model="searchForm.city" 
-                placeholder="请输入城市" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
-            <el-form-item label="区域">
-              <el-input 
-                v-model="searchForm.district" 
-                placeholder="请输入区域" 
-                clearable
-                style="width: 120px"
-              />
-            </el-form-item>
+            <!-- 修改：移除省市区输入框 -->
+            <!-- 原来的省份、城市、区域字段已删除 -->
             <el-form-item label="状态">
               <el-select 
                 v-model="searchForm.status" 
@@ -581,6 +617,10 @@ onMounted(() => {
               </el-button>
               <el-button @click="handleReset">
                 重置
+              </el-button>
+              <!-- 可选择添加清空所有按钮 -->
+              <el-button @click="handleClearAll">
+                清空所有
               </el-button>
             </el-form-item>
           </el-form>
