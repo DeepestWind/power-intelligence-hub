@@ -164,8 +164,8 @@ const getCabinetListApi = async (params: any = {}) => {
     const queryParams = new URLSearchParams();
     
     // 添加分页参数
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.size) queryParams.append('size', params.size.toString());
+    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
     // 添加搜索参数
     if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
@@ -213,8 +213,8 @@ const getCabinetList = async () => {
   try {
     // 调用真实的API
     const response = await getCabinetListApi({
-      page: currentPage.value,
-      size: pageSize.value,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
       ...areaFilter.value,
       ...searchForm.value
     });

@@ -176,8 +176,8 @@ const getUserListApi = async (params: any = {}) => {
     const queryParams = new URLSearchParams();
     
     // 添加分页参数
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.size) queryParams.append('size', params.size.toString());
+    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
     // 添加搜索参数
     if (params.userName) queryParams.append('userName', params.userName);
@@ -230,8 +230,8 @@ const getUserList = async () => {
   loading.value = true;
   try {
     const searchParams = {
-      page: currentPage.value,
-      size: pageSize.value,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
       ...areaFilter.value,  // 添加区域筛选条件
       ...searchForm.value   // 表单搜索条件
     };
