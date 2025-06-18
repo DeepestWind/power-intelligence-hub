@@ -52,6 +52,14 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
+// 导出相关的响应式数据
+const exportDialogVisible = ref(false);
+const exportForm = ref({
+  startDate: '',
+  endDate: ''
+});
+const exportLoading = ref(false);
+
 // 分离区域筛选和表单搜索
 const areaFilter = ref({
   province: '',
@@ -243,8 +251,125 @@ const handleView = (row: ReturnRecordData) => {
 
 // 导出记录
 const handleExport = () => {
-  ElMessage.info('导出功能开发中...');
-  // 这里可以实现导出功能
+  // 打开导出弹窗
+  exportDialogVisible.value = true;
+  
+  // 设置默认日期范围（最近30天）
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  
+  exportForm.value = {
+    startDate: thirtyDaysAgo.toISOString().split('T')[0], // YYYY-MM-DD 格式
+    endDate: today.toISOString().split('T')[0]
+  };
+};
+// 确认导出
+const confirmExport = async () => {
+  if (!exportForm.value.startDate || !exportForm.value.endDate) {
+    ElMessage.error('请选择导出日期范围');
+    return;
+  }
+  
+  // 验证日期范围
+  const startDate = new Date(exportForm.value.startDate);
+  const endDate = new Date(exportForm.value.endDate);
+  
+  if (startDate > endDate) {
+    ElMessage.error('开始日期不能大于结束日期');
+    return;
+  }
+  
+  // 验证日期范围不超过365天
+  const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays > 365) {
+    ElMessage.error('导出日期范围不能超过365天');
+    return;
+  }
+  
+  try {
+    exportLoading.value = true;
+    await downloadReturnedRecords(exportForm.value.startDate, exportForm.value.endDate);
+    exportDialogVisible.value = false;
+    ElMessage.success('导出成功');
+  } catch (error) {
+    ElMessage.error('导出失败，请稍后重试');
+    console.error('导出失败:', error);
+  } finally {
+    exportLoading.value = false;
+  }
+};
+// 取消导出
+const cancelExport = () => {
+  exportDialogVisible.value = false;
+  exportForm.value = {
+    startDate: '',
+    endDate: ''
+  };
+};
+// 调用导出API
+const downloadReturnedRecords = async (startDate: string, endDate: string) => {
+  try {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    queryParams.append('startDate', startDate);
+    queryParams.append('endDate', endDate);
+    
+    // 构建完整的URL
+    const url = `/api/power/returned-records/download/returned?${queryParams.toString()}`;
+    
+    console.log('导出API请求URL:', url);
+    
+    // 发送GET请求
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let fileName = '归还记录.xlsx'; // 默认文件名
+    
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (fileNameMatch && fileNameMatch[1]) {
+        fileName = fileNameMatch[1].replace(/['"]/g, '');
+      }
+    }
+    
+    // 如果文件名没有扩展名，添加.xlsx
+    if (!fileName.includes('.')) {
+      fileName += '.xlsx';
+    }
+    
+    // 获取文件blob
+    const blob = await response.blob();
+    
+    // 创建下载链接
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+    
+    console.log('文件下载成功:', fileName);
+    
+  } catch (error) {
+    console.error('导出API请求失败:', error);
+    throw error;
+  }
 };
 
 // 分页改变
@@ -505,6 +630,72 @@ onMounted(() => {
         </el-card>
       </div>
     </div>
+  <!-- 导出弹窗 -->
+  <el-dialog
+    v-model="exportDialogVisible"
+    title="导出归还记录"
+    width="500px"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+  >
+    <el-form :model="exportForm" label-width="100px" label-position="right">
+      <el-form-item label="开始日期" required>
+        <el-date-picker
+          v-model="exportForm.startDate"
+          type="date"
+          placeholder="选择开始日期"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+          style="width: 100%"
+          :disabledDate="(date) => date > new Date()"
+        />
+      </el-form-item>
+      <el-form-item label="结束日期" required>
+        <el-date-picker
+          v-model="exportForm.endDate"
+          type="date"
+          placeholder="选择结束日期"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+          style="width: 100%"
+          :disabledDate="(date) => date > new Date() || (exportForm.startDate && date < new Date(exportForm.startDate))"
+        />
+      </el-form-item>
+      
+      <!-- 提示信息 -->
+      <el-alert
+        title="导出说明"
+        type="info"
+        :closable="false"
+        style="margin-top: 15px"
+      >
+        <template #default>
+          <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+            <li>导出的数据将包含指定日期范围内的所有归还记录</li>
+            <li>日期范围不能超过365天</li>
+            <li>文件格式为Excel (.xlsx)</li>
+            <li>导出可能需要几秒钟时间，请耐心等待</li>
+          </ul>
+        </template>
+      </el-alert>
+    </el-form>
+    
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="cancelExport" :disabled="exportLoading">
+          取消
+        </el-button>
+        <el-button 
+          type="primary" 
+          @click="confirmExport"
+          :loading="exportLoading"
+          :disabled="!exportForm.startDate || !exportForm.endDate"
+        >
+          {{ exportLoading ? '导出中...' : '确认导出' }}
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
   </div>
 </template>
 
@@ -600,6 +791,21 @@ onMounted(() => {
       .el-input,
       .el-date-picker {
         width: 120px !important;
+      }
+    }
+  }
+}
+// 导出弹窗样式
+:deep(.el-dialog) {
+  .dialog-footer {
+    text-align: center;
+  }
+  
+  .el-alert {
+    ul {
+      li {
+        margin: 3px 0;
+        color: #606266;
       }
     }
   }
