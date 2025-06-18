@@ -793,10 +793,10 @@ onMounted(() => {
           }
           
           // 最后一行不需要底部间距
-          .el-form-item:last-child,
-          .el-form-item:nth-last-child(-n+2) { // 最后两个表单项（按钮）
-            margin-bottom: 0;
-          }
+          // .el-form-item:last-child,
+          // .el-form-item:nth-last-child(-n+2) { // 最后两个表单项（按钮）
+          //   margin-bottom: 0;
+          // }
         }
       }
       

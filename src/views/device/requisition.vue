@@ -64,8 +64,8 @@ const searchForm = ref({
   borrowName: '',
   createTimeStart: '',
   createTimeEnd: '',
-  usageQuantityMin: '',
-  usageQuantityMax: ''
+  usageQuantityMin: null as number | null, 
+  usageQuantityMax: null as number | null
 });
 
 // 处理区域搜索事件
@@ -200,8 +200,8 @@ const handleReset = () => {
     borrowName: '',
     createTimeStart: '',
     createTimeEnd: '',
-    usageQuantityMin: '',
-    usageQuantityMax: ''
+    usageQuantityMin: null,
+    usageQuantityMax: null
   };
   handleSearch();
 };
@@ -216,8 +216,8 @@ const handleClearAll = () => {
     borrowName: '',
     createTimeStart: '',
     createTimeEnd: '',
-    usageQuantityMin: '',
-    usageQuantityMax: ''
+    usageQuantityMin: null,
+    usageQuantityMax: null
   };
   areaFilter.value = {
     province: '',
@@ -284,11 +284,11 @@ const getBorrowStatus = (createTime: string) => {
   const diffDays = Math.floor((now.getTime() - borrowed.getTime()) / (1000 * 60 * 60 * 24));
   
   if (diffDays <= 1) {
-    return { type: 'success', text: '正常' };
+    return { type: 'success' as const, text: '正常' };
   } else if (diffDays <= 7) {
-    return { type: 'warning', text: '提醒' };
+    return { type: 'warning' as const, text: '提醒' };
   } else {
-    return { type: 'danger', text: '超期' };
+    return { type: 'danger' as const, text: '超期' };
   }
 };
 
@@ -522,10 +522,10 @@ onMounted(() => {
             margin-right: 12px;
           }
           
-          .el-form-item:last-child,
-          .el-form-item:nth-last-child(-n+2) {
-            margin-bottom: 0;
-          }
+          // .el-form-item:last-child,
+          // .el-form-item:nth-last-child(-n+2) {
+          //   margin-bottom: 0;
+          // }
         }
       }
       

@@ -41,7 +41,7 @@ export default {
       component: () => import("@/views/system/humiture.vue"),
       meta: {
         title: "温湿度设置",
-        icon: "ep:thermometer"
+        icon: "ep:umbrella"
       }
     }
   ]

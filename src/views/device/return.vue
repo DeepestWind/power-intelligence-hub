@@ -529,10 +529,10 @@ onMounted(() => {
             margin-right: 12px;
           }
           
-          .el-form-item:last-child,
-          .el-form-item:nth-last-child(-n+2) {
-            margin-bottom: 0;
-          }
+          // .el-form-item:last-child,
+          // .el-form-item:nth-last-child(-n+2) {
+          //   margin-bottom: 0;
+          // }
         }
       }
       

@@ -520,7 +520,7 @@ onMounted(() => {
                 <span v-if="row.minTemperature !== null && row.maxTemperature !== null">
                   {{ row.minTemperature }}° ~ {{ row.maxTemperature }}°
                 </span>
-                <span v-else class="text-muted">未设置</span>
+                <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
             <el-table-column label="湿度范围(%)" width="150" align="center">
@@ -528,7 +528,7 @@ onMounted(() => {
                 <span v-if="row.minHumidity !== null && row.maxHumidity !== null">
                   {{ row.minHumidity }}% ~ {{ row.maxHumidity }}%
                 </span>
-                <span v-else class="text-muted">未设置</span>
+                <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
             <el-table-column label="最大温差(°C)" width="120" align="center">
@@ -536,7 +536,7 @@ onMounted(() => {
                 <span v-if="row.maxTemperatureDifference !== null">
                   {{ row.maxTemperatureDifference }}°
                 </span>
-                <span v-else class="text-muted">未设置</span>
+                <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
             <el-table-column label="运行模式" width="100" align="center">
@@ -803,10 +803,10 @@ onMounted(() => {
             margin-right: 12px;
           }
           
-          .el-form-item:last-child,
-          .el-form-item:nth-last-child(-n+2) {
-            margin-bottom: 0;
-          }
+          // .el-form-item:last-child,
+          // .el-form-item:nth-last-child(-n+2) {
+          //   margin-bottom: 0;
+          // }
         }
       }
       

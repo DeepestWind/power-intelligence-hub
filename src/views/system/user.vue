@@ -648,7 +648,7 @@ onMounted(() => {
             <el-table-column prop="userName" label="用户名" width="100" />
             <el-table-column prop="department" label="部门" width="120">
               <template #default="{ row }">
-                {{ row.department || '未设置' }}
+                {{ row.department || '-' }}
               </template>
             </el-table-column>
             <el-table-column prop="employeeId" label="员工编号" width="120" />
@@ -669,22 +669,22 @@ onMounted(() => {
             </el-table-column>
             <el-table-column prop="province" label="省份" width="100">
               <template #default="{ row }">
-                {{ row.province || '未设置' }}
+                {{ row.province || '-' }}
               </template>
             </el-table-column>
             <el-table-column prop="city" label="城市" width="100">
               <template #default="{ row }">
-                {{ row.city || '未设置' }}
+                {{ row.city || '-' }}
               </template>
             </el-table-column>
             <el-table-column prop="district" label="区域" width="100">
               <template #default="{ row }">
-                {{ row.district || '未设置' }}
+                {{ row.district || '-' }}
               </template>
             </el-table-column>
             <el-table-column prop="address" label="地址" min-width="150">
               <template #default="{ row }">
-                {{ row.address || '未设置' }}
+                {{ row.address || '-' }}
               </template>
             </el-table-column>
             <el-table-column label="状态" width="80" align="center">
@@ -941,10 +941,10 @@ onMounted(() => {
             margin-right: 12px;
           }
           
-          .el-form-item:last-child,
-          .el-form-item:nth-last-child(-n+2) {
-            margin-bottom: 0;
-          }
+          // .el-form-item:last-child,
+          // .el-form-item:nth-last-child(-n+2) {
+          //   margin-bottom: 0;
+          // }
         }
       }
       
