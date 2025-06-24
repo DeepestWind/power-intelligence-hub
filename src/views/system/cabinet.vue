@@ -531,6 +531,9 @@ onMounted(() => {
               <el-button @click="handleReset">
                 重置
               </el-button>
+              <el-button @click="handleClearAll">
+                清空所有
+              </el-button>              
             </el-form-item>
           </el-form>
         </el-card>
