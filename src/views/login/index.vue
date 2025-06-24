@@ -14,7 +14,7 @@ import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar, illustration } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
-
+import { ElMessageBox } from 'element-plus';
 import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
 import Lock from "~icons/ri/lock-fill";
@@ -65,6 +65,58 @@ const onLogin = async (formEl: FormInstance | undefined) => {
             });
           } else {
             message("登录失败", { type: "error" });
+          }
+        })
+        .catch(error => {
+          // 🔥 添加权限校验逻辑
+          console.error('登录错误:', error);
+          
+          // 检查是否是普通用户无权登录的错误
+          if (error.response && error.response.data) {
+            const errorData = error.response.data;
+            
+            // 检查后端返回的错误码和消息
+            if (errorData.code === -7 && errorData.data === "普通用户无权登录") {
+              // 显示权限不足弹窗
+              ElMessageBox.alert(
+                '抱歉，您的账户权限不足，无法访问运营端管理系统。如需帮助，请联系系统管理员。',
+                '权限不足',
+                {
+                  confirmButtonText: '确定',
+                  type: 'warning',
+                  customClass: 'login-permission-alert',
+                  showClose: false,
+                  center: true
+                }
+              ).then(() => {
+                // 用户点击确定后，清空密码字段
+                ruleForm.password = '';
+                // 聚焦到密码输入框
+                setTimeout(() => {
+                  const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+                  if (passwordInput) {
+                    passwordInput.focus();
+                  }
+                }, 100);
+              });
+              return;
+            }
+          }
+          
+          // 🔥 其他类型的登录错误处理
+          if (error.response && error.response.status === 500) {
+            // 服务器内部错误
+            message("服务器内部错误，请稍后重试", { type: "error" });
+          } else if (error.response && error.response.status === 401) {
+            // 认证失败
+            message("用户名或密码错误", { type: "error" });
+          } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+            // 网络错误
+            message("网络连接失败，请检查网络状态", { type: "error" });
+          } else {
+            // 其他未知错误
+            const errorMsg = error.response?.data?.msg || error.response?.data?.data || error.message || "登录失败，请重试";
+            message(errorMsg, { type: "error" });
           }
         })
         .finally(() => (loading.value = false));
