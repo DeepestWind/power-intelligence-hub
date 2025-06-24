@@ -526,6 +526,229 @@ const formatAdminLevel = (adminLevel: number) => {
   return option ? option.label : '未知';
 };
 
+// 添加人脸识别相关数据
+const faceDialogVisible = ref(false);
+const currentUserId = ref<number | null>(null);
+const currentUserName = ref('');
+const faceImages = ref<string[]>([]);
+const faceLoading = ref(false);
+const uploadLoading = ref(false);
+// 添加文件上传引用
+const fileInputRef = ref<HTMLInputElement>();
+
+// 获取用户人脸信息API
+const getUserFacesApi = async (userId: number) => {
+  try {
+    const response = await fetch(`/api/power/minio/view/${userId}`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        // 404表示用户没有人脸照片
+        return { code: 404, msg: '用户暂无人脸照片' };
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const imageUrl = URL.createObjectURL(blob);
+    
+    console.log('获取人脸信息API响应: 图片URL已创建');
+    
+    // 包装成标准的API响应格式
+    return { 
+      code: 200, 
+      msg: '获取成功', 
+      data: imageUrl 
+    };
+    
+  } catch (error) {
+    console.error('获取人脸信息API请求失败:', error);
+    throw error;
+  }
+};
+// 上传人脸照片API
+const uploadFaceApi = async (userId: number, file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/power/minio/upload/${userId}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('上传人脸照片API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('上传人脸照片API请求失败:', error);
+    throw error;
+  }
+};
+// 删除人脸照片API
+const deleteFaceApi = async (userId: number, faceId: string) => {
+  try {
+    const response = await fetch(`/api/power/user/${userId}/face/${faceId}`, {
+      method: 'DELETE',
+      // headers: {
+      //   'Content-Type': 'application/json',
+      // }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+    
+  } catch (error) {
+    console.error('删除人脸照片API请求失败:', error);
+    throw error;
+  }
+};
+// 打开人脸识别弹窗
+const handleFaceRecognition = async (row: UserData) => {
+  currentUserId.value = row.id;
+  currentUserName.value = row.userName;
+  faceDialogVisible.value = true;
+  await loadUserFaces();
+};
+
+// 加载用户人脸信息
+const loadUserFaces = async () => {
+  if (!currentUserId.value) return;
+  
+  faceLoading.value = true;
+  try {
+    const result = await getUserFacesApi(currentUserId.value);
+    
+    if (result.code === 200) {
+      // 直接使用返回的图片URL
+      if (result.data) {
+        faceImages.value = [result.data]; // 图片URL包装成数组
+      } else {
+        faceImages.value = [];
+      }
+      
+      console.log('获取用户人脸信息成功:', faceImages.value);
+    } else if (result.code === 404) {
+      // 用户没有人脸照片
+      faceImages.value = [];
+      console.log('该用户暂无人脸数据');
+    } else {
+      ElMessage.error(result.msg || '获取人脸信息失败');
+    }
+    
+  } catch (error) {
+    // 处理网络错误
+    if (error.message.includes('404')) {
+      faceImages.value = [];
+      console.log('该用户暂无人脸数据');
+    } else {
+      ElMessage.error('获取人脸信息失败，请检查网络连接');
+      console.error('获取人脸信息错误:', error);
+    }
+  } finally {
+    faceLoading.value = false;
+  }
+};
+
+// 触发文件选择
+const triggerFileUpload = () => {
+  fileInputRef.value?.click();
+};
+// 处理文件上传
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  
+  if (!file || !currentUserId.value) return;
+  
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请选择图片文件');
+    return;
+  }
+  
+  // 验证文件大小（限制为5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过5MB');
+    return;
+  }
+  
+  uploadLoading.value = true;
+  try {
+    const result = await uploadFaceApi(currentUserId.value, file);
+    
+    if (result.code === 200) {
+      ElMessage.success('人脸照片上传成功');
+      await loadUserFaces(); // 重新加载人脸信息
+    } else {
+      ElMessage.error(result.msg || '人脸照片上传失败');
+    }
+    
+  } catch (error) {
+    ElMessage.error('人脸照片上传失败，请检查网络连接');
+    console.error('上传人脸照片错误:', error);
+  } finally {
+    uploadLoading.value = false;
+    // 清空文件输入
+    if (target) target.value = '';
+  }
+};
+// 删除人脸照片
+const handleDeleteFace = async (faceId: string, index: number) => {
+  if (!currentUserId.value) return;
+  
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这张人脸照片吗？删除后无法恢复！',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    const result = await deleteFaceApi(currentUserId.value, faceId);
+    
+    if (result.code === 200) {
+      ElMessage.success('人脸照片删除成功');
+      faceImages.value.splice(index, 1); // 从列表中移除
+    } else {
+      ElMessage.error(result.msg || '人脸照片删除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('人脸照片删除失败，请检查网络连接');
+      console.error('删除人脸照片错误:', error);
+    }
+  }
+};
+// 关闭人脸识别弹窗
+const closeFaceDialog = () => {
+  // 清理创建的图片URL，防止内存泄漏
+  faceImages.value.forEach(url => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
+  faceDialogVisible.value = false;
+  currentUserId.value = null;
+  currentUserName.value = '';
+  faceImages.value = [];
+};
+
 // 生命周期
 onMounted(() => {
   getUserList();
@@ -717,6 +940,13 @@ onMounted(() => {
                   @click="handleEdit(row)"
                 >
                   编辑
+                </el-button>
+                <el-button 
+                  type="warning" 
+                  size="small" 
+                  @click="handleFaceRecognition(row)"
+                >
+                  人脸识别
                 </el-button>
                 <el-button 
                   type="danger" 
@@ -918,6 +1148,78 @@ onMounted(() => {
         </span>
       </template>
     </el-dialog>
+    <!-- 添加人脸识别弹窗 -->
+    <el-dialog
+      v-model="faceDialogVisible"
+      :title="`${currentUserName} - 人脸识别管理`"
+      width="800px"
+      :close-on-click-modal="false"
+      @close="closeFaceDialog"
+    >
+      <div class="face-recognition-container">
+        <!-- 上传区域 -->
+        <div class="upload-section">
+          <el-button 
+            type="primary" 
+            @click="triggerFileUpload"
+            :loading="uploadLoading"
+            :disabled="faceLoading"
+          >
+            {{ uploadLoading ? '上传中...' : '上传人脸照片' }}
+          </el-button>
+          <span class="upload-tip">支持 JPG、PNG 格式，文件大小不超过 5MB</span>
+          
+          <!-- 隐藏的文件输入框 -->
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="handleFileUpload"
+          />
+        </div>
+        
+        <!-- 人脸照片展示区域 -->
+        <div class="face-images-section">
+          <el-divider content-position="left">
+            <span class="section-title">已有人脸照片 ({{ faceImages.length }})</span>
+          </el-divider>
+          
+          <div v-loading="faceLoading" class="images-grid">
+            <div v-if="faceImages.length === 0 && !faceLoading" class="empty-state">
+              <el-empty description="暂无人脸照片" />
+            </div>
+            
+            <div 
+              v-for="(image, index) in faceImages" 
+              :key="index" 
+              class="image-item"
+            >
+              <div class="image-wrapper">
+                <img :src="image" :alt="`人脸照片 ${index + 1}`" />
+                <div class="image-overlay">
+                  <el-button
+                    type="danger"
+                    size="small"
+                    circle
+                    @click="handleDeleteFace(image, index)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+              </div>
+              <div class="image-index">照片 {{ index + 1 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeFaceDialog">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>    
   </div>
 </template>
 
@@ -984,5 +1286,86 @@ onMounted(() => {
   .dialog-footer {
     text-align: center;
   }
+  .face-recognition-container {
+    .upload-section {
+      text-align: center;
+      padding: 20px 0;
+      border: 2px dashed #dcdfe6;
+      border-radius: 6px;
+      background-color: #fafafa;
+      margin-bottom: 20px;
+      
+      .upload-tip {
+        display: block;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #909399;
+      }
+    }
+    
+    .face-images-section {
+      .section-title {
+        font-weight: 500;
+        color: #303133;
+      }
+      
+      .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 16px;
+        min-height: 200px;
+        
+        .empty-state {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .image-item {
+          text-align: center;
+          
+          .image-wrapper {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #dcdfe6;
+            margin: 0 auto 8px;
+            
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            
+            .image-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-color: rgba(0, 0, 0, 0.5);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              opacity: 0;
+              transition: opacity 0.3s;
+            }
+            
+            &:hover .image-overlay {
+              opacity: 1;
+            }
+          }
+          
+          .image-index {
+            font-size: 12px;
+            color: #909399;
+          }
+        }
+      }
+    }
+  }  
 }
 </style>
