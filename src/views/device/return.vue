@@ -82,18 +82,18 @@ const searchForm = ref({
 });
 
 // 处理区域搜索事件
-const handleAreaSearch = (area: AreaNode) => {
-  console.log('🎯 return-records.vue 接收到区域搜索事件:', area);
+// const handleAreaSearch = (area: AreaNode) => {
+//   console.log('🎯 return-records.vue 接收到区域搜索事件:', area);
   
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
+//   // 清空区域筛选
+//   areaFilter.value = { province: '', city: '', district: '' };
   
-  // 设置新的区域筛选
-  fillAreaFilter(area);
+//   // 设置新的区域筛选
+//   fillAreaFilter(area);
   
-  // 自动执行搜索
-  handleSearch();
-};
+//   // 自动执行搜索
+//   handleSearch();
+// };
 
 const fillAreaFilter = (area: AreaNode) => {
   const code = area.code;
@@ -122,19 +122,19 @@ const getReturnRecordsApi = async (params: any = {}) => {
     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
     // 添加搜索参数
-    if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-    if (params.materialName) queryParams.append('materialName', params.materialName);
-    if (params.borrowName) queryParams.append('borrowName', params.borrowName);
-    if (params.returnName) queryParams.append('returnName', params.returnName);
-    if (params.province) queryParams.append('province', params.province);
-    if (params.city) queryParams.append('city', params.city);
-    if (params.district) queryParams.append('district', params.district);
-    if (params.lentOutTimeStart) queryParams.append('lentOutTimeStart', params.lentOutTimeStart);
-    if (params.lentOutTimeEnd) queryParams.append('lentOutTimeEnd', params.lentOutTimeEnd);
-    if (params.actualReturnTimeStart) queryParams.append('actualReturnTimeStart', params.actualReturnTimeStart);
-    if (params.actualReturnTimeEnd) queryParams.append('actualReturnTimeEnd', params.actualReturnTimeEnd);
+    // if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+    // if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+    // if (params.materialCode) queryParams.append('materialCode', params.materialCode);
+    // if (params.materialName) queryParams.append('materialName', params.materialName);
+    // if (params.borrowName) queryParams.append('borrowName', params.borrowName);
+    // if (params.returnName) queryParams.append('returnName', params.returnName);
+    // if (params.province) queryParams.append('province', params.province);
+    // if (params.city) queryParams.append('city', params.city);
+    // if (params.district) queryParams.append('district', params.district);
+    // if (params.lentOutTimeStart) queryParams.append('lentOutTimeStart', params.lentOutTimeStart);
+    // if (params.lentOutTimeEnd) queryParams.append('lentOutTimeEnd', params.lentOutTimeEnd);
+    // if (params.actualReturnTimeStart) queryParams.append('actualReturnTimeStart', params.actualReturnTimeStart);
+    // if (params.actualReturnTimeEnd) queryParams.append('actualReturnTimeEnd', params.actualReturnTimeEnd);
     
     // 构建完整的URL
     const baseUrl = `/api/power/returned-records/returnRecords`;
@@ -173,8 +173,9 @@ const getReturnRecordsList = async () => {
     const searchParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      ...areaFilter.value,
-      ...searchForm.value
+      //搜素条件暂未设置
+      // ...areaFilter.value,
+      // ...searchForm.value
     };
     
     console.log('归还记录搜索参数:', searchParams);
@@ -199,49 +200,49 @@ const getReturnRecordsList = async () => {
 };
 
 // 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getReturnRecordsList();
-};
+// const handleSearch = () => {
+//   currentPage.value = 1;
+//   getReturnRecordsList();
+// };
 
 // 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    borrowName: '',
-    returnName: '',
-    lentOutTimeStart: '',
-    lentOutTimeEnd: '',
-    actualReturnTimeStart: '',
-    actualReturnTimeEnd: ''
-  };
-  handleSearch();
-};
+// const handleReset = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     borrowName: '',
+//     returnName: '',
+//     lentOutTimeStart: '',
+//     lentOutTimeEnd: '',
+//     actualReturnTimeStart: '',
+//     actualReturnTimeEnd: ''
+//   };
+//   handleSearch();
+// };
 
 // 清空所有筛选条件
-const handleClearAll = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    borrowName: '',
-    returnName: '',
-    lentOutTimeStart: '',
-    lentOutTimeEnd: '',
-    actualReturnTimeStart: '',
-    actualReturnTimeEnd: ''
-  };
-  areaFilter.value = {
-    province: '',
-    city: '',
-    district: ''
-  };
-  handleSearch();
-};
+// const handleClearAll = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     borrowName: '',
+//     returnName: '',
+//     lentOutTimeStart: '',
+//     lentOutTimeEnd: '',
+//     actualReturnTimeStart: '',
+//     actualReturnTimeEnd: ''
+//   };
+//   areaFilter.value = {
+//     province: '',
+//     city: '',
+//     district: ''
+//   };
+//   handleSearch();
+// };
 
 // 查看记录详情
 const handleView = (row: ReturnRecordData) => {
@@ -423,15 +424,15 @@ onMounted(() => {
 
 <template>
   <div class="return-records-container">
-    <div>
-      <!-- 区域选择器 -->
+    <!-- 注释掉区域选择器 -->
+    <!-- <div>
       <AreaSelect @area-search="handleAreaSearch" />
-    </div>
+    </div> -->
     
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域 -->
-        <el-card class="search-card">
+        <!-- <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
             <el-form-item label="柜子编号">
               <el-input 
@@ -533,7 +534,7 @@ onMounted(() => {
               </el-button>
             </el-form-item>
           </el-form>
-        </el-card>
+        </el-card> -->
 
         <!-- 表格区域 -->
         <el-card class="table-card">

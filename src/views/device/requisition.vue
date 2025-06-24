@@ -77,18 +77,18 @@ const searchForm = ref({
 });
 
 // 处理区域搜索事件
-const handleAreaSearch = (area: AreaNode) => {
-  console.log('🎯 borrow-records.vue 接收到区域搜索事件:', area);
+// const handleAreaSearch = (area: AreaNode) => {
+//   console.log('🎯 borrow-records.vue 接收到区域搜索事件:', area);
   
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
+//   // 清空区域筛选
+//   areaFilter.value = { province: '', city: '', district: '' };
   
-  // 设置新的区域筛选
-  fillAreaFilter(area);
+//   // 设置新的区域筛选
+//   fillAreaFilter(area);
   
-  // 自动执行搜索
-  handleSearch();
-};
+//   // 自动执行搜索
+//   handleSearch();
+// };
 
 const fillAreaFilter = (area: AreaNode) => {
   const code = area.code;
@@ -116,19 +116,19 @@ const getBorrowRecordsApi = async (params: any = {}) => {
     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
-    // 添加搜索参数
-    if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-    if (params.materialName) queryParams.append('materialName', params.materialName);
-    if (params.borrowName) queryParams.append('borrowName', params.borrowName);
-    if (params.province) queryParams.append('province', params.province);
-    if (params.city) queryParams.append('city', params.city);
-    if (params.district) queryParams.append('district', params.district);
-    if (params.createTimeStart) queryParams.append('createTimeStart', params.createTimeStart);
-    if (params.createTimeEnd) queryParams.append('createTimeEnd', params.createTimeEnd);
-    if (params.usageQuantityMin) queryParams.append('usageQuantityMin', params.usageQuantityMin);
-    if (params.usageQuantityMax) queryParams.append('usageQuantityMax', params.usageQuantityMax);
+    // 后端暂未设置搜索参数
+    // if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+    // if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+    // if (params.materialCode) queryParams.append('materialCode', params.materialCode);
+    // if (params.materialName) queryParams.append('materialName', params.materialName);
+    // if (params.borrowName) queryParams.append('borrowName', params.borrowName);
+    // if (params.province) queryParams.append('province', params.province);
+    // if (params.city) queryParams.append('city', params.city);
+    // if (params.district) queryParams.append('district', params.district);
+    // if (params.createTimeStart) queryParams.append('createTimeStart', params.createTimeStart);
+    // if (params.createTimeEnd) queryParams.append('createTimeEnd', params.createTimeEnd);
+    // if (params.usageQuantityMin) queryParams.append('usageQuantityMin', params.usageQuantityMin);
+    // if (params.usageQuantityMax) queryParams.append('usageQuantityMax', params.usageQuantityMax);
     
     // 构建完整的URL
     const baseUrl = `/api/power/borrowed-records/borrowRecords`;
@@ -167,8 +167,9 @@ const getBorrowRecordsList = async () => {
     const searchParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      ...areaFilter.value,
-      ...searchForm.value
+      //搜素条件暂未设置
+      // ...areaFilter.value,
+      // ...searchForm.value
     };
     
     console.log('领用记录搜索参数:', searchParams);
@@ -193,47 +194,47 @@ const getBorrowRecordsList = async () => {
 };
 
 // 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getBorrowRecordsList();
-};
+// const handleSearch = () => {
+//   currentPage.value = 1;
+//   getBorrowRecordsList();
+// };
 
 // 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    borrowName: '',
-    createTimeStart: '',
-    createTimeEnd: '',
-    usageQuantityMin: null,
-    usageQuantityMax: null
-  };
-  handleSearch();
-};
+// const handleReset = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     borrowName: '',
+//     createTimeStart: '',
+//     createTimeEnd: '',
+//     usageQuantityMin: null,
+//     usageQuantityMax: null
+//   };
+//   handleSearch();
+// };
 
 // 清空所有筛选条件
-const handleClearAll = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    borrowName: '',
-    createTimeStart: '',
-    createTimeEnd: '',
-    usageQuantityMin: null,
-    usageQuantityMax: null
-  };
-  areaFilter.value = {
-    province: '',
-    city: '',
-    district: ''
-  };
-  handleSearch();
-};
+// const handleClearAll = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     borrowName: '',
+//     createTimeStart: '',
+//     createTimeEnd: '',
+//     usageQuantityMin: null,
+//     usageQuantityMax: null
+//   };
+//   areaFilter.value = {
+//     province: '',
+//     city: '',
+//     district: ''
+//   };
+//   handleSearch();
+// };
 
 // 查看记录详情
 const handleView = (row: BorrowRecordData) => {
@@ -428,15 +429,15 @@ onMounted(() => {
 
 <template>
   <div class="borrow-records-container">
-    <div>
-      <!-- 区域选择器 -->
+    <!-- 区域选择器 -->
+    <!-- <div>
       <AreaSelect @area-search="handleAreaSearch" />
-    </div>
+    </div> -->
     
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域 -->
-        <el-card class="search-card">
+        <!-- <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
             <el-form-item label="柜子编号">
               <el-input 
@@ -528,7 +529,7 @@ onMounted(() => {
               </el-button>
             </el-form-item>
           </el-form>
-        </el-card>
+        </el-card> -->
 
         <!-- 表格区域 -->
         <el-card class="table-card">
