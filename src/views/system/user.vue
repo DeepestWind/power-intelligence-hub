@@ -150,17 +150,18 @@ const userFormRef = ref();
 
 // 用户类型选项
 const userTypeOptions = [
-  { label: '普通用户', value: 1 },
-  { label: '管理员', value: 2 },
-  { label: '超级管理员', value: 3 }
+  { label: '普通用户', value: 0 },
+  { label: '管理员', value: 1 },
+  { label: '超级管理员', value: 2 }
 ];
 
 // 管理员级别选项
 const adminLevelOptions = [
+  { label: '普通用户', value: 0 },
   { label: '区级', value: 1 },
   { label: '市级', value: 2 },
   { label: '省级', value: 3 },
-  { label: '超级管理员', value: 4 }
+  //{ label: '超级管理员', value: 4 }
 ];
 
 // 状态选项
@@ -655,14 +656,14 @@ onMounted(() => {
             <el-table-column prop="bindCard" label="绑定卡号" width="120" />
             <el-table-column label="用户类型" width="100" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.userType === 1 ? 'info' : row.userType === 2 ? 'success' : 'warning'">
+                <el-tag :type="row.userType === 0 ? 'info' : row.userType === 1 ? 'success' : 'warning'">
                   {{ formatUserType(row.userType) }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="管理级别" width="100" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.adminLevel === 1 ? 'info' : row.adminLevel === 2 ? 'success' : row.adminLevel === 3 ? 'warning' : 'danger'">
+                <el-tag :type="row.adminLevel === 0 ? 'info' : row.adminLevel === 1 ? 'success' : row.adminLevel === 3 ? 'warning' : 'danger'">
                   {{ formatAdminLevel(row.adminLevel) }}
                 </el-tag>
               </template>
