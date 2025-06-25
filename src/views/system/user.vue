@@ -531,6 +531,7 @@ const faceDialogVisible = ref(false);
 const currentUserId = ref<number | null>(null);
 const currentUserName = ref('');
 const faceImages = ref<string[]>([]);
+const currentUserFaceFilename = ref<string | null>(null);
 const faceLoading = ref(false);
 const uploadLoading = ref(false);
 // 添加文件上传引用
@@ -545,7 +546,6 @@ const getUserFacesApi = async (userId: number) => {
 
     if (!response.ok) {
       if (response.status === 404) {
-        // 404表示用户没有人脸照片
         return { code: 404, msg: '用户暂无人脸照片' };
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -556,11 +556,11 @@ const getUserFacesApi = async (userId: number) => {
     
     console.log('获取人脸信息API响应: 图片URL已创建');
     
-    // 包装成标准的API响应格式
+    // 🔥 简化返回，只返回图片URL
     return { 
       code: 200, 
       msg: '获取成功', 
-      data: imageUrl 
+      data: imageUrl
     };
     
   } catch (error) {
@@ -593,13 +593,10 @@ const uploadFaceApi = async (userId: number, file: File) => {
   }
 };
 // 删除人脸照片API
-const deleteFaceApi = async (userId: number, faceId: string) => {
+const deleteFaceApi = async (userId: number, filename: string) => {
   try {
-    const response = await fetch(`/api/power/user/${userId}/face/${faceId}`, {
-      method: 'DELETE',
-      // headers: {
-      //   'Content-Type': 'application/json',
-      // }
+    const response = await fetch(`/api/power/minio/delete/${userId}/${filename}`, {
+      method: 'DELETE'
     });
 
     if (!response.ok) {
@@ -607,6 +604,7 @@ const deleteFaceApi = async (userId: number, faceId: string) => {
     }
 
     const result = await response.json();
+    console.log('删除人脸照片API响应:', result);
     return result;
     
   } catch (error) {
@@ -618,6 +616,7 @@ const deleteFaceApi = async (userId: number, faceId: string) => {
 const handleFaceRecognition = async (row: UserData) => {
   currentUserId.value = row.id;
   currentUserName.value = row.userName;
+  currentUserFaceFilename.value = row.faceRecognition;
   faceDialogVisible.value = true;
   await loadUserFaces();
 };
@@ -631,9 +630,8 @@ const loadUserFaces = async () => {
     const result = await getUserFacesApi(currentUserId.value);
     
     if (result.code === 200) {
-      // 直接使用返回的图片URL
       if (result.data) {
-        faceImages.value = [result.data]; // 图片URL包装成数组
+        faceImages.value = [result.data]; // 🔥 直接使用图片URL
       } else {
         faceImages.value = [];
       }
@@ -705,8 +703,11 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 // 删除人脸照片
-const handleDeleteFace = async (faceId: string, index: number) => {
-  if (!currentUserId.value) return;
+const handleDeleteFace = async (imageUrl: string, index: number) => {
+  if (!currentUserId.value || !currentUserFaceFilename.value) {
+    ElMessage.error('无法获取文件信息，删除失败');
+    return;
+  }
   
   try {
     await ElMessageBox.confirm(
@@ -719,11 +720,18 @@ const handleDeleteFace = async (faceId: string, index: number) => {
       }
     );
     
-    const result = await deleteFaceApi(currentUserId.value, faceId);
+    const result = await deleteFaceApi(currentUserId.value, currentUserFaceFilename.value);
     
     if (result.code === 200) {
       ElMessage.success('人脸照片删除成功');
-      faceImages.value.splice(index, 1); // 从列表中移除
+      // 🔥 清理blob URL
+      if (imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl);
+      }
+      faceImages.value.splice(index, 1);
+      
+      // 🔥 删除成功后清空当前用户的人脸文件名引用
+      currentUserFaceFilename.value = null;
     } else {
       ElMessage.error(result.msg || '人脸照片删除失败');
     }
@@ -746,6 +754,7 @@ const closeFaceDialog = () => {
   faceDialogVisible.value = false;
   currentUserId.value = null;
   currentUserName.value = '';
+  currentUserFaceFilename.value = null; // 🔥 清理文件名引用
   faceImages.value = [];
 };
 
@@ -925,14 +934,14 @@ onMounted(() => {
             </el-table-column>
             <el-table-column label="操作" width="240" fixed="right">
               <template #default="{ row }">
-                <el-button 
+                <!-- <el-button 
                   type="primary" 
                   size="small" 
                   :icon="View"
                   @click="handleView(row)"
                 >
                   查看
-                </el-button>
+                </el-button> -->
                 <el-button 
                   type="success" 
                   size="small" 
