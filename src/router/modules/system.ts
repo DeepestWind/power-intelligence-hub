@@ -43,6 +43,15 @@ export default {
         title: "温湿度设置",
         icon: "ep:umbrella"
       }
+    },
+    {
+      path: "/system/department",
+      name: "DepartmentManagement",
+      component: () => import("@/views/system/department.vue"),
+      meta: {
+        title: "部门管理",
+        icon: "ep:office-building"
+      }
     }
   ]
 } satisfies RouteConfigsTable;
