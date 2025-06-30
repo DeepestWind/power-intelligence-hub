@@ -54,7 +54,7 @@ const areaFilter = ref({
 const searchForm = ref({
   cabinetCode: '',
   cabinetName: '',
-  onlineStatus: ''
+  onlineStatus: null as number | null 
 });
 
 // 处理区域搜索事件，左侧areaSelect组件
@@ -94,7 +94,7 @@ const handleReset = () => {
   searchForm.value = {
     cabinetCode: '',
     cabinetName: '',
-    onlineStatus: ''
+    onlineStatus: null
   };
   handleSearch();
 };
@@ -103,7 +103,7 @@ const handleClearAll = () => {
   searchForm.value = {
     cabinetCode: '',
     cabinetName: '',
-    onlineStatus: ''
+    onlineStatus: null
   };
   areaFilter.value = {
     province: '',
@@ -174,8 +174,8 @@ const getCabinetListApi = async (params: any = {}) => {
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
-    if (params.onlineStatus !== '' && params.onlineStatus !== undefined) {
-      queryParams.append('onlineStatus', params.onlineStatus);
+    if (params.onlineStatus !== null && params.onlineStatus !== undefined) {
+      queryParams.append('onlineStatus', params.onlineStatus.toString());
     }
     
     // 构建完整的URL
@@ -521,7 +521,6 @@ onMounted(() => {
               >
                 <el-option label="在线" value="1" />
                 <el-option label="离线" value="0" />
-                <el-option label="未知" value="null" />
               </el-select>
             </el-form-item>
             <el-form-item>

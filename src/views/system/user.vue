@@ -64,10 +64,10 @@ const areaFilter = ref({
 const searchForm = ref({
   userName: '',
   department: '',
-  employeeId: '',
-  userType: '',
-  adminLevel: '',
-  status: ''
+  // employeeId: '',
+  // userType: '',
+  // adminLevel: '',
+  // status: ''
 });
 
 // 处理区域搜索事件，左侧areaSelect组件
@@ -183,19 +183,19 @@ const getUserListApi = async (params: any = {}) => {
     // 添加搜索参数
     if (params.userName) queryParams.append('userName', params.userName);
     if (params.department) queryParams.append('department', params.department);
-    if (params.employeeId) queryParams.append('employeeId', params.employeeId);
-    if (params.userType !== '' && params.userType !== undefined) {
-      queryParams.append('userType', params.userType);
-    }
-    if (params.adminLevel !== '' && params.adminLevel !== undefined) {
-      queryParams.append('adminLevel', params.adminLevel);
-    }
+    // if (params.employeeId) queryParams.append('employeeId', params.employeeId);
+    // if (params.userType !== '' && params.userType !== undefined) {
+    //   queryParams.append('userType', params.userType);
+    // }
+    // if (params.adminLevel !== '' && params.adminLevel !== undefined) {
+    //   queryParams.append('adminLevel', params.adminLevel);
+    // }
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
-    if (params.status !== '' && params.status !== undefined) {
-      queryParams.append('status', params.status);
-    }
+    // if (params.status !== '' && params.status !== undefined) {
+    //   queryParams.append('status', params.status);
+    // }
     
     // 构建完整的URL
     const baseUrl = `/api/power/user/page`;
@@ -269,10 +269,10 @@ const handleReset = () => {
   searchForm.value = {
     userName: '',
     department: '',
-    employeeId: '',
-    userType: '',
-    adminLevel: '',
-    status: ''
+    //employeeId: '',
+    // userType: '',
+    // adminLevel: '',
+    // status: ''
   };
   // 不清空区域筛选，保持用户选择的区域
   handleSearch();
@@ -283,10 +283,10 @@ const handleClearAll = () => {
   searchForm.value = {
     userName: '',
     department: '',
-    employeeId: '',
-    userType: '',
-    adminLevel: '',
-    status: ''
+    //employeeId: '',
+    // userType: '',
+    // adminLevel: '',
+    // status: ''
   };
   areaFilter.value = {
     province: '',
@@ -789,15 +789,15 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="员工编号">
+            <!-- <el-form-item label="员工编号">
               <el-input 
                 v-model="searchForm.employeeId" 
                 placeholder="请输入员工编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
-            <el-form-item label="用户类型">
+            </el-form-item> -->
+            <!-- <el-form-item label="用户类型">
               <el-select 
                 v-model="searchForm.userType" 
                 placeholder="请选择用户类型"
@@ -829,7 +829,7 @@ onMounted(() => {
             </el-form-item>
             <!-- 修改：移除省市区输入框 -->
             <!-- 原来的省份、城市、区域字段已删除 -->
-            <el-form-item label="状态">
+            <!-- <el-form-item label="状态">
               <el-select 
                 v-model="searchForm.status" 
                 placeholder="请选择状态"
@@ -843,7 +843,7 @@ onMounted(() => {
                   :value="option.value"
                 />
               </el-select>
-            </el-form-item>
+            </el-form-item> --> 
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
