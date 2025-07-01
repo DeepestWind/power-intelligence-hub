@@ -1,10 +1,10 @@
 <script setup lang='ts'>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
-//import ResizablePanel from "@/components/ResizeablePanel/index.vue"; 已弃用
 import type { AreaNode } from "@/utils/area";
+import { transformPcaToTree } from "@/utils/area";
 
 defineOptions({
   name: "CabinetManagement"
@@ -43,6 +43,47 @@ const tableData = ref<CabinetData[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+
+//以下为省市区下拉框的实现
+// 🔥 添加省市区数据源
+const areaData = transformPcaToTree();
+// 🔥 省份选项
+const provinceOptions = computed(() => {
+  return areaData.map(item => ({
+    label: item.label,
+    value: item.label
+  }));
+});
+// 🔥 城市选项
+const cityOptions = computed(() => {
+  if (!deviceForm.value.province) return [];
+  const province = areaData.find(item => item.label === deviceForm.value.province);
+  return province ? province.children.map(item => ({
+    label: item.label,
+    value: item.label
+  })) : [];
+});
+// 🔥 区域选项
+const districtOptions = computed(() => {
+  if (!deviceForm.value.province || !deviceForm.value.city) return [];
+  const province = areaData.find(item => item.label === deviceForm.value.province);
+  if (!province) return [];
+  const city = province.children.find(item => item.label === deviceForm.value.city);
+  return city ? city.children.map(item => ({
+    label: item.label,
+    value: item.label
+  })) : [];
+});
+// 🔥 省份改变时清空城市和区域
+const handleProvinceChange = () => {
+  deviceForm.value.city = '';
+  deviceForm.value.district = '';
+};
+// 🔥 城市改变时清空区域
+const handleCityChange = () => {
+  deviceForm.value.district = '';
+};
+
 
 // 分离区域筛选和表单搜索
 const areaFilter = ref({
@@ -143,13 +184,13 @@ const deviceFormRules = {
     { min: 2, max: 50, message: '设备名称长度为2-50个字符', trigger: 'blur' }
   ],
   province: [
-    { required: true, message: '请输入省份', trigger: 'blur' }
+    { required: true, message: '请输入省份', trigger: 'change' }
   ],
   city: [
-    { required: true, message: '请输入城市', trigger: 'blur' }
+    { required: true, message: '请输入城市', trigger: 'change' }
   ],
   district: [
-    { required: true, message: '请输入区域', trigger: 'blur' }
+    { required: true, message: '请输入区域', trigger: 'change' }
   ],
   address: [
     { required: true, message: '请输入具体地址', trigger: 'blur' }
@@ -247,6 +288,12 @@ const handleAddDevice = () => {
   isEdit.value = false;
   resetDeviceForm();
   dialogVisible.value = true;
+  // 🔥 清除表单验证
+  nextTick(() => {
+    if (deviceFormRef.value) {
+      deviceFormRef.value.clearValidate();
+    }
+  });
 };
 // 重置表单，取消新增设备时使用
 const resetDeviceForm = () => {
@@ -650,29 +697,54 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="省份" prop="province">
-              <el-input
+              <el-select
                 v-model="deviceForm.province"
-                placeholder="请输入省份"
-                clearable
-              />
+                placeholder="请选择省份"
+                style="width: 100%"
+                @change="handleProvinceChange"
+              >
+                <el-option
+                  v-for="option in provinceOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="城市" prop="city">
-              <el-input
+              <el-select
                 v-model="deviceForm.city"
-                placeholder="请输入城市"
-                clearable
-              />
+                placeholder="请选择城市"
+                style="width: 100%"
+                :disabled="!deviceForm.province"
+                @change="handleCityChange"
+              >
+                <el-option
+                  v-for="option in cityOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="区域" prop="district">
-              <el-input
+              <el-select
                 v-model="deviceForm.district"
-                placeholder="请输入区域"
-                clearable
-              />
+                placeholder="请选择区域"
+                style="width: 100%"
+                :disabled="!deviceForm.city"
+              >
+                <el-option
+                  v-for="option in districtOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
