@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Edit, Delete, View, Setting, Plus } from '@element-plus/icons-vue';
+import { Edit, Delete, View, Setting, Plus, CreditCard, Box } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
@@ -187,6 +187,25 @@ interface IcCardApiResponse {
   msg: string;
   data: string[];
 }
+// 🔥 添加绑定柜子相关数据
+const userCabinets = ref<UserCabinet[]>([]);
+const cabinetLoading = ref(false);
+const addCabinetVisible = ref(false);
+const newCabinetId = ref('');
+const newCabinetName = ref('');
+// 🔥 绑定柜子数据接口
+interface UserCabinet {
+  id: number;
+  userId: number;
+  cabinetId: number;
+  cabinetName: string;
+}
+// 🔥 绑定柜子API响应接口
+interface CabinetApiResponse {
+  code: number;
+  msg: string;
+  data: Record<string, string>; // 对象形式，key是柜子ID，value是柜子名称
+}
 
 // 从API获取用户列表
 const getUserListApi = async (params: any = {}) => {
@@ -313,6 +332,77 @@ const deleteUserIcCardApi = async (userId: number, icCard: string) => {
     throw error;
   }
 };
+// 🔥 获取用户绑定柜子列表API
+const getUserCabinetsApi = async (userId: number) => {
+  try {
+    const response = await fetch(`/api/power/user-cabinet-relation/getCabinets/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: CabinetApiResponse = await response.json();
+    console.log('获取用户绑定柜子API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('获取用户绑定柜子API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 添加用户绑定柜子API
+const addUserCabinetApi = async (data: Partial<UserCabinet>) => {
+  try {
+    const response = await fetch('/api/power/user-cabinet-relation/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('添加用户绑定柜子API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('添加用户绑定柜子API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 删除用户绑定柜子API
+const deleteUserCabinetApi = async (userId: number, cabinetId: number) => {
+  try {
+    const response = await fetch(`/api/power/user-cabinet-relation/delete/${userId}/${cabinetId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('删除用户绑定柜子API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('删除用户绑定柜子API请求失败:', error);
+    throw error;
+  }
+};
+
 
 // 获取用户列表
 const getUserList = async () => {
@@ -586,12 +676,26 @@ const handleEdit = (row: UserData) => {
 
 // 查看用户 现有功能为IC卡管理和绑定柜子管理
 const handleView = async (row: UserData) => {
-  console.log('查看用户详情:', row);
-  currentViewUser.value = { ...row };
-  viewDialogVisible.value = true;
-  
-  // 加载用户的IC卡信息
-  await loadUserIcCards(row.id);
+  try {
+    console.log('查看用户详情:', row);
+    
+    if (!row || !row.id) {
+      ElMessage.error('用户信息不完整');
+      return;
+    }
+    
+    currentViewUser.value = { ...row };
+    viewDialogVisible.value = true;
+    
+    // 🔥 分别加载数据，避免Promise.all可能的问题
+    await loadUserIcCards(row.id);
+    await loadUserCabinets(row.id);
+    
+  } catch (error) {
+    console.error('查看用户详情错误:', error);
+    ElMessage.error('加载用户详情失败');
+    viewDialogVisible.value = false;
+  }
 };
 // 🔥 加载用户IC卡信息
 const loadUserIcCards = async (userId: number) => {
@@ -702,13 +806,130 @@ const handleDeleteIcCard = async (icCard: UserIcCard) => {
     }
   }
 };
+// 🔥 加载用户绑定柜子信息
+const loadUserCabinets = async (userId: number) => {
+  cabinetLoading.value = true;
+  try {
+    const result = await getUserCabinetsApi(userId);
+    
+    if (result.code === 200) {
+      // 🔥 将对象转换为数组形式
+      const cabinetData = result.data || {};
+      userCabinets.value = Object.entries(cabinetData).map(([cabinetId, cabinetName]) => ({
+        id: parseInt(cabinetId), // 使用cabinetId作为id
+        userId: userId,
+        cabinetId: parseInt(cabinetId),
+        cabinetName: cabinetName
+      }));
+      
+      console.log('获取用户绑定柜子成功:', userCabinets.value);
+    } else {
+      ElMessage.error(result.msg || '获取绑定柜子信息失败');
+      userCabinets.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取绑定柜子信息失败，请检查网络连接');
+    console.error('获取用户绑定柜子错误:', error);
+    userCabinets.value = [];
+  } finally {
+    cabinetLoading.value = false;
+  }
+};
+// 🔥 打开添加绑定柜子弹窗
+const handleAddCabinet = () => {
+  newCabinetId.value = '';
+  newCabinetName.value = '';
+  addCabinetVisible.value = true;
+};
+// 🔥 确认添加绑定柜子
+const handleConfirmAddCabinet = async () => {
+  if (!newCabinetId.value.trim()) {
+    ElMessage.warning('请输入柜子ID');
+    return;
+  }
+  
+  if (!newCabinetName.value.trim()) {
+    ElMessage.warning('请输入柜子名称');
+    return;
+  }
+  
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    const cabinetData = {
+      userId: currentViewUser.value.id,
+      cabinetId: parseInt(newCabinetId.value.trim()),
+      cabinetName: newCabinetName.value.trim()
+    };
+    
+    const result = await addUserCabinetApi(cabinetData);
+    
+    if (result.code === 200) {
+      ElMessage.success('柜子绑定成功');
+      addCabinetVisible.value = false;
+      newCabinetId.value = '';
+      newCabinetName.value = '';
+      // 重新加载绑定柜子列表
+      await loadUserCabinets(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || '柜子绑定失败');
+    }
+    
+  } catch (error) {
+    ElMessage.error('柜子绑定失败，请检查网络连接');
+    console.error('添加绑定柜子错误:', error);
+  }
+};
+// 🔥 删除绑定柜子
+const handleDeleteCabinet = async (cabinet: UserCabinet) => {
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要解除与柜子 "${cabinet.cabinetName}" 的绑定吗？解除后无法恢复！`,
+      '解除绑定确认',
+      {
+        confirmButtonText: '确定解除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    const result = await deleteUserCabinetApi(currentViewUser.value.id, cabinet.cabinetId);
+    
+    if (result.code === 200) {
+      ElMessage.success('柜子绑定解除成功');
+      // 重新加载绑定柜子列表
+      await loadUserCabinets(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || '柜子绑定解除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('柜子绑定解除失败，请检查网络连接');
+      console.error('删除绑定柜子错误:', error);
+    }
+  }
+};
 // 🔥 关闭查看弹窗
 const closeViewDialog = () => {
   viewDialogVisible.value = false;
   currentViewUser.value = null;
   userIcCards.value = [];
+  userCabinets.value = []; 
   newIcCard.value = '';
+  newCabinetId.value = '';
+  newCabinetName.value = '';
   addIcCardVisible.value = false;
+  addCabinetVisible.value = false;
 };
 
 // 分页改变
@@ -1554,23 +1775,72 @@ onMounted(() => {
           </div>
         </div>
         
-        <!-- 右侧：绑定柜子管理（待实现） -->
+        <!-- 右侧：绑定柜子管理 -->
         <div class="right-panel">
           <div class="panel-header">
             <h3 class="panel-title">绑定柜子管理</h3>
             <el-button 
               type="primary" 
               size="small" 
-              disabled
+              @click="handleAddCabinet"
             >
               添加柜子
             </el-button>
           </div>
           
           <div class="cabinets-section">
-            <div class="empty-state">
-              <el-empty description="功能开发中..." />
-            </div>
+            <el-table
+              :data="userCabinets"
+              v-loading="cabinetLoading"
+              style="width: 100%"
+              stripe
+              :show-header="true"
+              empty-text="暂无绑定的柜子"
+              max-height="400"
+            >
+              <el-table-column 
+                prop="cabinetId" 
+                label="柜子ID" 
+                width="80"
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-tag type="info" size="small">
+                    {{ row.cabinetId || 0 }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              
+              <el-table-column 
+                prop="cabinetName" 
+                label="柜子名称" 
+                min-width="150"
+              >
+                <template #default="{ row }">
+                  <div v-if="row" class="cabinet-info">
+                    <el-icon class="cabinet-icon"><Box /></el-icon>
+                    <span class="cabinet-text">{{ row.cabinetName || '未知柜子' }}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column 
+                label="操作" 
+                width="80" 
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-button 
+                    v-if="row"
+                    type="danger" 
+                    size="small" 
+                    :icon="Delete"
+                    @click="handleDeleteCabinet(row)"
+                    circle
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </div>
       </div>
@@ -1604,6 +1874,40 @@ onMounted(() => {
         <div class="dialog-footer">
           <el-button @click="addIcCardVisible = false">取消</el-button>
           <el-button type="primary" @click="handleConfirmAddIcCard">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+    <!-- 🔥 添加绑定柜子弹窗 -->
+    <el-dialog
+      v-model="addCabinetVisible"
+      title="添加绑定柜子"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="柜子ID" required>
+          <el-input
+            v-model="newCabinetId"
+            placeholder="请输入柜子ID"
+            clearable
+            type="number"
+          />
+        </el-form-item>
+        <el-form-item label="柜子名称" required>
+          <el-input
+            v-model="newCabinetName"
+            placeholder="请输入柜子名称"
+            clearable
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="addCabinetVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleConfirmAddCabinet">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -1803,6 +2107,22 @@ onMounted(() => {
             }
             
             .card-text {
+              font-size: 14px;
+              font-weight: 500;
+              color: #303133;
+            }
+          }
+          .cabinet-info {
+            display: flex;
+            align-items: center;
+            
+            .cabinet-icon {
+              margin-right: 8px;
+              color: #67c23a;
+              font-size: 16px;
+            }
+            
+            .cabinet-text {
               font-size: 14px;
               font-weight: 500;
               color: #303133;
