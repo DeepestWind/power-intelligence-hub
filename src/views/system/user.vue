@@ -1,14 +1,17 @@
 <script setup lang='ts'>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting, Plus, CreditCard, Box } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
+import { transformPcaToTree } from "@/utils/area";
 
 defineOptions({
   name: "UserManagement"
 });
+// 🔥 添加省市区数据源
+const areaData = transformPcaToTree();
 // 初始化 areaStore
 const areaStore = useAreaStore();
 // 用户数据接口
@@ -68,7 +71,6 @@ const searchForm = ref({
   // adminLevel: '',
   // status: ''
 });
-
 // 处理区域搜索事件，左侧areaSelect组件
 const handleAreaSearch = (area: AreaNode) => {
   console.log('🎯 user.vue 接收到区域搜索事件:', area);
@@ -97,6 +99,43 @@ const fillAreaFilter = (area: AreaNode) => {
   
   console.log('区域筛选已设置:', areaFilter.value);
   ElMessage.info(`区域筛选已设置为: ${label}`);
+};
+
+// 🔥 省份选项
+const provinceOptions = computed(() => {
+  return areaData.map(item => ({
+    label: item.label,
+    value: item.label
+  }));
+});
+// 🔥 城市选项
+const cityOptions = computed(() => {
+  if (!userForm.value.province) return [];
+  const province = areaData.find(item => item.label === userForm.value.province);
+  return province ? province.children.map(item => ({
+    label: item.label,
+    value: item.label
+  })) : [];
+});
+// 🔥 区域选项
+const districtOptions = computed(() => {
+  if (!userForm.value.province || !userForm.value.city) return [];
+  const province = areaData.find(item => item.label === userForm.value.province);
+  if (!province) return [];
+  const city = province.children.find(item => item.label === userForm.value.city);
+  return city ? city.children.map(item => ({
+    label: item.label,
+    value: item.label
+  })) : [];
+});
+// 🔥 省份改变时清空城市和区域
+const handleUserProvinceChange = () => {
+  userForm.value.city = '';
+  userForm.value.district = '';
+};
+// 🔥 城市改变时清空区域
+const handleUserCityChange = () => {
+  userForm.value.district = '';
 };
 
 // 新增用户相关数据
@@ -142,6 +181,16 @@ const userFormRules = {
   ],
   adminLevel: [
     { required: true, message: '请选择管理员级别', trigger: 'change' }
+  ],
+  // 🔥 省市区验证规则
+  province: [
+    { required: true, message: '请选择省份', trigger: 'change' } // 🔥 改为选择
+  ],
+  city: [
+    { required: true, message: '请选择城市', trigger: 'change' } // 🔥 改为选择
+  ],
+  district: [
+    { required: true, message: '请选择区域', trigger: 'change' } // 🔥 改为选择
   ]
 };
 
@@ -480,6 +529,12 @@ const handleAddUser = () => {
   isEdit.value = false;
   resetUserForm();
   dialogVisible.value = true;
+  // 🔥 使用 nextTick 确保表单渲染完成后再清除验证
+  nextTick(() => {
+    if (userFormRef.value) {
+      userFormRef.value.clearValidate();
+    }
+  });
 };
 
 // 重置表单
@@ -672,6 +727,12 @@ const handleEdit = (row: UserData) => {
   };
   
   dialogVisible.value = true;
+  // 🔥 使用 nextTick 确保表单渲染完成后再清除验证
+  nextTick(() => {
+    if (userFormRef.value) {
+      userFormRef.value.clearValidate();
+    }
+  });
 };
 
 // 查看用户 现有功能为IC卡管理和绑定柜子管理
@@ -1634,32 +1695,58 @@ onMounted(() => {
           </el-col>
         </el-row>
 
+        <!-- 🔥 修改省市区为下拉选择器 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
-              <el-input
+              <el-select
                 v-model="userForm.province"
-                placeholder="请输入省份"
-                clearable
-              />
+                placeholder="请选择省份"
+                style="width: 100%"
+                @change="handleUserProvinceChange"
+              >
+                <el-option
+                  v-for="option in provinceOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="城市" prop="city">
-              <el-input
+              <el-select
                 v-model="userForm.city"
-                placeholder="请输入城市"
-                clearable
-              />
+                placeholder="请选择城市"
+                style="width: 100%"
+                :disabled="!userForm.province"
+                @change="handleUserCityChange"
+              >
+                <el-option
+                  v-for="option in cityOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="区域" prop="district">
-              <el-input
+              <el-select
                 v-model="userForm.district"
-                placeholder="请输入区域"
-                clearable
-              />
+                placeholder="请选择区域"
+                style="width: 100%"
+                :disabled="!userForm.city"
+              >
+                <el-option
+                  v-for="option in districtOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
