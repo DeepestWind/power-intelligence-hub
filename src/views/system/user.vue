@@ -53,7 +53,6 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-
 // 区域筛选和表单搜索
 const areaFilter = ref({
   province: '',
@@ -170,6 +169,25 @@ const statusOptions = [
   { label: '禁用', value: 0 }
 ];
 
+// 🔥 添加查看弹窗相关数据
+const viewDialogVisible = ref(false);
+const currentViewUser = ref<UserData | null>(null);
+// 🔥 IC卡管理相关数据
+const userIcCards = ref<UserIcCard[]>([]);
+const icCardLoading = ref(false);
+const addIcCardVisible = ref(false);
+const newIcCard = ref('');
+// 🔥 IC卡数据接口
+interface UserIcCard {
+  icCard: string;
+}
+// 🔥 IC卡API响应接口
+interface IcCardApiResponse {
+  code: number;
+  msg: string;
+  data: string[];
+}
+
 // 从API获取用户列表
 const getUserListApi = async (params: any = {}) => {
   try {
@@ -222,6 +240,76 @@ const getUserListApi = async (params: any = {}) => {
     
   } catch (error) {
     console.error('用户API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 获取用户IC卡列表API
+const getUserIcCardsApi = async (userId: number) => {
+  try {
+    const response = await fetch(`/api/power/user-ic/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: IcCardApiResponse = await response.json();
+    console.log('获取用户IC卡API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('获取用户IC卡API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 添加用户IC卡API
+const addUserIcCardApi = async (data: Partial<UserIcCard>) => {
+  try {
+    const response = await fetch('/api/power/user-ic/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('添加用户IC卡API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('添加用户IC卡API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 删除用户IC卡API
+const deleteUserIcCardApi = async (userId: number, icCard: string) => {
+  try {
+    const response = await fetch(`/api/power/user-ic/${userId}/${icCard}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('删除用户IC卡API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('删除用户IC卡API请求失败:', error);
     throw error;
   }
 };
@@ -496,10 +584,131 @@ const handleEdit = (row: UserData) => {
   dialogVisible.value = true;
 };
 
-// 查看用户详情
-const handleView = (row: UserData) => {
-  ElMessage.info(`查看用户: ${row.userName}`);
-  // 这里可以打开详情弹窗或跳转到详情页
+// 查看用户 现有功能为IC卡管理和绑定柜子管理
+const handleView = async (row: UserData) => {
+  console.log('查看用户详情:', row);
+  currentViewUser.value = { ...row };
+  viewDialogVisible.value = true;
+  
+  // 加载用户的IC卡信息
+  await loadUserIcCards(row.id);
+};
+// 🔥 加载用户IC卡信息
+const loadUserIcCards = async (userId: number) => {
+  icCardLoading.value = true;
+  try {
+    const result = await getUserIcCardsApi(userId);
+    
+    if (result.code === 200) {
+      userIcCards.value = (result.data || []).map((icCard: string, index: number) => ({
+        icCard: icCard
+        // 🔥 删除时间相关字段
+        // id: index + 1,
+        // userId: userId,
+        // userName: currentViewUser.value?.userName || '',
+        // createTime: new Date().toISOString(),
+        // updatedTime: new Date().toISOString()
+      }));
+      console.log('获取用户IC卡成功:', userIcCards.value);
+    } else {
+      ElMessage.error(result.msg || '获取IC卡信息失败');
+      userIcCards.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取IC卡信息失败，请检查网络连接');
+    console.error('获取用户IC卡错误:', error);
+    userIcCards.value = [];
+  } finally {
+    icCardLoading.value = false;
+  }
+};
+// 🔥 打开添加IC卡弹窗
+const handleAddIcCard = () => {
+  newIcCard.value = '';
+  addIcCardVisible.value = true;
+};
+// 🔥 确认添加IC卡
+const handleConfirmAddIcCard = async () => {
+  if (!newIcCard.value.trim()) {
+    ElMessage.warning('请输入IC卡号');
+    return;
+  }
+  
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    const cardData = {
+      userId: currentViewUser.value.id,
+      userName: currentViewUser.value.userName,
+      icCard: newIcCard.value.trim(),
+      //删除时间字段，让后端自动处理
+      //createTime: new Date().toISOString(),
+      // updatedTime: new Date().toISOString()
+    };
+    
+    const result = await addUserIcCardApi(cardData);
+    
+    if (result.code === 200) {
+      ElMessage.success('IC卡添加成功');
+      addIcCardVisible.value = false;
+      newIcCard.value = '';
+      // 重新加载IC卡列表
+      await loadUserIcCards(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || 'IC卡添加失败');
+    }
+    
+  } catch (error) {
+    ElMessage.error('IC卡添加失败，请检查网络连接');
+    console.error('添加IC卡错误:', error);
+  }
+};
+// 🔥 删除IC卡
+const handleDeleteIcCard = async (icCard: UserIcCard) => {
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除IC卡 "${icCard.icCard}" 吗？删除后无法恢复！`,
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    const result = await deleteUserIcCardApi(currentViewUser.value.id, icCard.icCard);
+    
+    if (result.code === 200) {
+      ElMessage.success('IC卡删除成功');
+      // 重新加载IC卡列表
+      await loadUserIcCards(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || 'IC卡删除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('IC卡删除失败，请检查网络连接');
+      console.error('删除IC卡错误:', error);
+    }
+  }
+};
+// 🔥 关闭查看弹窗
+const closeViewDialog = () => {
+  viewDialogVisible.value = false;
+  currentViewUser.value = null;
+  userIcCards.value = [];
+  newIcCard.value = '';
+  addIcCardVisible.value = false;
 };
 
 // 分页改变
@@ -1279,6 +1488,125 @@ onMounted(() => {
         </div>
       </template>
     </el-dialog>    
+    <!-- 🔥 用户详情查看弹窗 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      :title="`${currentViewUser?.userName || ''} - 用户详情`"
+      width="1200px"
+      :close-on-click-modal="false"
+      @close="closeViewDialog"
+    >
+      <div class="user-detail-container">
+        <!-- 左侧：绑定卡号管理 -->
+        <div class="left-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">绑定卡号管理</h3>
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="handleAddIcCard"
+            >
+              添加IC卡
+            </el-button>
+          </div>
+          
+          <div class="ic-cards-section">
+            <!-- 🔥 改为表格形式 -->
+            <el-table
+              :data="userIcCards"
+              v-loading="icCardLoading"
+              style="width: 100%"
+              stripe
+              :show-header="true"
+              empty-text="暂无绑定的IC卡"
+              max-height="400"
+            >
+              <el-table-column 
+                prop="icCard" 
+                label="IC卡号" 
+                min-width="150"
+              >
+                <template #default="{ row }">
+                  <div class="card-info">
+                    <el-icon class="card-icon"><CreditCard /></el-icon>
+                    <span class="card-text">{{ row.icCard }}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              
+              
+              <el-table-column 
+                label="操作" 
+                width="80" 
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    :icon="Delete"
+                    @click="handleDeleteIcCard(row)"
+                    circle
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+        
+        <!-- 右侧：绑定柜子管理（待实现） -->
+        <div class="right-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">绑定柜子管理</h3>
+            <el-button 
+              type="primary" 
+              size="small" 
+              disabled
+            >
+              添加柜子
+            </el-button>
+          </div>
+          
+          <div class="cabinets-section">
+            <div class="empty-state">
+              <el-empty description="功能开发中..." />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeViewDialog">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+    <!-- 🔥 添加IC卡弹窗 -->
+    <el-dialog
+      v-model="addIcCardVisible"
+      title="添加IC卡"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="IC卡号" required>
+          <el-input
+            v-model="newIcCard"
+            placeholder="请输入IC卡号"
+            clearable
+            maxlength="50"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="addIcCardVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleConfirmAddIcCard">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1426,5 +1754,78 @@ onMounted(() => {
       }
     }
   }  
+  .user-detail-container {
+    display: flex;
+    gap: 20px;
+    height: 500px;
+    
+    .left-panel,
+    .right-panel {
+      flex: 1;
+      border: 1px solid #e4e7ed;
+      border-radius: 6px;
+      overflow: hidden;
+      
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e4e7ed;
+        
+        .panel-title {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 500;
+          color: #303133;
+        }
+      }
+      
+      .ic-cards-section,
+      .cabinets-section {
+        padding: 20px;
+        height: calc(100% - 72px);
+        overflow: hidden;
+
+        .el-table {
+          border-radius: 6px;
+          overflow: hidden;
+          
+          .card-info {
+            display: flex;
+            align-items: center;
+            
+            .card-icon {
+              margin-right: 8px;
+              color: #409eff;
+              font-size: 16px;
+            }
+            
+            .card-text {
+              font-size: 14px;
+              font-weight: 500;
+              color: #303133;
+            }
+          }
+          
+        }
+        
+        .empty-state {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 200px;
+        }
+      }
+    }
+  }
+}
+:deep(.el-table__body) {
+  .el-button.is-circle {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
 }
 </style>
