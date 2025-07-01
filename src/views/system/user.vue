@@ -935,7 +935,7 @@ onMounted(() => {
               </template>
             </el-table-column>
             <el-table-column prop="employeeId" label="员工编号" width="120" />
-            <el-table-column prop="bindCard" label="绑定卡号" width="120" />
+            <!-- <el-table-column prop="bindCard" label="绑定卡号" width="120" /> -->
             <el-table-column label="用户类型" width="100" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.userType === 0 ? 'info' : row.userType === 1 ? 'success' : 'warning'">
@@ -970,28 +970,28 @@ onMounted(() => {
                 {{ row.address || '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="80" align="center">
+            <!-- <el-table-column label="状态" width="80" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.status === 1 ? 'success' : 'danger'">
                   {{ row.status === 1 ? '启用' : '禁用' }}
                 </el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column label="创建时间" width="160">
               <template #default="{ row }">
                 {{ new Date(row.createTime).toLocaleString() }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="240" fixed="right">
+            <el-table-column label="操作" width="350" fixed="right">
               <template #default="{ row }">
-                <!-- <el-button 
+                <el-button 
                   type="primary" 
                   size="small" 
                   :icon="View"
                   @click="handleView(row)"
                 >
                   查看
-                </el-button> -->
+                </el-button>
                 <el-button 
                   type="success" 
                   size="small" 
