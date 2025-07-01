@@ -531,7 +531,7 @@ const faceDialogVisible = ref(false);
 const currentUserId = ref<number | null>(null);
 const currentUserName = ref('');
 const faceImages = ref<string[]>([]);
-const currentUserFaceFilename = ref<string | null>(null);
+//const currentUserFaceFilename = ref<string | null>(null);
 const faceLoading = ref(false);
 const uploadLoading = ref(false);
 // 添加文件上传引用
@@ -540,8 +540,16 @@ const fileInputRef = ref<HTMLInputElement>();
 // 获取用户人脸信息API
 const getUserFacesApi = async (userId: number) => {
   try {
-    const response = await fetch(`/api/power/minio/view/${userId}`, {
-      method: 'GET'
+    // 🔥 添加缓存控制参数，强制重新获取
+    const timestamp = Date.now();
+    const response = await fetch(`/api/power/minio/view/${userId}?t=${timestamp}`, {
+      method: 'GET',
+      headers: {
+        // 🔥 添加缓存控制头
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
 
     if (!response.ok) {
@@ -556,7 +564,6 @@ const getUserFacesApi = async (userId: number) => {
     
     console.log('获取人脸信息API响应: 图片URL已创建');
     
-    // 🔥 简化返回，只返回图片URL
     return { 
       code: 200, 
       msg: '获取成功', 
@@ -593,9 +600,9 @@ const uploadFaceApi = async (userId: number, file: File) => {
   }
 };
 // 删除人脸照片API
-const deleteFaceApi = async (userId: number, filename: string) => {
+const deleteFaceApi = async (userId: number) => {
   try {
-    const response = await fetch(`/api/power/minio/delete/${userId}/${filename}`, {
+    const response = await fetch(`/api/power/minio/delete/${userId}`, {
       method: 'DELETE'
     });
 
@@ -616,7 +623,7 @@ const deleteFaceApi = async (userId: number, filename: string) => {
 const handleFaceRecognition = async (row: UserData) => {
   currentUserId.value = row.id;
   currentUserName.value = row.userName;
-  currentUserFaceFilename.value = row.faceRecognition;
+  //currentUserFaceFilename.value = row.faceRecognition;
   faceDialogVisible.value = true;
   await loadUserFaces();
 };
@@ -625,20 +632,27 @@ const handleFaceRecognition = async (row: UserData) => {
 const loadUserFaces = async () => {
   if (!currentUserId.value) return;
   
+  // 🔥 先清理现有的Blob URL，防止内存泄漏
+  faceImages.value.forEach(url => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
+  faceImages.value = [];
+  
   faceLoading.value = true;
   try {
     const result = await getUserFacesApi(currentUserId.value);
     
     if (result.code === 200) {
       if (result.data) {
-        faceImages.value = [result.data]; // 🔥 直接使用图片URL
+        faceImages.value = [result.data];
+        console.log('获取用户人脸信息成功:', faceImages.value);
       } else {
         faceImages.value = [];
+        console.log('用户人脸数据为空');
       }
-      
-      console.log('获取用户人脸信息成功:', faceImages.value);
     } else if (result.code === 404) {
-      // 用户没有人脸照片
       faceImages.value = [];
       console.log('该用户暂无人脸数据');
     } else {
@@ -646,10 +660,9 @@ const loadUserFaces = async () => {
     }
     
   } catch (error) {
-    // 处理网络错误
     if (error.message.includes('404')) {
       faceImages.value = [];
-      console.log('该用户暂无人脸数据');
+      console.log('该用户暂无人脸数据(404)');
     } else {
       ElMessage.error('获取人脸信息失败，请检查网络连接');
       console.error('获取人脸信息错误:', error);
@@ -704,8 +717,8 @@ const handleFileUpload = async (event: Event) => {
 };
 // 删除人脸照片
 const handleDeleteFace = async (imageUrl: string, index: number) => {
-  if (!currentUserId.value || !currentUserFaceFilename.value) {
-    ElMessage.error('无法获取文件信息，删除失败');
+  if (!currentUserId.value) {
+    ElMessage.error('无法获取用户信息，删除失败');
     return;
   }
   
@@ -720,18 +733,32 @@ const handleDeleteFace = async (imageUrl: string, index: number) => {
       }
     );
     
-    const result = await deleteFaceApi(currentUserId.value, currentUserFaceFilename.value);
+    // 🔥 简化API调用 - 只传用户ID
+    const result = await deleteFaceApi(currentUserId.value);
     
     if (result.code === 200) {
-      ElMessage.success('人脸照片删除成功');
-      // 🔥 清理blob URL
-      if (imageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(imageUrl);
-      }
-      faceImages.value.splice(index, 1);
+      // 🔥 立即清理所有相关的Blob URL
+      faceImages.value.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
       
-      // 🔥 删除成功后清空当前用户的人脸文件名引用
-      currentUserFaceFilename.value = null;
+      // 🔥 清空图片数组，不要只删除一个元素
+      faceImages.value = [];
+      
+      
+      // 🔥 可选：延迟一段时间后重新加载，确保后端删除完成
+      // setTimeout(() => {
+      //   loadUserFaces();
+      // }, 1000);
+          const isDeleted = await verifyDeletionStatus(currentUserId.value);
+          if (isDeleted) {
+            ElMessage.success('人脸照片删除成功');
+          } else {
+            ElMessage.warning('删除请求已发送，可能需要稍等片刻生效');
+          }
+      
     } else {
       ElMessage.error(result.msg || '人脸照片删除失败');
     }
@@ -743,6 +770,28 @@ const handleDeleteFace = async (imageUrl: string, index: number) => {
     }
   }
 };
+
+// 添加验证删除状态的函数
+const verifyDeletionStatus = async (userId: number, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // 延迟检查
+      await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+      
+      const result = await getUserFacesApi(userId);
+      if (result.code === 404) {
+        // 确认删除成功
+        return true;
+      }
+    } catch (error) {
+      if (error.message.includes('404')) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
 // 关闭人脸识别弹窗
 const closeFaceDialog = () => {
   // 清理创建的图片URL，防止内存泄漏
@@ -754,7 +803,8 @@ const closeFaceDialog = () => {
   faceDialogVisible.value = false;
   currentUserId.value = null;
   currentUserName.value = '';
-  currentUserFaceFilename.value = null; // 🔥 清理文件名引用
+  // 🔥 删除文件名清理逻辑
+  // currentUserFaceFilename.value = null;
   faceImages.value = [];
 };
 
