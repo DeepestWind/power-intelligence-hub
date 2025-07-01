@@ -806,6 +806,71 @@ const handleDeleteIcCard = async (icCard: UserIcCard) => {
     }
   }
 };
+
+// 🔥 添加柜子列表相关数据
+const cabinetListData = ref<CabinetListItem[]>([]);
+const cabinetListLoading = ref(false);
+const selectedCabinet = ref<CabinetListItem | null>(null);
+const cabinetListCurrentPage = ref(1);
+const cabinetListPageSize = ref(10);
+const cabinetListTotal = ref(0);
+// 🔥 柜子列表项接口
+interface CabinetListItem {
+  id: number;
+  cabinetCode: string;
+  cabinetName: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  onlineStatus?: number;
+}
+// 🔥 柜子列表API响应接口
+interface CabinetListApiResponse {
+  code: number;
+  msg: string;
+  data: {
+    records: CabinetListItem[];
+    total: number;
+    current: number;
+    size: number;
+    pages: number;
+  };
+}
+// 🔥 获取柜子列表API
+const getCabinetListApi = async (params: any = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    // 添加分页参数
+    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+    
+    const baseUrl = `/api/power/cabinet/page`;
+    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+    
+    console.log('获取柜子列表API请求URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: CabinetListApiResponse = await response.json();
+    console.log('获取柜子列表API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('获取柜子列表API请求失败:', error);
+    throw error;
+  }
+};
 // 🔥 加载用户绑定柜子信息
 const loadUserCabinets = async (userId: number) => {
   cabinetLoading.value = true;
@@ -837,20 +902,59 @@ const loadUserCabinets = async (userId: number) => {
   }
 };
 // 🔥 打开添加绑定柜子弹窗
-const handleAddCabinet = () => {
-  newCabinetId.value = '';
-  newCabinetName.value = '';
+const handleAddCabinet = async () => {
+  selectedCabinet.value = null;
+  cabinetListCurrentPage.value = 1;
   addCabinetVisible.value = true;
+  
+  // 🔥 打开弹窗时立即加载柜子列表
+  await loadCabinetList();
+};
+// 🔥 加载柜子列表
+const loadCabinetList = async () => {
+  cabinetListLoading.value = true;
+  try {
+    const result = await getCabinetListApi({
+      pageNum: cabinetListCurrentPage.value,
+      pageSize: cabinetListPageSize.value
+    });
+    
+    if (result.code === 200) {
+      cabinetListData.value = result.data.records || [];
+      cabinetListTotal.value = result.data.total || 0;
+      console.log('获取柜子列表成功:', cabinetListData.value);
+    } else {
+      ElMessage.error(result.msg || '获取柜子列表失败');
+      cabinetListData.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取柜子列表失败，请检查网络连接');
+    console.error('获取柜子列表错误:', error);
+    cabinetListData.value = [];
+  } finally {
+    cabinetListLoading.value = false;
+  }
+};
+// 🔥 柜子列表分页改变
+const handleCabinetListPageChange = (page: number) => {
+  cabinetListCurrentPage.value = page;
+  loadCabinetList();
+};
+const handleCabinetListSizeChange = (size: number) => {
+  cabinetListPageSize.value = size;
+  cabinetListCurrentPage.value = 1;
+  loadCabinetList();
+};
+// 🔥 选择柜子
+const handleSelectCabinet = (cabinet: CabinetListItem) => {
+  selectedCabinet.value = cabinet;
+  console.log('选择柜子:', cabinet);
 };
 // 🔥 确认添加绑定柜子
 const handleConfirmAddCabinet = async () => {
-  if (!newCabinetId.value.trim()) {
-    ElMessage.warning('请输入柜子ID');
-    return;
-  }
-  
-  if (!newCabinetName.value.trim()) {
-    ElMessage.warning('请输入柜子名称');
+  if (!selectedCabinet.value) {
+    ElMessage.warning('请选择要绑定的柜子');
     return;
   }
   
@@ -860,10 +964,11 @@ const handleConfirmAddCabinet = async () => {
   }
   
   try {
+    // 🔥 使用选中的柜子信息
     const cabinetData = {
       userId: currentViewUser.value.id,
-      cabinetId: parseInt(newCabinetId.value.trim()),
-      cabinetName: newCabinetName.value.trim()
+      cabinetId: selectedCabinet.value.id,
+      cabinetName: selectedCabinet.value.cabinetName
     };
     
     const result = await addUserCabinetApi(cabinetData);
@@ -871,8 +976,8 @@ const handleConfirmAddCabinet = async () => {
     if (result.code === 200) {
       ElMessage.success('柜子绑定成功');
       addCabinetVisible.value = false;
-      newCabinetId.value = '';
-      newCabinetName.value = '';
+      selectedCabinet.value = null;
+      cabinetListData.value = [];
       // 重新加载绑定柜子列表
       await loadUserCabinets(currentViewUser.value.id);
     } else {
@@ -884,6 +989,7 @@ const handleConfirmAddCabinet = async () => {
     console.error('添加绑定柜子错误:', error);
   }
 };
+
 // 🔥 删除绑定柜子
 const handleDeleteCabinet = async (cabinet: UserCabinet) => {
   if (!currentViewUser.value) {
@@ -926,8 +1032,9 @@ const closeViewDialog = () => {
   userIcCards.value = [];
   userCabinets.value = []; 
   newIcCard.value = '';
-  newCabinetId.value = '';
-  newCabinetName.value = '';
+  selectedCabinet.value = null;
+  cabinetListData.value = [];
+  cabinetListCurrentPage.value = 1;
   addIcCardVisible.value = false;
   addCabinetVisible.value = false;
 };
@@ -1057,7 +1164,6 @@ const handleFaceRecognition = async (row: UserData) => {
   faceDialogVisible.value = true;
   await loadUserFaces();
 };
-
 // 加载用户人脸信息
 const loadUserFaces = async () => {
   if (!currentUserId.value) return;
@@ -1101,7 +1207,6 @@ const loadUserFaces = async () => {
     faceLoading.value = false;
   }
 };
-
 // 触发文件选择
 const triggerFileUpload = () => {
   fileInputRef.value?.click();
@@ -1200,7 +1305,6 @@ const handleDeleteFace = async (imageUrl: string, index: number) => {
     }
   }
 };
-
 // 添加验证删除状态的函数
 const verifyDeletionStatus = async (userId: number, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -1221,7 +1325,6 @@ const verifyDeletionStatus = async (userId: number, maxRetries = 3) => {
   }
   return false;
 };
-
 // 关闭人脸识别弹窗
 const closeFaceDialog = () => {
   // 清理创建的图片URL，防止内存泄漏
@@ -1269,61 +1372,6 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <!-- <el-form-item label="员工编号">
-              <el-input 
-                v-model="searchForm.employeeId" 
-                placeholder="请输入员工编号" 
-                clearable
-                style="width: 150px"
-              />
-            </el-form-item> -->
-            <!-- <el-form-item label="用户类型">
-              <el-select 
-                v-model="searchForm.userType" 
-                placeholder="请选择用户类型"
-                clearable
-                style="width: 120px"
-              >
-                <el-option
-                  v-for="option in userTypeOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="管理级别">
-              <el-select 
-                v-model="searchForm.adminLevel" 
-                placeholder="请选择管理级别"
-                clearable
-                style="width: 120px"
-              >
-                <el-option
-                  v-for="option in adminLevelOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-            </el-form-item>
-            <!-- 修改：移除省市区输入框 -->
-            <!-- 原来的省份、城市、区域字段已删除 -->
-            <!-- <el-form-item label="状态">
-              <el-select 
-                v-model="searchForm.status" 
-                placeholder="请选择状态"
-                clearable
-                style="width: 100px"
-              >
-                <el-option
-                  v-for="option in statusOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-            </el-form-item> --> 
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
@@ -1877,37 +1925,100 @@ onMounted(() => {
         </div>
       </template>
     </el-dialog>
-    <!-- 🔥 添加绑定柜子弹窗 -->
+    <!-- 🔥 修改添加绑定柜子弹窗 -->
     <el-dialog
       v-model="addCabinetVisible"
       title="添加绑定柜子"
-      width="500px"
+      width="600px"
       :close-on-click-modal="false"
     >
-      <el-form label-width="100px">
-        <el-form-item label="柜子ID" required>
-          <el-input
-            v-model="newCabinetId"
-            placeholder="请输入柜子ID"
-            clearable
-            type="number"
+      <div class="cabinet-selection-container">
+        <div class="selection-header">
+          <span class="selection-title">选择要绑定的柜子</span>
+          <div class="selection-info">
+            <span v-if="selectedCabinet" class="selected-info">
+              已选择：{{ selectedCabinet.cabinetName }} (ID: {{ selectedCabinet.id }})
+            </span>
+            <span v-else class="no-selection">请选择一个柜子</span>
+          </div>
+        </div>
+        
+        <!-- 🔥 柜子列表表格 -->
+        <el-table
+          :data="cabinetListData"
+          v-loading="cabinetListLoading"
+          style="width: 100%"
+          stripe
+          border
+          empty-text="暂无可绑定的柜子"
+          max-height="400"
+          highlight-current-row
+          @current-change="handleSelectCabinet"
+        >
+          <el-table-column 
+            prop="id" 
+            label="柜子ID" 
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag type="primary" size="small">
+                {{ row.id }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <el-table-column 
+            prop="cabinetCode" 
+            label="设备编号" 
+            width="150"
+            align="center"
           />
-        </el-form-item>
-        <el-form-item label="柜子名称" required>
-          <el-input
-            v-model="newCabinetName"
-            placeholder="请输入柜子名称"
-            clearable
-            maxlength="100"
-            show-word-limit
+          
+          <el-table-column 
+            prop="cabinetName" 
+            label="柜子名称" 
+            min-width="200"
+          >
+            <template #default="{ row }">
+              <div class="cabinet-name-cell">
+                <el-icon class="cabinet-icon"><Box /></el-icon>
+                <span>{{ row.cabinetName }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          
+          <!-- 🔥 删除省市区和在线状态列 -->
+          <!-- <el-table-column prop="province" label="省份" width="100" />
+          <el-table-column prop="city" label="城市" width="100" />
+          <el-table-column prop="district" label="区域" width="100" />
+          <el-table-column label="在线状态" width="80" align="center" /> -->
+        </el-table>
+        
+        <!-- 🔥 分页组件 -->
+        <div class="cabinet-pagination">
+          <el-pagination
+            v-model:current-page="cabinetListCurrentPage"
+            v-model:page-size="cabinetListPageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="cabinetListTotal"
+            layout="total, sizes, prev, pager, next"
+            @size-change="handleCabinetListSizeChange"
+            @current-change="handleCabinetListPageChange"
           />
-        </el-form-item>
-      </el-form>
+        </div>
+      </div>
       
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="addCabinetVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirmAddCabinet">确定</el-button>
+          <el-button 
+            type="primary" 
+            @click="handleConfirmAddCabinet"
+            :disabled="!selectedCabinet"
+          >
+            确定绑定
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -2140,12 +2251,82 @@ onMounted(() => {
       }
     }
   }
+  .cabinet-selection-container {
+    .selection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 16px;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e4e7ed;
+      
+      .selection-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+      
+      .selected-info {
+        color: #67c23a;
+        font-weight: 500;
+        
+        &::before {
+          content: "✓ ";
+        }
+      }
+      
+      .no-selection {
+        color: #909399;
+        font-size: 14px;
+      }
+    }
+    
+    .cabinet-name-cell {
+      display: flex;
+      align-items: center;
+      
+      .cabinet-icon {
+        margin-right: 8px;
+        color: #67c23a;
+        font-size: 16px;
+      }
+    }
+    
+    .cabinet-pagination {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .el-table {
+      .el-table-column {
+        text-align: center;
+      }
+      
+      .cabinet-name-cell {
+        text-align: left;
+      }
+    }
+  }
 }
 :deep(.el-table__body) {
   .el-button.is-circle {
     width: 28px;
     height: 28px;
     padding: 0;
+  }
+}
+// 🔥 表格行选中样式优化
+:deep(.el-table__row) {
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #f5f7fa;
+  }
+  
+  &.current-row {
+    background-color: #ecf5ff;
   }
 }
 </style>
