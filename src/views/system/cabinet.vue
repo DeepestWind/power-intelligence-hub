@@ -54,7 +54,7 @@ const areaFilter = ref({
 const searchForm = ref({
   cabinetCode: '',
   cabinetName: '',
-  onlineStatus: null as number | null 
+  //onlineStatus: null as number | null 
 });
 
 // 处理区域搜索事件，左侧areaSelect组件
@@ -94,7 +94,7 @@ const handleReset = () => {
   searchForm.value = {
     cabinetCode: '',
     cabinetName: '',
-    onlineStatus: null
+    //onlineStatus: null
   };
   handleSearch();
 };
@@ -103,7 +103,7 @@ const handleClearAll = () => {
   searchForm.value = {
     cabinetCode: '',
     cabinetName: '',
-    onlineStatus: null
+    //onlineStatus: null
   };
   areaFilter.value = {
     province: '',
@@ -174,9 +174,9 @@ const getCabinetListApi = async (params: any = {}) => {
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
-    if (params.onlineStatus !== null && params.onlineStatus !== undefined) {
-      queryParams.append('onlineStatus', params.onlineStatus.toString());
-    }
+    // if (params.onlineStatus !== null && params.onlineStatus !== undefined) {
+    //   queryParams.append('onlineStatus', params.onlineStatus.toString());
+    // }
     
     // 构建完整的URL
     const baseUrl = `/api/power/cabinet/page`;
@@ -512,7 +512,7 @@ onMounted(() => {
                 style="width: 200px"
               />
             </el-form-item>
-            <el-form-item label="在线状态">
+            <!-- <el-form-item label="在线状态">
               <el-select 
                 v-model="searchForm.onlineStatus" 
                 placeholder="请选择状态"
@@ -522,7 +522,7 @@ onMounted(() => {
                 <el-option label="在线" value="1" />
                 <el-option label="离线" value="0" />
               </el-select>
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
