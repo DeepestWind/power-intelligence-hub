@@ -28,7 +28,7 @@ interface UserData {
   city: string | null;
   district: string | null;
   address: string | null;
-  status: number; // 状态：1-启用, 0-禁用
+  status: number; // 状态：1-启用, 0-禁用，🔥 已不在业务中使用
   cabinetManagement: string | null;
   faceRecognition: string | null;
   fingerprintRecognition: string | null;
@@ -147,7 +147,6 @@ const isEdit = ref(false);
 const userForm = ref({
   userName: '',
   department: '',
-  bindCard: '',
   employeeId: '',
   password: '',
   userType: 1,
@@ -156,9 +155,22 @@ const userForm = ref({
   city: '',
   district: '',
   address: '',
-  status: 1
+  // status: 1 // 🔥 删除状态字段
 });
-
+// 🔥 添加用户类型和管理员级别的自定义验证规则
+const validateAdminLevel = (rule: any, value: any, callback: any) => {
+  const { userType } = userForm.value;
+  
+  if (userType === 0 && value !== 0) {
+    callback(new Error('普通用户的管理员级别必须为普通用户'));
+  } else if (userType === 2 && value !== 3) {
+    callback(new Error('超级管理员的管理员级别必须为省级'));
+  } else if (userType === 1 && ![1, 2, 3].includes(value)) {
+    callback(new Error('管理员的级别必须为区级、市级或省级'));
+  } else {
+    callback();
+  }
+};
 // 表单验证规则
 const userFormRules = {
   userName: [
@@ -169,28 +181,27 @@ const userFormRules = {
     { required: true, message: '请输入员工编号', trigger: 'blur' },
     { min: 3, max: 20, message: '员工编号长度为3-20个字符', trigger: 'blur' }
   ],
-  bindCard: [
-    { required: true, message: '请输入绑定卡号', trigger: 'blur' }
-  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度为6-20个字符', trigger: 'blur' }
+    { min: 5, max: 20, message: '密码长度为5-20个字符', trigger: 'blur' }
   ],
   userType: [
     { required: true, message: '请选择用户类型', trigger: 'change' }
   ],
   adminLevel: [
-    { required: true, message: '请选择管理员级别', trigger: 'change' }
+    { required: true, message: '请选择管理员级别', trigger: 'change' },
+    { validator: validateAdminLevel, trigger: 'change' } // 🔥 添加自定义验证
   ],
   // 🔥 省市区验证规则
   province: [
     { required: true, message: '请选择省份', trigger: 'change' } // 🔥 改为选择
   ],
+  // 🔥 修改城市和区域为非必选项
   city: [
-    { required: true, message: '请选择城市', trigger: 'change' } // 🔥 改为选择
+    // { required: true, message: '请选择城市', trigger: 'change' } // 🔥 删除必选验证
   ],
   district: [
-    { required: true, message: '请选择区域', trigger: 'change' } // 🔥 改为选择
+    // { required: true, message: '请选择区域', trigger: 'change' } // 🔥 删除必选验证
   ]
 };
 
@@ -203,20 +214,72 @@ const userTypeOptions = [
   { label: '超级管理员', value: 2 }
 ];
 
-// 管理员级别选项
-const adminLevelOptions = [
-  { label: '普通用户', value: 0 },
-  { label: '区级', value: 1 },
-  { label: '市级', value: 2 },
-  { label: '省级', value: 3 },
-  //{ label: '超级管理员', value: 4 }
-];
+// 🔥 管理员级别选项 - 根据用户类型动态显示
+const adminLevelOptions = computed(() => {
+  switch (userForm.value.userType) {
+    case 0: // 普通用户
+      return [
+        { label: '普通用户', value: 0 }
+      ];
+    case 1: // 管理员
+      return [
+        { label: '区级', value: 1 },
+        { label: '市级', value: 2 },
+        { label: '省级', value: 3 }
+      ];
+    case 2: // 超级管理员
+      return [
+        { label: '省级', value: 3 }
+      ];
+    default:
+      return [
+        { label: '普通用户', value: 0 }
+      ];
+  }
+});
+// 🔥 用户类型改变时的处理函数
+const handleUserTypeChange = () => {
+  // 根据用户类型设置对应的管理员级别
+  switch (userForm.value.userType) {
+    case 0: // 普通用户
+      userForm.value.adminLevel = 0;
+      break;
+    case 1: // 管理员
+      // 如果当前级别不在管理员可选范围内，设置为区级
+      if (![1, 2, 3].includes(userForm.value.adminLevel)) {
+        userForm.value.adminLevel = 1; // 默认设置为区级
+      }
+      break;
+    case 2: // 超级管理员
+      userForm.value.adminLevel = 3; // 强制设置为省级
+      // 🔥 超级管理员清空城市和区域
+      userForm.value.city = '';
+      userForm.value.district = '';
+      break;
+    default:
+      userForm.value.adminLevel = 0;
+  }
+  
+  // 🔥 根据新的管理员级别清理不适用的地区选择
+  handleAdminLevelChange();
+  
+  console.log('用户类型改变:', userForm.value.userType, '管理员级别:', userForm.value.adminLevel);
+};
+// 🔥 添加管理员级别改变时的处理函数
+const handleAdminLevelChange = () => {
+  const { userType, adminLevel } = userForm.value;
+  
+  // 根据管理员级别清理不适用的地区选择
+  if (userType === 2 || adminLevel === 3) {
+    // 超级管理员或省级管理员：清空城市和区域
+    userForm.value.city = '';
+    userForm.value.district = '';
+  } else if (adminLevel === 2) {
+    // 市级管理员：只清空区域
+    userForm.value.district = '';
+  }
+};
 
-// 状态选项
-const statusOptions = [
-  { label: '启用', value: 1 },
-  { label: '禁用', value: 0 }
-];
 
 // 🔥 添加查看弹窗相关数据
 const viewDialogVisible = ref(false);
@@ -542,7 +605,6 @@ const resetUserForm = () => {
   userForm.value = {
     userName: '',
     department: '',
-    bindCard: '',
     employeeId: '',
     password: '',
     userType: 1,
@@ -551,8 +613,9 @@ const resetUserForm = () => {
     city: '',
     district: '',
     address: '',
-    status: 1
   };
+  // 🔥 清理当前编辑用户引用
+  currentEditUser.value = null;
   if (userFormRef.value) {
     userFormRef.value.clearValidate();
   }
@@ -572,8 +635,10 @@ const handleConfirm = async () => {
     await userFormRef.value.validate();
     
     if (isEdit.value) {
+      console.log('执行更新操作，当前编辑用户:', currentEditUser.value);
       await updateUser();
     } else {
+      console.log('执行新增操作');
       await addUser();
     }
     
@@ -592,7 +657,6 @@ const addUser = async () => {
     const requestData = {
       userName: userForm.value.userName,
       department: userForm.value.department,
-      bindCard: userForm.value.bindCard,
       employeeId: userForm.value.employeeId,
       password: userForm.value.password,
       userType: userForm.value.userType,
@@ -601,7 +665,6 @@ const addUser = async () => {
       city: userForm.value.city,
       district: userForm.value.district,
       address: userForm.value.address,
-      status: userForm.value.status,
       createTime: new Date().toISOString(),
       updatedTime: new Date().toISOString()
     };
@@ -637,13 +700,55 @@ const addUser = async () => {
   }
 };
 
+const currentEditUser = ref<UserData | null>(null);
 // 更新用户API调用
 const updateUser = async () => {
   try {
-    ElMessage.success('用户更新成功');
-    console.log('更新用户数据:', userForm.value);
+    if (!currentEditUser.value?.id) {
+      throw new Error('缺少用户ID，无法更新');
+    }
+
+    const requestData = {
+      id: currentEditUser.value.id, // 🔥 必须包含用户ID
+      userName: userForm.value.userName,
+      department: userForm.value.department,
+      employeeId: userForm.value.employeeId,
+      password: userForm.value.password,
+      userType: userForm.value.userType,
+      adminLevel: userForm.value.adminLevel,
+      province: userForm.value.province,
+      city: userForm.value.city,
+      district: userForm.value.district,
+      address: userForm.value.address,
+      updatedTime: new Date().toISOString()
+    };
+    
+    console.log('发送更新用户请求:', requestData);
+
+    const response = await fetch('/api/power/user/update', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.code === 200) {
+      ElMessage.success('用户更新成功');
+      console.log('更新用户成功:', result);
+    } else {
+      ElMessage.error(result.msg || '用户更新失败');
+      throw new Error(result.msg || '用户更新失败');
+    }
+    
   } catch (error) {
-    ElMessage.error('用户更新失败');
+    ElMessage.error('用户更新失败，请检查网络连接');
     console.error('更新用户错误:', error);
     throw error;
   }
@@ -709,12 +814,12 @@ const handleDelete = async (row: UserData) => {
 const handleEdit = (row: UserData) => {
   dialogTitle.value = '编辑用户';
   isEdit.value = true;
+  currentEditUser.value = { ...row }; // 保存当前编辑的用户数据
   
   // 填充表单数据
   userForm.value = {
     userName: row.userName,
     department: row.department || '',
-    bindCard: row.bindCard,
     employeeId: row.employeeId,
     password: row.password,
     userType: row.userType,
@@ -722,18 +827,73 @@ const handleEdit = (row: UserData) => {
     province: row.province || '',
     city: row.city || '',
     district: row.district || '',
-    address: row.address || '',
-    status: row.status
+    address: row.address || ''
   };
   
-  dialogVisible.value = true;
-  // 🔥 使用 nextTick 确保表单渲染完成后再清除验证
+  // 🔥 编辑时验证用户类型和管理员级别的一致性
   nextTick(() => {
+    validateUserTypeAndAdminLevel();
     if (userFormRef.value) {
       userFormRef.value.clearValidate();
     }
   });
+  
+  dialogVisible.value = true;
 };
+// 🔥 验证用户类型和管理员级别的一致性
+const validateUserTypeAndAdminLevel = () => {
+  const { userType, adminLevel } = userForm.value;
+  
+  // 检查数据一致性，如果不一致则修正
+  if (userType === 0 && adminLevel !== 0) {
+    userForm.value.adminLevel = 0;
+    ElMessage.warning('普通用户的管理员级别已自动调整为普通用户');
+  } else if (userType === 2 && adminLevel !== 3) {
+    userForm.value.adminLevel = 3;
+    ElMessage.warning('超级管理员的管理员级别已自动调整为省级');
+  } else if (userType === 1 && ![1, 2, 3].includes(adminLevel)) {
+    userForm.value.adminLevel = 1;
+    ElMessage.warning('管理员的管理员级别已自动调整为区级');
+  }
+  // 🔥 根据管理员级别验证和清理地区选择
+  validateAreaByAdminLevel();
+};
+// 🔥 添加根据管理员级别验证地区选择的函数
+const validateAreaByAdminLevel = () => {
+  const { userType, adminLevel, city, district } = userForm.value;
+  let hasChanges = false;
+  
+  // 超级管理员或省级管理员不应该有城市和区域
+  if ((userType === 2 || adminLevel === 3) && (city || district)) {
+    userForm.value.city = '';
+    userForm.value.district = '';
+  }
+  // 市级管理员不应该有区域
+  else if (adminLevel === 2 && district) {
+    userForm.value.district = '';
+  }
+  
+};
+// 🔥 判断根据管理员级别是否禁用某个级别的选择
+const isDisabledByAdminLevel = (level: 'city' | 'district') => {
+  const { userType, adminLevel } = userForm.value;
+  
+  // 只有管理员和超级管理员才有级别限制
+  if (userType === 0) return false; // 普通用户无限制
+  
+  if (level === 'city') {
+    // 省级管理员(3)和超级管理员(userType=2)不能选择城市
+    return adminLevel === 3 || userType === 2;
+  }
+  
+  if (level === 'district') {
+    // 市级管理员(2)、省级管理员(3)和超级管理员(userType=2)不能选择区域
+    return adminLevel >= 2 || userType === 2;
+  }
+  
+  return false;
+};
+
 
 // 查看用户 现有功能为IC卡管理和绑定柜子管理
 const handleView = async (row: UserData) => {
@@ -1120,7 +1280,7 @@ const formatUserType = (userType: number) => {
 
 // 格式化管理员级别
 const formatAdminLevel = (adminLevel: number) => {
-  const option = adminLevelOptions.find(opt => opt.value === adminLevel);
+  const option = adminLevelOptions.value.find(opt => opt.value === adminLevel); // 🔥 添加 .value
   return option ? option.label : '未知';
 };
 
@@ -1620,18 +1780,6 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="绑定卡号" prop="bindCard">
-              <el-input
-                v-model="userForm.bindCard"
-                placeholder="请输入绑定卡号"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
             <el-form-item label="密码" prop="password">
               <el-input
                 v-model="userForm.password"
@@ -1640,22 +1788,6 @@ onMounted(() => {
                 show-password
                 clearable
               />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-select
-                v-model="userForm.status"
-                placeholder="请选择状态"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="option in statusOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -1667,6 +1799,7 @@ onMounted(() => {
                 v-model="userForm.userType"
                 placeholder="请选择用户类型"
                 style="width: 100%"
+                @change="handleUserTypeChange"
               >
                 <el-option
                   v-for="option in userTypeOptions"
@@ -1683,6 +1816,8 @@ onMounted(() => {
                 v-model="userForm.adminLevel"
                 placeholder="请选择管理员级别"
                 style="width: 100%"
+                :disabled="userForm.userType === 0 || userForm.userType === 2"
+                @change="handleAdminLevelChange"
               >
                 <el-option
                   v-for="option in adminLevelOptions"
@@ -1695,7 +1830,7 @@ onMounted(() => {
           </el-col>
         </el-row>
 
-        <!-- 🔥 修改省市区为下拉选择器 -->
+        <!-- 🔥 修改省市区为下拉选择器，城市和区域改为非必选 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
@@ -1718,10 +1853,11 @@ onMounted(() => {
             <el-form-item label="城市" prop="city">
               <el-select
                 v-model="userForm.city"
-                placeholder="请选择城市"
+                placeholder="请选择城市(可选)"
                 style="width: 100%"
-                :disabled="!userForm.province"
+                :disabled="!userForm.province || isDisabledByAdminLevel('city')"
                 @change="handleUserCityChange"
+                clearable
               >
                 <el-option
                   v-for="option in cityOptions"
@@ -1736,9 +1872,10 @@ onMounted(() => {
             <el-form-item label="区域" prop="district">
               <el-select
                 v-model="userForm.district"
-                placeholder="请选择区域"
+                placeholder="请选择区域(可选)"
                 style="width: 100%"
-                :disabled="!userForm.city"
+                :disabled="!userForm.city || isDisabledByAdminLevel('district')"
+                clearable
               >
                 <el-option
                   v-for="option in districtOptions"
@@ -2394,6 +2531,22 @@ onMounted(() => {
       .cabinet-name-cell {
         text-align: left;
       }
+    }
+  }
+  .form-tip {
+    margin-top: 4px;
+    
+    .el-text {
+      font-size: 12px;
+      
+    }
+  }
+  // 🔥 禁用状态的选择器样式优化
+  .el-select.is-disabled {
+    .el-input__wrapper {
+      background-color: #f5f7fa;
+      border-color: #e4e7ed;
+      color: #c0c4cc;
     }
   }
 }
