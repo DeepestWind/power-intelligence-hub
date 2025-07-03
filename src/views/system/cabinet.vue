@@ -4,11 +4,16 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
-import { transformPcaToTree } from "@/utils/area";
+import { useAreaStore } from "@/store/modules/area"; // 🔥 导入 AreaStore
+import { useAreaSelect } from "@/utils/useAreaSelect";
+import { usePageSearch } from "@/utils/useAreaFilter"; 
 
 defineOptions({
   name: "CabinetManagement"
 });
+
+// 🔥 使用 AreaStore
+const areaStore = useAreaStore();
 
 // 柜子数据接口（根据API返回数据调整）
 interface CabinetData {
@@ -44,120 +49,6 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-//以下为省市区下拉框的实现
-// 🔥 添加省市区数据源
-const areaData = transformPcaToTree();
-// 🔥 省份选项
-const provinceOptions = computed(() => {
-  return areaData.map(item => ({
-    label: item.label,
-    value: item.label
-  }));
-});
-// 🔥 城市选项
-const cityOptions = computed(() => {
-  if (!deviceForm.value.province) return [];
-  const province = areaData.find(item => item.label === deviceForm.value.province);
-  return province ? province.children.map(item => ({
-    label: item.label,
-    value: item.label
-  })) : [];
-});
-// 🔥 区域选项
-const districtOptions = computed(() => {
-  if (!deviceForm.value.province || !deviceForm.value.city) return [];
-  const province = areaData.find(item => item.label === deviceForm.value.province);
-  if (!province) return [];
-  const city = province.children.find(item => item.label === deviceForm.value.city);
-  return city ? city.children.map(item => ({
-    label: item.label,
-    value: item.label
-  })) : [];
-});
-// 🔥 省份改变时清空城市和区域
-const handleProvinceChange = () => {
-  deviceForm.value.city = '';
-  deviceForm.value.district = '';
-};
-// 🔥 城市改变时清空区域
-const handleCityChange = () => {
-  deviceForm.value.district = '';
-};
-
-
-// 分离区域筛选和表单搜索
-const areaFilter = ref({
-  province: '',
-  city: '',
-  district: ''
-});
-// 搜索表单（修改为新的字段）
-const searchForm = ref({
-  cabinetCode: '',
-  cabinetName: '',
-  //onlineStatus: null as number | null 
-});
-
-// 处理区域搜索事件，左侧areaSelect组件
-const handleAreaSearch = (area: AreaNode) => {
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
-  
-  // 设置新的区域筛选
-  fillAreaFilter(area);
-  
-  // 自动执行搜索
-  handleSearch();
-};
-const fillAreaFilter = (area: AreaNode) => {
-  const code = area.code;
-  const label = area.label;
-  
-  if (code.endsWith('0000')) {
-    areaFilter.value.province = label;
-  } else if (code.endsWith('00')) {
-    areaFilter.value.city = label;
-  } else {
-    areaFilter.value.district = label;
-  }
-  
-  ElMessage.info(`区域筛选已设置为: ${label}`);
-};
-
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getCabinetList();
-};
-
-// 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    //onlineStatus: null
-  };
-  handleSearch();
-};
-// 清空所有筛选条件
-const handleClearAll = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    //onlineStatus: null
-  };
-  areaFilter.value = {
-    province: '',
-    city: '',
-    district: ''
-  };
-  handleSearch();
-};
-
-// 新增设备相关数据
-const dialogVisible = ref(false);
-const dialogTitle = ref('新增设备');
-const isEdit = ref(false);
 // 设备表单数据
 const deviceForm = ref({
   cabinetCode: '',
@@ -166,13 +57,228 @@ const deviceForm = ref({
   city: '',
   district: '',
   address: '',
-  // maxTemperature: null,//此处默认
-  // minTemperature: null,//此处默认
-  // maxHumidity: null,//此处默认
-  // minHumidity: null,//此处默认
-  // operationMode: 0,//此处默认
-  // maxTemperatureDifference: null//此处默认
 });
+//以下为省市区下拉框的实现
+// 🔥 使用通用的省市区选择器工具类
+const {
+  provinceOptions,
+  cityOptions,
+  districtOptions,
+  handleProvinceChange,
+  handleCityChange,
+  validateAreaPermission,
+  initAreaSelectData,
+  hasPermissionData
+} = useAreaSelect(deviceForm);
+
+// 🔥 使用页面搜索工具类
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    cabinetCode: '',
+    cabinetName: '',
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getCabinetList();
+  }
+);
+
+// 🔥 简化：省市区改变事件处理
+// const handleDeviceProvinceChange = () => {
+//   handleProvinceChange(deviceForm.value);
+// };
+
+// const handleDeviceCityChange = () => {
+//   handleCityChange(deviceForm.value);
+// };
+
+// const areaData = computed(() => {
+//   const userAreaData = areaStore.getCurrentAreaData;
+  
+//   if (!userAreaData || userAreaData.length === 0) {
+//     console.warn('用户无权限区域数据');
+//     return [];
+//   }
+  
+//   return userAreaData;
+// });
+// 🔥 省份选项
+// const provinceOptions = computed(() => {
+//   const userAreaData = areaData.value;
+  
+//   if (!userAreaData || userAreaData.length === 0) {
+//     return [];
+//   }
+  
+//   return userAreaData.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   }));
+// });
+// 🔥 城市选项
+// const cityOptions = computed(() => {
+//   if (!deviceForm.value.province) return [];
+  
+//   const userAreaData = areaData.value;
+//   if (!userAreaData || userAreaData.length === 0) return [];
+  
+//   // 在用户权限范围内查找省份
+//   const province = userAreaData.find(item => item.label === deviceForm.value.province);
+  
+//   if (!province || !province.children) return [];
+  
+//   return province.children.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   }));
+// });
+// 🔥 区域选项
+// const districtOptions = computed(() => {
+//   if (!deviceForm.value.province || !deviceForm.value.city) return [];
+  
+//   const userAreaData = areaData.value;
+//   if (!userAreaData || userAreaData.length === 0) return [];
+  
+//   // 在用户权限范围内查找省份和城市
+//   const province = userAreaData.find(item => item.label === deviceForm.value.province);
+//   if (!province || !province.children) return [];
+  
+//   const city = province.children.find(item => item.label === deviceForm.value.city);
+//   if (!city || !city.children) return [];
+  
+//   return city.children.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   }));
+// });
+// 🔥 省份改变时清空城市和区域
+// const handleProvinceChange = () => {
+//   deviceForm.value.city = '';
+//   deviceForm.value.district = '';
+// };
+// // 🔥 城市改变时清空区域
+// const handleCityChange = () => {
+//   deviceForm.value.district = '';
+// };
+// 🔥 新增：权限验证函数
+// const validateAreaPermission = (province: string, city?: string, district?: string): boolean => {
+//   const userAreaData = areaData.value;
+  
+//   if (!userAreaData || userAreaData.length === 0) {
+//     return false;
+//   }
+  
+//   // 检查省份权限
+//   const provinceNode = userAreaData.find(item => item.label === province);
+//   if (!provinceNode) {
+//     return false;
+//   }
+  
+//   // 如果只检查省份权限
+//   if (!city) {
+//     return true;
+//   }
+  
+//   // 检查城市权限
+//   const cityNode = provinceNode.children?.find(item => item.label === city);
+//   if (!cityNode) {
+//     return false;
+//   }
+  
+//   // 如果只检查城市权限
+//   if (!district) {
+//     return true;
+//   }
+  
+//   // 检查区域权限
+//   const districtNode = cityNode.children?.find(item => item.label === district);
+//   return !!districtNode;
+// };
+
+
+// // 分离区域筛选和表单搜索
+// const areaFilter = ref({
+//   province: '',
+//   city: '',
+//   district: ''
+// });
+// // 搜索表单（修改为新的字段）
+// const searchForm = ref({
+//   cabinetCode: '',
+//   cabinetName: '',
+//   //onlineStatus: null as number | null 
+// });
+
+// // 处理区域搜索事件，左侧areaSelect组件
+// const handleAreaSearch = (area: AreaNode) => {
+//   // 清空区域筛选
+//   areaFilter.value = { province: '', city: '', district: '' };
+  
+//   // 设置新的区域筛选
+//   fillAreaFilter(area);
+  
+//   // 自动执行搜索
+//   handleSearch();
+// };
+// const fillAreaFilter = (area: AreaNode) => {
+//   const code = area.code;
+//   const label = area.label;
+  
+//   if (code.endsWith('0000')) {
+//     areaFilter.value.province = label;
+//   } else if (code.endsWith('00')) {
+//     areaFilter.value.city = label;
+//   } else {
+//     areaFilter.value.district = label;
+//   }
+  
+//   ElMessage.info(`区域筛选已设置为: ${label}`);
+// };
+
+// // 搜索
+// const handleSearch = () => {
+//   currentPage.value = 1;
+//   getCabinetList();
+// };
+
+// // 重置搜索
+// const handleReset = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     //onlineStatus: null
+//   };
+//   handleSearch();
+// };
+// // 清空所有筛选条件
+// const handleClearAll = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     //onlineStatus: null
+//   };
+//   areaFilter.value = {
+//     province: '',
+//     city: '',
+//     district: ''
+//   };
+//   handleSearch();
+// };
+
+// 新增设备相关数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('新增设备');
+const isEdit = ref(false);
+
 // 表单验证规则
 const deviceFormRules = {
   cabinetCode: [
@@ -284,11 +390,18 @@ const getCabinetList = async () => {
 
 // 打开新增设备弹窗
 const handleAddDevice = () => {
+  // 检查是否有权限数据
+  if (!hasPermissionData.value) {
+    ElMessage.warning('权限数据未加载，请稍后再试');
+    return;
+  }
+  
   dialogTitle.value = '新增设备';
   isEdit.value = false;
   resetDeviceForm();
   dialogVisible.value = true;
-  // 🔥 清除表单验证
+  
+  // 清除表单验证
   nextTick(() => {
     if (deviceFormRef.value) {
       deviceFormRef.value.clearValidate();
@@ -326,6 +439,13 @@ const handleConfirm = async () => {
   
   try {
     await deviceFormRef.value.validate();
+
+    // 🔥 使用工具类的权限验证
+    const { province, city, district } = deviceForm.value;
+    if (!validateAreaPermission(province, city, district)) {
+      ElMessage.error('您没有权限在该区域新增设备，请重新选择');
+      return;
+    }
     
     if (isEdit.value) {
       // 编辑设备
@@ -343,6 +463,37 @@ const handleConfirm = async () => {
     console.error('表单验证失败:', error);
   }
 };
+
+const initPermissionData = async () => {
+  try {
+    const userType = areaStore.getCurrentUserType;
+    const areaType = areaStore.getCurrentAreaType;
+    const areaCode = areaStore.getCurrentAreaCode;
+    
+    console.log('初始化权限数据:', { userType, areaType, areaCode });
+    
+    // 如果没有权限数据，尝试重新加载
+    if (!areaStore.hasAreaData && areaType && areaCode) {
+      console.log('权限数据为空，重新加载...');
+      areaStore.loadAreaData(areaType, areaCode);
+    }
+    
+    // 验证权限数据
+    setTimeout(() => {
+      if (areaStore.hasAreaData) {
+        console.log('权限数据加载成功:', areaStore.getCurrentAreaData);
+      } else {
+        console.warn('权限数据加载失败');
+        ElMessage.warning('无法加载权限数据，请刷新页面重试');
+      }
+    }, 100);
+    
+  } catch (error) {
+    console.error('初始化权限数据失败:', error);
+    ElMessage.error('初始化权限数据失败');
+  }
+};
+
 // 新增设备API调用
 const addDevice = async () => {
   try {
@@ -527,8 +678,11 @@ const handlePanelResize = (width: number) => {
 };
 
 // 生命周期（修改函数调用）
-onMounted(() => {
-  getCabinetList();
+onMounted(async () => {
+  // 🔥 使用工具类初始化权限数据
+  await initAreaSelectData();
+  // 获取柜子列表数据
+  await getCabinetList();
 });
 </script>
 
@@ -701,7 +855,7 @@ onMounted(() => {
                 v-model="deviceForm.province"
                 placeholder="请选择省份"
                 style="width: 100%"
-                @change="handleProvinceChange"
+                @change="handleProvinceChange(deviceForm)"
               >
                 <el-option
                   v-for="option in provinceOptions"
@@ -719,7 +873,7 @@ onMounted(() => {
                 placeholder="请选择城市"
                 style="width: 100%"
                 :disabled="!deviceForm.province"
-                @change="handleCityChange"
+                @change="handleCityChange(deviceForm)"
               >
                 <el-option
                   v-for="option in cityOptions"

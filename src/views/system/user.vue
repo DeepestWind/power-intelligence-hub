@@ -5,14 +5,13 @@ import { Edit, Delete, View, Setting, Plus, CreditCard, Box } from '@element-plu
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
-import { transformPcaToTree } from "@/utils/area";
+import { useAreaSelect } from "@/utils/useAreaSelect";
+import { usePageSearch } from "@/utils/useAreaFilter";
+//import { transformPcaToTree } from "@/utils/area";
 
 defineOptions({
   name: "UserManagement"
 });
-// 🔥 添加省市区数据源
-const areaData = transformPcaToTree();
-// 初始化 areaStore
 const areaStore = useAreaStore();
 // 用户数据接口
 interface UserData {
@@ -56,92 +55,72 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 区域筛选和表单搜索
-const areaFilter = ref({
-  province: '',
-  city: '',
-  district: ''
-});
-// 搜索表单
-const searchForm = ref({
-  userName: '',
-  department: '',
-  // employeeId: '',
-  // userType: '',
-  // adminLevel: '',
-  // status: ''
-});
-// 处理区域搜索事件，左侧areaSelect组件
-const handleAreaSearch = (area: AreaNode) => {
-  console.log('🎯 user.vue 接收到区域搜索事件:', area);
-  
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
-  
-  // 设置新的区域筛选
-  fillAreaFilter(area);
-  
-  // 自动执行搜索
-  handleSearch();
-};
+// // 区域筛选和表单搜索
+// const areaFilter = ref({
+//   province: '',
+//   city: '',
+//   district: ''
+// });
+// // 搜索表单
+// const searchForm = ref({
+//   userName: '',
+//   department: '',
+//   // employeeId: '',
+//   // userType: '',
+//   // adminLevel: '',
+//   // status: ''
+// });
 
-const fillAreaFilter = (area: AreaNode) => {
-  const code = area.code;
-  const label = area.label;
-  
-  if (code.endsWith('0000')) {
-    areaFilter.value.province = label;
-  } else if (code.endsWith('00')) {
-    areaFilter.value.city = label;
-  } else {
-    areaFilter.value.district = label;
+// 🔥 使用页面搜索工具类
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    userName: '',
+    department: '',
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getUserList();
   }
+);
+
+// 处理区域搜索事件，左侧areaSelect组件
+// const handleAreaSearch = (area: AreaNode) => {
+//   console.log('🎯 user.vue 接收到区域搜索事件:', area);
   
-  console.log('区域筛选已设置:', areaFilter.value);
-  ElMessage.info(`区域筛选已设置为: ${label}`);
-};
+//   // 清空区域筛选
+//   areaFilter.value = { province: '', city: '', district: '' };
+  
+//   // 设置新的区域筛选
+//   fillAreaFilter(area);
+  
+//   // 自动执行搜索
+//   handleSearch();
+// };
 
-// 🔥 省份选项
-const provinceOptions = computed(() => {
-  return areaData.map(item => ({
-    label: item.label,
-    value: item.label
-  }));
-});
-// 🔥 城市选项
-const cityOptions = computed(() => {
-  if (!userForm.value.province) return [];
-  const province = areaData.find(item => item.label === userForm.value.province);
-  return province ? province.children.map(item => ({
-    label: item.label,
-    value: item.label
-  })) : [];
-});
-// 🔥 区域选项
-const districtOptions = computed(() => {
-  if (!userForm.value.province || !userForm.value.city) return [];
-  const province = areaData.find(item => item.label === userForm.value.province);
-  if (!province) return [];
-  const city = province.children.find(item => item.label === userForm.value.city);
-  return city ? city.children.map(item => ({
-    label: item.label,
-    value: item.label
-  })) : [];
-});
-// 🔥 省份改变时清空城市和区域
-const handleUserProvinceChange = () => {
-  userForm.value.city = '';
-  userForm.value.district = '';
-};
-// 🔥 城市改变时清空区域
-const handleUserCityChange = () => {
-  userForm.value.district = '';
-};
-
-// 新增用户相关数据
-const dialogVisible = ref(false);
-const dialogTitle = ref('新增用户');
-const isEdit = ref(false);
+// const fillAreaFilter = (area: AreaNode) => {
+//   const code = area.code;
+//   const label = area.label;
+  
+//   if (code.endsWith('0000')) {
+//     areaFilter.value.province = label;
+//   } else if (code.endsWith('00')) {
+//     areaFilter.value.city = label;
+//   } else {
+//     areaFilter.value.district = label;
+//   }
+  
+//   console.log('区域筛选已设置:', areaFilter.value);
+//   ElMessage.info(`区域筛选已设置为: ${label}`);
+// };
 
 // 用户表单数据
 const userForm = ref({
@@ -157,6 +136,62 @@ const userForm = ref({
   address: '',
   // status: 1 // 🔥 删除状态字段
 });
+
+// 🔥 使用通用的省市区选择器工具类
+const {
+  provinceOptions,
+  cityOptions,
+  districtOptions,
+  handleProvinceChange,
+  handleCityChange,
+  validateAreaPermission,
+  initAreaSelectData,
+  hasPermissionData
+} = useAreaSelect(userForm);
+
+// // 🔥 省份选项
+// const provinceOptions = computed(() => {
+//   return areaData.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   }));
+// });
+// // 🔥 城市选项
+// const cityOptions = computed(() => {
+//   if (!userForm.value.province) return [];
+//   const province = areaData.find(item => item.label === userForm.value.province);
+//   return province ? province.children.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   })) : [];
+// });
+// // 🔥 区域选项
+// const districtOptions = computed(() => {
+//   if (!userForm.value.province || !userForm.value.city) return [];
+//   const province = areaData.find(item => item.label === userForm.value.province);
+//   if (!province) return [];
+//   const city = province.children.find(item => item.label === userForm.value.city);
+//   return city ? city.children.map(item => ({
+//     label: item.label,
+//     value: item.label
+//   })) : [];
+// });
+
+// 🔥 修改省市区改变事件处理
+const handleUserProvinceChange = () => {
+  handleProvinceChange(userForm.value);
+};
+
+const handleUserCityChange = () => {
+  handleCityChange(userForm.value);
+};
+
+// 新增用户相关数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('新增用户');
+const isEdit = ref(false);
+
+
 // 🔥 添加用户类型和管理员级别的自定义验证规则
 const validateAdminLevel = (rule: any, value: any, callback: any) => {
   const { userType } = userForm.value;
@@ -171,6 +206,22 @@ const validateAdminLevel = (rule: any, value: any, callback: any) => {
     callback();
   }
 };
+// 🔥 添加区域权限验证到表单验证规则
+const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
+  const { province, city, district } = userForm.value;
+  
+  // 只在有选择的情况下验证
+  if (province) {
+    if (!validateAreaPermission(province, city, district)) {
+      callback(new Error('您没有权限在该区域创建用户'));
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
+};
+
 // 表单验证规则
 const userFormRules = {
   userName: [
@@ -193,15 +244,16 @@ const userFormRules = {
     { validator: validateAdminLevel, trigger: 'change' } // 🔥 添加自定义验证
   ],
   // 🔥 省市区验证规则
+  // 🔥 添加区域权限验证
   province: [
-    { required: true, message: '请选择省份', trigger: 'change' } // 🔥 改为选择
+    { required: true, message: '请选择省份', trigger: 'change' },
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
-  // 🔥 修改城市和区域为非必选项
   city: [
-    // { required: true, message: '请选择城市', trigger: 'change' } // 🔥 删除必选验证
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   district: [
-    // { required: true, message: '请选择区域', trigger: 'change' } // 🔥 删除必选验证
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ]
 };
 
@@ -321,6 +373,7 @@ interface CabinetApiResponse {
 
 // 从API获取用户列表
 const getUserListApi = async (params: any = {}) => {
+  loading.value = true;
   try {
     // 构建查询参数
     const queryParams = new URLSearchParams();
@@ -548,46 +601,50 @@ const getUserList = async () => {
   }
 };
 
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getUserList();
-};
+// // 搜索
+// const handleSearch = () => {
+//   currentPage.value = 1;
+//   getUserList();
+// };
 
-// 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    userName: '',
-    department: '',
-    //employeeId: '',
-    // userType: '',
-    // adminLevel: '',
-    // status: ''
-  };
-  // 不清空区域筛选，保持用户选择的区域
-  handleSearch();
-};
+// // 重置搜索
+// const handleReset = () => {
+//   searchForm.value = {
+//     userName: '',
+//     department: '',
+//     //employeeId: '',
+//     // userType: '',
+//     // adminLevel: '',
+//     // status: ''
+//   };
+//   // 不清空区域筛选，保持用户选择的区域
+//   handleSearch();
+// };
 
-// 添加清空所有筛选条件函数
-const handleClearAll = () => {
-  searchForm.value = {
-    userName: '',
-    department: '',
-    //employeeId: '',
-    // userType: '',
-    // adminLevel: '',
-    // status: ''
-  };
-  areaFilter.value = {
-    province: '',
-    city: '',
-    district: ''
-  };
-  handleSearch();
-};
+// // 添加清空所有筛选条件函数
+// const handleClearAll = () => {
+//   searchForm.value = {
+//     userName: '',
+//     department: '',
+//     //employeeId: '',
+//     // userType: '',
+//     // adminLevel: '',
+//     // status: ''
+//   };
+//   areaFilter.value = {
+//     province: '',
+//     city: '',
+//     district: ''
+//   };
+//   handleSearch();
+// };
 
 // 打开新增用户弹窗
 const handleAddUser = () => {
+  if (!hasPermissionData.value) {
+    ElMessage.warning('权限数据未加载，请稍后再试');
+    return;
+  }
   dialogTitle.value = '新增用户';
   isEdit.value = false;
   resetUserForm();
@@ -633,6 +690,12 @@ const handleConfirm = async () => {
   
   try {
     await userFormRef.value.validate();
+    // 🔥 使用工具类的权限验证
+    const { province, city, district } = userForm.value;
+    if (province && !validateAreaPermission(province, city, district)) {
+      ElMessage.error('您没有权限在该区域创建用户，请重新选择');
+      return;
+    }
     
     if (isEdit.value) {
       console.log('执行更新操作，当前编辑用户:', currentEditUser.value);
@@ -1563,7 +1626,11 @@ const closeFaceDialog = () => {
 };
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
+  // 🔥 使用工具类初始化权限数据
+  await initAreaSelectData();
+  
+  // 获取用户列表
   getUserList();
 });
 </script>
