@@ -1,10 +1,12 @@
 <script setup lang='ts'>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting, Plus } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area"; // 添加类型导入
 import { useAreaStore } from "@/store/modules/area";
+import { useAreaSelect } from "@/utils/useAreaSelect";
+import { usePageSearch } from "@/utils/useAreaFilter";
 
 defineOptions({
   name: "ItemsManagement"
@@ -49,8 +51,8 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 初始化 areaStore
-const areaStore = useAreaStore();
+// // 初始化 areaStore
+// const areaStore = useAreaStore();
 
 // const emit = defineEmits<{
 //   areaSearch: [area: AreaNode] // 注意这里是 areaSearch，不是 area-search
@@ -63,56 +65,30 @@ const areaStore = useAreaStore();
 //   emit('areaSearch', data); // 确保这里调用了 emit
 // };
 
-// 搜索表单
-const searchForm = ref({
-  cabinetCode: '',
-  cabinetName: '',
-  materialCode: '',
-  materialName: '',
-  rfid: '',
-  experimentDate: '',
-  isDelete: ''
-});
-// 分离区域筛选和表单搜索
-const areaFilter = ref({
-  province: '',
-  city: '',
-  district: ''
-});
-
-// 处理区域搜索事件，左侧areaSelect组件
-const handleAreaSearch = (area: AreaNode) => {
-  console.log('接收到区域搜索事件:', area);
-  
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
-  
-  // 设置新的区域筛选
-  fillAreaFilter(area);
-  
-  // 自动执行搜索
-  handleSearch();
-};
-const fillAreaFilter = (area: AreaNode) => {
-  const code = area.code;
-  const label = area.label;
-  
-  if (code.endsWith('0000')) {
-    areaFilter.value.province = label;
-  } else if (code.endsWith('00')) {
-    areaFilter.value.city = label;
-  } else {
-    areaFilter.value.district = label;
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    cabinetCode: '',
+    cabinetName: '',
+    materialCode: '',
+    materialName: '',
+    rfid: '',
+    experimentDate: '',
+    isDelete: ''
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getItemList();
   }
-  
-  console.log('区域筛选已设置:', areaFilter.value); // 添加调试日志
-  ElMessage.info(`区域筛选已设置为: ${label}`);
-};
-
-// 新增物料相关数据
-const dialogVisible = ref(false);
-const dialogTitle = ref('新增物料');
-const isEdit = ref(false);
+);
 
 // 物料表单数据
 const itemForm = ref({
@@ -130,6 +106,91 @@ const itemForm = ref({
   isDelete: 1
 });
 
+const {
+  provinceOptions,
+  cityOptions,
+  districtOptions,
+  handleProvinceChange,
+  handleCityChange,
+  validateAreaPermission,
+  initAreaSelectData,
+  hasPermissionData
+} = useAreaSelect(itemForm);
+
+const handleItemProvinceChange = () => {
+  handleProvinceChange(itemForm.value);
+};
+
+const handleItemCityChange = () => {
+  handleCityChange(itemForm.value);
+};
+
+// 搜索表单
+// const searchForm = ref({
+//   cabinetCode: '',
+//   cabinetName: '',
+//   materialCode: '',
+//   materialName: '',
+//   rfid: '',
+//   experimentDate: '',
+//   isDelete: ''
+// });
+// 分离区域筛选和表单搜索
+// const areaFilter = ref({
+//   province: '',
+//   city: '',
+//   district: ''
+// });
+
+// // 处理区域搜索事件，左侧areaSelect组件
+// const handleAreaSearch = (area: AreaNode) => {
+//   console.log('接收到区域搜索事件:', area);
+  
+//   // 清空区域筛选
+//   areaFilter.value = { province: '', city: '', district: '' };
+  
+//   // 设置新的区域筛选
+//   fillAreaFilter(area);
+  
+//   // 自动执行搜索
+//   handleSearch();
+// };
+// const fillAreaFilter = (area: AreaNode) => {
+//   const code = area.code;
+//   const label = area.label;
+  
+//   if (code.endsWith('0000')) {
+//     areaFilter.value.province = label;
+//   } else if (code.endsWith('00')) {
+//     areaFilter.value.city = label;
+//   } else {
+//     areaFilter.value.district = label;
+//   }
+  
+//   console.log('区域筛选已设置:', areaFilter.value); // 添加调试日志
+//   ElMessage.info(`区域筛选已设置为: ${label}`);
+// };
+
+// 新增物料相关数据
+const dialogVisible = ref(false);
+const dialogTitle = ref('新增物料');
+const isEdit = ref(false);
+const currentEditItem = ref<ItemData | null>(null);
+
+// 🔥 修改表单验证规则，改为下拉选择并添加权限验证
+const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
+  const { province, city, district } = itemForm.value;
+  
+  if (province) {
+    if (!validateAreaPermission(province, city, district)) {
+      callback(new Error('您没有权限在该区域创建物料'));
+    } else {
+      callback();
+    }
+  } else {
+    callback();
+  }
+};
 // 表单验证规则
 const itemFormRules = {
   cabinetCode: [
@@ -153,13 +214,16 @@ const itemFormRules = {
     { required: true, message: '请选择实验日期', trigger: 'change' }
   ],
   province: [
-    { required: true, message: '请输入省份', trigger: 'blur' }
+    { required: true, message: '请选择省份', trigger: 'change' },
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   city: [
-    { required: true, message: '请输入城市', trigger: 'blur' }
+    { required: true, message: '请选择城市', trigger: 'change' },
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   district: [
-    { required: true, message: '请输入区域', trigger: 'blur' }
+    { required: true, message: '请选择区域', trigger: 'change' },
+    { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   address: [
     { required: true, message: '请输入地址', trigger: 'blur' }
@@ -260,51 +324,64 @@ const getItemList = async () => {
   }
 };
 
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getItemList();
-};
+// // 搜索
+// const handleSearch = () => {
+//   currentPage.value = 1;
+//   getItemList();
+// };
 
-// 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    rfid: '',
-    experimentDate: '',
-    isDelete: ''
-  };
-  handleSearch();
-};
+// // 重置搜索
+// const handleReset = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     rfid: '',
+//     experimentDate: '',
+//     isDelete: ''
+//   };
+//   handleSearch();
+// };
 
-// 清空所有搜索条件
-const handleClearAll = () => {
-  searchForm.value = {
-    cabinetCode: '',
-    cabinetName: '',
-    materialCode: '',
-    materialName: '',
-    rfid: '',
-    experimentDate: '',
-    isDelete: ''
-  };
-  areaFilter.value = {
-    province: '',
-    city: '',
-    district: ''
-  };
-  handleSearch();
-};
+// // 清空所有搜索条件
+// const handleClearAll = () => {
+//   searchForm.value = {
+//     cabinetCode: '',
+//     cabinetName: '',
+//     materialCode: '',
+//     materialName: '',
+//     rfid: '',
+//     experimentDate: '',
+//     isDelete: ''
+//   };
+//   areaFilter.value = {
+//     province: '',
+//     city: '',
+//     district: ''
+//   };
+//   handleSearch();
+// };
 
 // 打开新增物料弹窗
 const handleAddItem = () => {
+  // 检查是否有权限数据
+  if (!hasPermissionData.value) {
+    ElMessage.warning('权限数据未加载，请稍后再试');
+    return;
+  }
+
   dialogTitle.value = '新增物料';
   isEdit.value = false;
   resetItemForm();
   dialogVisible.value = true;
+
+  // 清除表单验证
+  nextTick(() => {
+    if (itemFormRef.value) {
+      itemFormRef.value.clearValidate();
+    }
+  });
 };
 
 // 重置表单
@@ -340,6 +417,13 @@ const handleConfirm = async () => {
   
   try {
     await itemFormRef.value.validate();
+
+    // 🔥 使用工具类的权限验证
+    const { province, city, district } = itemForm.value;
+    if (!validateAreaPermission(province, city, district)) {
+      ElMessage.error('您没有权限在该区域创建物料，请重新选择');
+      return;
+    }
     
     if (isEdit.value) {
       await updateItem();
@@ -479,6 +563,7 @@ const handleDelete = async (row: ItemData) => {
 const handleEdit = (row: ItemData) => {
   dialogTitle.value = '编辑物料';
   isEdit.value = true;
+  currentEditItem.value = row;
   
   // 填充表单数据
   itemForm.value = {
@@ -523,8 +608,11 @@ const formatDeleteStatus = (isDelete: number) => {
 };
 
 // 生命周期
-onMounted(() => {
-  getItemList();
+onMounted(async () => {
+  // 🔥 使用工具类初始化权限数据
+  await initAreaSelectData();
+  // 获取物料列表
+  await getItemList();
 });
 </script>
 
@@ -792,32 +880,58 @@ onMounted(() => {
           </el-col>
         </el-row>
 
+        <!-- 🔥 修改：省市区改为下拉选择 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
-              <el-input
+              <el-select
                 v-model="itemForm.province"
-                placeholder="请输入省份"
-                clearable
-              />
+                placeholder="请选择省份"
+                style="width: 100%"
+                @change="handleItemProvinceChange"
+              >
+                <el-option
+                  v-for="option in provinceOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="城市" prop="city">
-              <el-input
+              <el-select
                 v-model="itemForm.city"
-                placeholder="请输入城市"
-                clearable
-              />
+                placeholder="请选择城市"
+                style="width: 100%"
+                :disabled="!itemForm.province"
+                @change="handleItemCityChange"
+              >
+                <el-option
+                  v-for="option in cityOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="区域" prop="district">
-              <el-input
+              <el-select
                 v-model="itemForm.district"
-                placeholder="请输入区域"
-                clearable
-              />
+                placeholder="请选择区域"
+                style="width: 100%"
+                :disabled="!itemForm.city"
+              >
+                <el-option
+                  v-for="option in districtOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
