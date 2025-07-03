@@ -85,7 +85,19 @@ export const useUserStore = defineStore("pure-user", {
                   data.extra.userVo.city,
                   data.extra.userVo.district
                 );
-                areaStore.setUserType(data.extra.userVo.adminLevel, areaCode);
+                //areaStore.setUserType(data.extra.userVo.adminLevel, areaCode);
+                // 🔥 使用新的方法，传入完整信息
+                areaStore.setUserType(
+                  data.extra.userVo.adminLevel, 
+                  areaCode,
+                  {
+                    userType: data.extra.userVo.userType,
+                    province: data.extra.userVo.province || '',
+                    city: data.extra.userVo.city || '',
+                    district: data.extra.userVo.district || '',
+                    department: data.extra.userVo.department || ''
+                  }
+                );
               }
             }
             resolve(data);

@@ -81,19 +81,82 @@ export const transformPcaToTree = (): AreaNode[] => {
 };
 
 // 根据用户类型和代码获取对应的数据
-export const getAreaDataByUserType = (areaType, areaCode): AreaNode[] => {
+export const getAreaDataByUserType = (areaType: any, areaCode: any): AreaNode[] => {
   const allData = transformPcaToTree();
-  console.log(areaCode);
+  
+  console.log('根据权限类型获取数据:', { areaType, areaCode });
+  
+  // 根据权限级别返回对应数据
   switch (areaType) {
-    case 3:
+    case 3: // 省级管理员
       return getProvinceData(allData, areaCode);
-    case 2:
+    case 2: // 市级管理员
       return getCityData(allData, areaCode);
-    case 1:
+    case 1: // 区级管理员
       return getDistrictData(allData, areaCode);
     default:
+      console.warn('未知的权限级别:', areaType);
       return [];
   }
+};
+// 🔥 新增：获取完整的区域数据（超级管理员使用）
+export const getAllAreaData = (): AreaNode[] => {
+  return transformPcaToTree();
+};
+
+// 🔥 新增：根据用户权限获取数据的统一入口
+export const getAreaDataByUserPermission = (
+  userType: number | null,
+  areaType: any,
+  areaCode: any
+): AreaNode[] => {
+  console.log('用户权限信息:', { userType, areaType, areaCode });
+  
+  // 超级管理员：返回所有数据
+  if (userType === 2) {
+    console.log('超级管理员权限：返回全部区域数据');
+    return getAllAreaData();
+  }
+  
+  // 普通管理员：根据权限级别返回数据
+  if (areaType && areaCode) {
+    return getAreaDataByUserType(areaType, areaCode);
+  }
+  
+  // 兜底：返回空数组
+  console.warn('无法确定用户权限，返回空数据');
+  return [];
+};
+
+// 🔥 新增：检查用户是否有权限访问某个区域
+export const hasAreaPermission = (
+  targetAreaCode: string,
+  userType: number | null,
+  areaType: any,
+  areaCode: any
+): boolean => {
+  // 超级管理员：有所有权限
+  if (userType === 2) {
+    return true;
+  }
+  
+  // 普通管理员：检查目标区域是否在权限范围内
+  const userAreaData = getAreaDataByUserType(areaType, areaCode);
+  
+  // 递归检查目标区域代码是否在权限数据中
+  const checkCodeInData = (data: AreaNode[], code: string): boolean => {
+    for (const node of data) {
+      if (node.code === code) {
+        return true;
+      }
+      if (node.children && checkCodeInData(node.children, code)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  return checkCodeInData(userAreaData, targetAreaCode);
 };
 
 // 获取省级数据（返回该省的所有数据）
