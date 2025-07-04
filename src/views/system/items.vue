@@ -75,13 +75,13 @@ const {
 } = usePageSearch(
   // 初始搜索数据
   {
-    cabinetCode: '',
+    //cabinetCode: '',
     cabinetName: '',
     materialCode: '',
     materialName: '',
-    rfid: '',
-    experimentDate: '',
-    isDelete: ''
+    //rfid: '',
+    //experimentDate: '',
+    //isDelete: ''
   },
   // 搜索回调函数
   () => {
@@ -249,18 +249,18 @@ const getItemListApi = async (params: any = {}) => {
     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
     // 添加搜索参数
-    if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+    //if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
     if (params.materialCode) queryParams.append('materialCode', params.materialCode);
     if (params.materialName) queryParams.append('materialName', params.materialName);
-    if (params.rfid) queryParams.append('rfid', params.rfid);
+    //if (params.rfid) queryParams.append('rfid', params.rfid);
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
-    if (params.experimentDate) queryParams.append('experimentDate', params.experimentDate);
-    if (params.isDelete !== '' && params.isDelete !== undefined) {
-      queryParams.append('isDelete', params.isDelete);
-    }
+    //if (params.experimentDate) queryParams.append('experimentDate', params.experimentDate);
+    // if (params.isDelete !== '' && params.isDelete !== undefined) {
+    //   queryParams.append('isDelete', params.isDelete);
+    // }
     
     // 构建完整的URL
     const baseUrl = `/api/power/material/page`;
@@ -626,14 +626,14 @@ onMounted(async () => {
         <!-- 搜索区域 -->
         <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
-            <el-form-item label="柜子编号">
+            <!-- <el-form-item label="柜子编号">
               <el-input 
                 v-model="searchForm.cabinetCode" 
                 placeholder="请输入柜子编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="柜子名称">
               <el-input 
                 v-model="searchForm.cabinetName" 
@@ -658,16 +658,16 @@ onMounted(async () => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="RFID标签">
+            <!-- <el-form-item label="RFID标签">
               <el-input 
                 v-model="searchForm.rfid" 
                 placeholder="请输入RFID标签" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <!-- 移除省市区输入框 -->
-            <el-form-item label="实验日期">
+            <!-- <el-form-item label="实验日期">
               <el-date-picker
                 v-model="searchForm.experimentDate"
                 type="date"
@@ -676,8 +676,8 @@ onMounted(async () => {
                 value-format="YYYY-MM-DD"
                 style="width: 150px"
               />
-            </el-form-item>
-            <el-form-item label="状态">
+            </el-form-item> -->
+            <!-- <el-form-item label="状态">
               <el-select 
                 v-model="searchForm.isDelete" 
                 placeholder="请选择状态"
@@ -691,7 +691,7 @@ onMounted(async () => {
                   :value="option.value"
                 />
               </el-select>
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
