@@ -24,9 +24,32 @@ interface CabinetData {
   city: string;
   district: string;
   address: string;
-  onlineStatus: number | null; // 1-在线, 0-离线, null-未知
+  onlineStatus?: number | null; // 🔥 改为可选字段，通过其他API更新
   createTime?: string;
   updatedTime?: string;
+}
+// 🔥 新增：在线状态相关接口
+interface OnlineStatusApiResponse {
+  code: number;
+  msg: string;
+  data: string[];
+}
+// 🔥 新增：一键开柜API请求接口
+interface OpenCabinetRequest {
+  cabinetCode: string;
+  type: string;
+}
+// 🔥 新增：一键开柜API响应接口
+interface OpenCabinetApiResponse {
+  code: number;
+  msg: string;
+  data?: any;
+}
+// 🔥 新增：单个设备状态检查API响应接口
+interface DeviceStatusApiResponse {
+  code: number;
+  msg: string;
+  data: boolean; // true-在线, false-离线
 }
 
 // API响应接口
@@ -321,9 +344,6 @@ const getCabinetListApi = async (params: any = {}) => {
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
-    // if (params.onlineStatus !== null && params.onlineStatus !== undefined) {
-    //   queryParams.append('onlineStatus', params.onlineStatus.toString());
-    // }
     
     // 构建完整的URL
     const baseUrl = `/api/power/cabinet/page`;
@@ -353,12 +373,178 @@ const getCabinetListApi = async (params: any = {}) => {
     throw error;
   }
 };
+// 🔥 新增：获取在线设备列表的API
+const getOnlineDevicesApi = async (): Promise<OnlineStatusApiResponse> => {
+  try {
+    const response = await fetch('/api/power/dtu/devices', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: OnlineStatusApiResponse = await response.json();
+    console.log('获取在线设备API响应:', data);
+    return data;
+    
+  } catch (error) {
+    console.error('获取在线设备API请求失败:', error);
+    throw error;
+  }
+};
+
+// 🔥 新增：一键开柜API调用
+const openCabinetApi = async (cabinetCode: string, type: string = 'open'): Promise<OpenCabinetApiResponse> => {
+  try {
+    const requestData: OpenCabinetRequest = {
+      cabinetCode,
+      type
+    };
+    
+    console.log('发送开柜请求:', requestData);
+    
+    const response = await fetch('/api/power/dtu/devices/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: OpenCabinetApiResponse = await response.json();
+    console.log('开柜API响应:', data);
+    return data;
+    
+  } catch (error) {
+    console.error('开柜API请求失败:', error);
+    throw error;
+  }
+};
+// 🔥 新增：检查单个设备状态API
+const checkDeviceStatusApi = async (cabinetCode: string): Promise<DeviceStatusApiResponse> => {
+  try {
+    const response = await fetch(`/api/power/dtu/devices/status/${cabinetCode}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: DeviceStatusApiResponse = await response.json();
+    console.log(`设备 ${cabinetCode} 状态检查响应:`, data);
+    return data;
+    
+  } catch (error) {
+    console.error(`检查设备 ${cabinetCode} 状态失败:`, error);
+    throw error;
+  }
+};
+
+const updateDeviceOnlineStatus = async () => {
+  try {
+    console.log('开始更新设备在线状态...');
+    
+    // 获取在线设备列表
+    const response = await getOnlineDevicesApi();
+    
+    if (response.code === 200) {
+      const onlineDeviceCodes = response.data; // 在线设备编号列表
+      console.log('在线设备列表:', onlineDeviceCodes);
+      
+      // 更新当前表格数据的在线状态
+      tableData.value = tableData.value.map(device => {
+        // 检查设备编号是否在在线列表中
+        const isOnline = onlineDeviceCodes.includes(device.cabinetCode);
+        
+        return {
+          ...device,
+          onlineStatus: isOnline ? 1 : 0 // 1-在线, 0-离线
+        };
+      });
+      
+      console.log('设备在线状态更新完成');
+      
+      // 🔥 可选：显示更新结果统计
+      const onlineCount = tableData.value.filter(device => device.onlineStatus === 1).length;
+      const totalCount = tableData.value.length;
+      console.log(`在线状态更新完成: ${onlineCount}/${totalCount} 设备在线`);
+      
+    } else {
+      console.error('获取在线设备列表失败:', response.msg);
+      ElMessage.error(response.msg || '获取在线设备列表失败');
+    }
+    
+  } catch (error) {
+    console.error('更新设备在线状态失败:', error);
+    ElMessage.error('更新设备在线状态失败，请检查网络连接');
+  }
+};
+
+// 🔥 新增：检查单个设备状态
+const handleCheckDeviceStatus = async (row: CabinetData) => {
+  // 显示检查中的加载状态
+  const loadingMessage = ElMessage({
+    message: `正在检查设备 "${row.cabinetName}" 的在线状态...`,
+    type: 'info',
+    duration: 0 // 不自动关闭
+  });
+  
+  try {
+    // 调用状态检查API
+    const result = await checkDeviceStatusApi(row.cabinetCode);
+    
+    // 关闭加载提示
+    loadingMessage.close();
+    
+    if (result.code === 200) {
+      const isOnline = result.data;
+      const statusText = isOnline ? '在线' : '离线';
+      const statusType = isOnline ? 'success' : 'warning';
+      
+      // 更新表格中该设备的状态
+      const deviceIndex = tableData.value.findIndex(device => device.cabinetCode === row.cabinetCode);
+      if (deviceIndex !== -1) {
+        tableData.value[deviceIndex].onlineStatus = isOnline ? 1 : 0;
+      }
+      
+      // 显示检查结果
+      ElMessage({
+        message: `设备 "${row.cabinetName}" 当前状态：${statusText}`,
+        type: statusType,
+        duration: 3000
+      });
+      
+      console.log(`设备 ${row.cabinetCode} 状态检查完成:`, statusText);
+      
+    } else {
+      ElMessage.error(result.msg || '设备状态检查失败');
+      console.error('设备状态检查失败:', result);
+    }
+    
+  } catch (error) {
+    // 关闭加载提示
+    loadingMessage.close();
+    ElMessage.error('设备状态检查失败，请检查网络连接');
+    console.error('设备状态检查API调用失败:', error);
+  }
+};
 
 // 获取柜子列表
 const getCabinetList = async () => {
   loading.value = true;
   try {
-    // 调用真实的API
     const response = await getCabinetListApi({
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -366,11 +552,18 @@ const getCabinetList = async () => {
       ...searchForm.value
     });
     
-    // 处理API响应
     if (response.code === 200) {
-      tableData.value = response.data.records;
+      // 🔥 修改：先设置数据，在线状态暂时设为null
+      tableData.value = response.data.records.map(item => ({
+        ...item,
+        onlineStatus: null // 🔥 初始设为null，等待状态更新
+      }));
       total.value = response.data.total;
       console.log('获取到的柜子数据:', tableData.value);
+      
+      // 🔥 新增：获取数据后立即更新在线状态
+      await updateDeviceOnlineStatus();
+      
     } else {
       ElMessage.error(response.msg || '获取数据失败');
     }
@@ -378,14 +571,11 @@ const getCabinetList = async () => {
   } catch (error) {
     ElMessage.error('获取柜子列表失败，请检查网络连接');
     console.error('获取柜子列表错误:', error);
-    
-    // 失败时显示模拟数据作为备用
-    //tableData.value = mockData;
-    //total.value = mockData.length;
   } finally {
     loading.value = false;
   }
 };
+
 
 
 // 打开新增设备弹窗
@@ -506,7 +696,7 @@ const addDevice = async () => {
       city: deviceForm.value.city,
       district: deviceForm.value.district,
       address: deviceForm.value.address,
-      onlineStatus: 0, // 新增时默认在线状态为离线
+      //onlineStatus: 0, 
       createTime: new Date().toISOString(),
       updatedTime: new Date().toISOString()
       // maxTemperature: deviceForm.value.maxTemperature,
@@ -572,6 +762,11 @@ const updateDevice = async () => {
 // 一键开柜
 const handleOpenCabinet = async (row: CabinetData) => {
   // 检查设备在线状态
+  if (row.onlineStatus === null || row.onlineStatus === undefined) {
+    ElMessage.warning('设备状态未知，无法执行开柜操作');
+    return;
+  }
+  
   if (row.onlineStatus !== 1) {
     ElMessage.warning('设备离线，无法执行开柜操作');
     return;
@@ -588,13 +783,45 @@ const handleOpenCabinet = async (row: CabinetData) => {
       }
     );
     
-    // 这里调用开柜API
-    // await openCabinetApi(row.id);
+    // 🔥 新增：显示开柜中的加载状态
+    const loadingMessage = ElMessage({
+      message: '正在发送开柜命令...',
+      type: 'info',
+      duration: 0 // 不自动关闭
+    });
     
-    ElMessage.success('开柜命令已发送，请检查设备状态');
+    try {
+      // 🔥 新增：调用开柜API
+      const result = await openCabinetApi(row.cabinetCode, 'open');
+      
+      // 关闭加载提示
+      loadingMessage.close();
+      
+      if (result.code === 200) {
+        ElMessage.success(`设备 "${row.cabinetName}" 开柜命令发送成功！`);
+        console.log('开柜成功:', result);
+        
+        // 🔥 可选：开柜成功后刷新在线状态
+        setTimeout(() => {
+          updateDeviceOnlineStatus();
+        }, 2000); // 2秒后刷新状态
+        
+      } else {
+        ElMessage.error(result.msg || '开柜命令发送失败');
+        console.error('开柜失败:', result);
+      }
+      
+    } catch (error) {
+      // 关闭加载提示
+      loadingMessage.close();
+      ElMessage.error('开柜命令发送失败，请检查网络连接');
+      console.error('开柜API调用失败:', error);
+    }
     
-  } catch {
-    ElMessage.info('已取消开柜操作');
+  } catch (error) {
+    if (error === 'cancel') {
+      ElMessage.info('已取消开柜操作');
+    }
   }
 };
 
@@ -683,6 +910,7 @@ onMounted(async () => {
   await initAreaSelectData();
   // 获取柜子列表数据
   await getCabinetList();
+  
 });
 </script>
 
@@ -713,17 +941,6 @@ onMounted(async () => {
                 style="width: 200px"
               />
             </el-form-item>
-            <!-- <el-form-item label="在线状态">
-              <el-select 
-                v-model="searchForm.onlineStatus" 
-                placeholder="请选择状态"
-                clearable
-                style="width: 120px"
-              >
-                <el-option label="在线" value="1" />
-                <el-option label="离线" value="0" />
-              </el-select>
-            </el-form-item> -->
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
@@ -743,9 +960,21 @@ onMounted(async () => {
           <template #header>
             <div class="card-header">
               <span class="title">设备列表</span>
-              <el-button type="primary" size="small" @click="handleAddDevice">
-                新增设备
-              </el-button>
+
+              <div class="header-actions">
+                <!-- 🔥 新增：刷新在线状态按钮 -->
+                <el-button 
+                  type="success" 
+                  size="small" 
+                  @click="updateDeviceOnlineStatus"
+                  :loading="loading"
+                >
+                  刷新状态
+                </el-button>
+                <el-button type="primary" size="small" @click="handleAddDevice">
+                  新增设备
+                </el-button>
+              </div>
             </div>
           </template>
 
@@ -767,14 +996,24 @@ onMounted(async () => {
             <el-table-column label="在线状态" min-width="100" align="center">
               <template #default="{ row }">
                 <el-tag 
-                  :type="row.onlineStatus === 1 ? 'success' : row.onlineStatus === 0 ? 'danger' : 'info'"
+                  :type="row.onlineStatus === 1 ? 'success' : 
+                        row.onlineStatus === 0 ? 'danger' : 'info'"
                 >
-                  {{ row.onlineStatus === 1 ? '在线' : row.onlineStatus === 0 ? '离线' : '未知' }}
+                  {{ row.onlineStatus === 1 ? '在线' : 
+                    row.onlineStatus === 0 ? '离线' : '未知' }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" min-width="300" fixed="right">
               <template #default="{ row }">
+                <el-button 
+                  type="info" 
+                  size="small" 
+                  :icon="View"
+                  @click="handleCheckDeviceStatus(row)"
+                >
+                  检查状态
+                </el-button>                
                 <el-button 
                   type="primary" 
                   size="small" 
@@ -1039,6 +1278,11 @@ onMounted(async () => {
             font-weight: 500;
             color: #303133;
           }
+          // 🔥 新增：头部操作按钮样式
+          .header-actions {
+            display: flex;
+            gap: 10px;
+          }          
         }
         
         .pagination-container {
