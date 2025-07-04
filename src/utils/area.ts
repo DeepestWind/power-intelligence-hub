@@ -1,4 +1,11 @@
+interface PcaData {
+  [province: string]: {
+    [city: string]: string[];
+  };
+}
+
 import pcaData from "@/assets/area/pca.json";
+const typedPcaData = pcaData as PcaData;
 export interface AreaNode {
   label: string;
   code: string;
@@ -36,7 +43,7 @@ export const generateAreaCode = (
 export const transformPcaToTree = (): AreaNode[] => {
   const result: AreaNode[] = [];
 
-  Object.keys(pcaData).forEach((provinceName, provinceIndex) => {
+  Object.keys(typedPcaData).forEach((provinceName, provinceIndex) => {
     const provinceCode = `${(provinceIndex + 1).toString().padStart(2, "0")}0000`;
     const provinceNode: AreaNode = {
       label: provinceName,
@@ -45,7 +52,7 @@ export const transformPcaToTree = (): AreaNode[] => {
       children: []
     };
 
-    const cities = pcaData[provinceName as keyof typeof pcaData];
+    const cities = typedPcaData[provinceName];
     let cityIndex = 1;
 
     Object.keys(cities).forEach(cityName => {
@@ -57,8 +64,9 @@ export const transformPcaToTree = (): AreaNode[] => {
         children: []
       };
 
-      const districts = cities[cityName as keyof typeof cities];
+      const districts = cities[cityName];
 
+      // 🔥 现在 districts 类型明确为 string[]
       districts.forEach((districtName: string, districtIndex: number) => {
         const districtCode = `${cityCode.substring(0, 4)}${(districtIndex + 1).toString().padStart(2, "0")}`;
         const districtNode: AreaNode = {
