@@ -190,6 +190,78 @@ export const exportReturnRecords = async (params: ExportParams): Promise<void> =
   }
 };
 
+// 🔥 新增：导出领用归还总表
+/**
+ * 导出领用归还总表
+ * @param params 导出参数
+ * @returns 下载文件的Promise
+ */
+export const exportBorrowReturnSummary = async (params: ExportParams): Promise<void> => {
+  try {
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    queryParams.append('startDate', params.startDate);
+    queryParams.append('endDate', params.endDate);
+    
+    // 构建完整的URL
+    const url = `/api/power/returned-records/download/summary?${queryParams.toString()}`;
+    
+    console.log('导出领用归还总表API请求URL:', url);
+    
+    // 发送GET请求
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let fileName = '领用归还总表.xlsx'; // 默认文件名
+    
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (fileNameMatch && fileNameMatch[1]) {
+        fileName = fileNameMatch[1].replace(/['"]/g, '');
+      }
+    }
+    
+    // 如果文件名没有扩展名，添加.xlsx
+    if (!fileName.includes('.')) {
+      fileName += '.xlsx';
+    }
+    
+    // 获取文件blob
+    const blob = await response.blob();
+    
+    // 创建下载链接
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+    
+    console.log('领用归还总表下载成功:', fileName);
+    
+  } catch (error) {
+    console.error('导出领用归还总表API请求失败:', error);
+    throw error;
+  }
+};
+
+
 // ==================== 工具函数 ====================
 
 /**
@@ -315,6 +387,7 @@ export const getQuantityDifference = (usageQuantity: number, returnQuantity: num
 export default {
   getReturnRecordsList,
   exportReturnRecords,
+  exportBorrowReturnSummary, // 🔥 新增：导出领用归还总表
   calculateUsageDuration,
   isFullyReturned,
   formatDateTime,

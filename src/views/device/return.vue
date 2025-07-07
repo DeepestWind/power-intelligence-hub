@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { View, Download, Search } from '@element-plus/icons-vue';
+import { View, Download, Search, Document } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
@@ -11,6 +11,7 @@ import { usePageSearch } from "@/utils/useAreaFilter";
 import { 
   getReturnRecordsList as getReturnRecordsListApi,
   exportReturnRecords as exportReturnRecordsApi,
+  exportBorrowReturnSummary as exportBorrowReturnSummaryApi,
   calculateUsageDuration,
   isFullyReturned,
   formatDateTime,
@@ -45,6 +46,14 @@ const exportForm = ref<ExportParams>({
   endDate: ''
 });
 const exportLoading = ref(false);
+
+// 🔥 新增：导出总表相关的响应式数据
+const summaryExportDialogVisible = ref(false);
+const summaryExportForm = ref<ExportParams>({
+  startDate: '',
+  endDate: ''
+});
+const summaryExportLoading = ref(false);
 
 // 🔥 使用页面搜索工具类
 const {
@@ -123,6 +132,16 @@ const handleExport = () => {
   // 🔥 使用工具函数获取默认日期范围
   exportForm.value = getDefaultExportDateRange();
 };
+
+// 🔥 新增：导出领用归还总表
+const handleSummaryExport = () => {
+  // 打开导出总表弹窗
+  summaryExportDialogVisible.value = true;
+  
+  // 🔥 使用工具函数获取默认日期范围
+  summaryExportForm.value = getDefaultExportDateRange();
+};
+
 // 🔥 修改：确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
   // 🔥 使用工具函数验证参数
@@ -145,10 +164,43 @@ const confirmExport = async () => {
     exportLoading.value = false;
   }
 };
+
+// 🔥 新增：确认导出领用归还总表
+const confirmSummaryExport = async () => {
+  // 🔥 使用工具函数验证参数
+  const validation = validateExportParams(summaryExportForm.value);
+  if (!validation.valid) {
+    ElMessage.error(validation.message);
+    return;
+  }
+  
+  try {
+    summaryExportLoading.value = true;
+    // 🔥 使用 API 方法导出总表
+    await exportBorrowReturnSummaryApi(summaryExportForm.value);
+    summaryExportDialogVisible.value = false;
+    ElMessage.success('导出领用归还总表成功');
+  } catch (error) {
+    ElMessage.error('导出领用归还总表失败，请稍后重试');
+    console.error('导出领用归还总表失败:', error);
+  } finally {
+    summaryExportLoading.value = false;
+  }
+};
+
 // 取消导出
 const cancelExport = () => {
   exportDialogVisible.value = false;
   exportForm.value = {
+    startDate: '',
+    endDate: ''
+  };
+};
+
+// 🔥 新增：取消导出领用归还总表
+const cancelSummaryExport = () => {
+  summaryExportDialogVisible.value = false;
+  summaryExportForm.value = {
     startDate: '',
     endDate: ''
   };
@@ -297,6 +349,9 @@ onMounted(() => {
                 <el-button type="success" size="small" :icon="Download" @click="handleExport">
                   导出记录
                 </el-button>
+                <el-button type="warning" size="small" :icon="Document" @click="handleSummaryExport">
+                  导出领用归还总表
+                </el-button>                
               </div>
             </div>
           </template>
@@ -449,6 +504,73 @@ onMounted(() => {
       </div>
     </template>
   </el-dialog>
+    <!-- 🔥 新增：导出领用归还总表弹窗 -->
+    <el-dialog
+      v-model="summaryExportDialogVisible"
+      title="导出领用归还总表"
+      width="500px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+    >
+      <el-form :model="summaryExportForm" label-width="100px" label-position="right">
+        <el-form-item label="开始日期" required>
+          <el-date-picker
+            v-model="summaryExportForm.startDate"
+            type="date"
+            placeholder="选择开始日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+            :disabledDate="(date) => date > new Date()"
+          />
+        </el-form-item>
+        <el-form-item label="结束日期" required>
+          <el-date-picker
+            v-model="summaryExportForm.endDate"
+            type="date"
+            placeholder="选择结束日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+            :disabledDate="(date) => date > new Date() || (summaryExportForm.startDate && date < new Date(summaryExportForm.startDate))"
+          />
+        </el-form-item>
+        
+        <!-- 提示信息 -->
+        <el-alert
+          title="导出说明"
+          type="warning"
+          :closable="false"
+          style="margin-top: 15px"
+        >
+          <template #default>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+              <li>导出的数据将包含指定日期范围内的领用和归还记录汇总</li>
+              <li>包含物料的借出、归还、超时等统计信息</li>
+              <li>日期范围不能超过365天</li>
+              <li>文件格式为Excel (.xlsx)</li>
+              <li>导出可能需要几秒钟时间，请耐心等待</li>
+            </ul>
+          </template>
+        </el-alert>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="cancelSummaryExport" :disabled="summaryExportLoading">
+            取消
+          </el-button>
+          <el-button 
+            type="primary" 
+            @click="confirmSummaryExport"
+            :loading="summaryExportLoading"
+            :disabled="!summaryExportForm.startDate || !summaryExportForm.endDate"
+          >
+            {{ summaryExportLoading ? '导出中...' : '确认导出' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>  
   </div>
 </template>
 
