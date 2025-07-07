@@ -24,38 +24,6 @@ defineOptions({
   name: "HumitureSettings"
 });
 
-// 温湿度设备数据接口
-// interface HumitureData {
-//   id: number;
-//   cabinetCode: string;
-//   cabinetName: string;
-//   province: string;
-//   city: string;
-//   district: string;
-//   address: string;
-//   maxTemperature: number | null;
-//   minTemperature: number | null;
-//   maxHumidity: number | null;
-//   minHumidity: number | null;
-//   operationMode: number; // 0-自动模式, 1-手动模式
-//   maxTemperatureDifference: number | null;
-//   onlineStatus: number | null; // 1-在线, 0-离线, null-未知
-//   createTime?: string;
-//   updatedTime?: string;
-// }
-
-// API响应接口
-// interface ApiResponse {
-//   code: number;
-//   msg: string;
-//   data: {
-//     records: HumitureData[];
-//     total: number;
-//     current: number;
-//     size: number;
-//     pages: number;
-//   };
-// }
 
 // 响应式数据
 const loading = ref(false);
@@ -87,50 +55,6 @@ const {
   }
 );
 
-// // 分离区域筛选和表单搜索
-// const areaFilter = ref({
-//   province: '',
-//   city: '',
-//   district: ''
-// });
-
-// // 搜索表单
-// const searchForm = ref({
-//   cabinetCode: '',
-//   cabinetName: '',
-//   operationMode: '',
-//   onlineStatus: ''
-// });
-
-// // 处理区域搜索事件
-// const handleAreaSearch = (area: AreaNode) => {
-//   console.log('🎯 humiture.vue 接收到区域搜索事件:', area);
-  
-//   // 清空区域筛选
-//   areaFilter.value = { province: '', city: '', district: '' };
-  
-//   // 设置新的区域筛选
-//   fillAreaFilter(area);
-  
-//   // 自动执行搜索
-//   handleSearch();
-// };
-
-// const fillAreaFilter = (area: AreaNode) => {
-//   const code = area.code;
-//   const label = area.label;
-  
-//   if (code.endsWith('0000')) {
-//     areaFilter.value.province = label;
-//   } else if (code.endsWith('00')) {
-//     areaFilter.value.city = label;
-//   } else {
-//     areaFilter.value.district = label;
-//   }
-  
-//   console.log('区域筛选已设置:', areaFilter.value);
-//   ElMessage.info(`区域筛选已设置为: ${label}`);
-// };
 
 // 编辑温湿度设置相关数据
 const dialogVisible = ref(false);
@@ -180,68 +104,6 @@ const humitureFormRules = ref<FormRules<HumitureFormData>>({
 
 const humitureFormRef = ref<FormInstance>();
 
-// // 运行模式选项
-// const operationModeOptions = [
-//   { label: '自动模式', value: 0 },
-//   { label: '手动模式', value: 1 }
-// ];
-
-// // 在线状态选项
-// const onlineStatusOptions = [
-//   { label: '在线', value: 1 },
-//   { label: '离线', value: 0 },
-//   { label: '未知', value: null }
-// ];
-
-// 从API获取温湿度设备列表
-// const getHumitureListApi = async (params: any = {}) => {
-//   try {
-//     // 构建查询参数
-//     const queryParams = new URLSearchParams();
-    
-//     // 添加分页参数
-//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-//     // 添加搜索参数
-//     if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-//     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-//     if (params.province) queryParams.append('province', params.province);
-//     if (params.city) queryParams.append('city', params.city);
-//     if (params.district) queryParams.append('district', params.district);
-//     if (params.operationMode !== '' && params.operationMode !== undefined) {
-//       queryParams.append('operationMode', params.operationMode);
-//     }
-//     if (params.onlineStatus !== '' && params.onlineStatus !== undefined) {
-//       queryParams.append('onlineStatus', params.onlineStatus);
-//     }
-    
-//     // 构建完整的URL
-//     const baseUrl = `/api/power/cabinet/page`;
-//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-//     console.log('温湿度API请求URL:', url);
-    
-//     // 发送GET请求
-//     const response = await fetch(url, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-    
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-    
-//     const data: ApiResponse = await response.json();
-//     return data;
-    
-//   } catch (error) {
-//     console.error('温湿度API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 修改：获取温湿度设备列表（使用 API 方法）
 const getHumitureList = async () => {
@@ -275,38 +137,6 @@ const getHumitureList = async () => {
   }
 };
 
-// 搜索
-// const handleSearch = () => {
-//   currentPage.value = 1;
-//   getHumitureList();
-// };
-
-// 重置搜索
-// const handleReset = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     operationMode: '',
-//     onlineStatus: ''
-//   };
-//   handleSearch();
-// };
-
-// 清空所有筛选条件
-// const handleClearAll = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     operationMode: '',
-//     onlineStatus: ''
-//   };
-//   areaFilter.value = {
-//     province: '',
-//     city: '',
-//     district: ''
-//   };
-//   handleSearch();
-// };
 
 // 🔥 修改：打开温湿度设置弹窗
 const handleEditHumiture = (row: HumitureData) => {
@@ -462,11 +292,6 @@ const handleSizeChange = (size: number) => {
   getHumitureList();
 };
 
-// 格式化运行模式
-// const formatOperationMode = (mode: number) => {
-//   const option = operationModeOptions.find(opt => opt.value === mode);
-//   return option ? option.label : '未知';
-// };
 
 // 生命周期
 onMounted(() => {

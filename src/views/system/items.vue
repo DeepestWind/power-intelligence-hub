@@ -29,37 +29,6 @@ defineOptions({
   name: "ItemsManagement"
 });
 
-// 物料数据接口
-// interface ItemData {
-//   id: number;
-//   cabinetId: number;
-//   cabinetCode: string;
-//   cabinetName: string;
-//   materialCode: string;
-//   materialName: string;
-//   rfid: string;
-//   experimentDate: string;
-//   province: string;
-//   city: string;
-//   district: string;
-//   address: string;
-//   isDelete: number; // 1-正常, 0-已删除
-//   createTime: string;
-//   updatedTime: string;
-// }
-
-// API响应接口
-// interface ApiResponse {
-//   code: number;
-//   msg: string;
-//   data: {
-//     records: ItemData[];
-//     total: number;
-//     current: number;
-//     size: number;
-//     pages: number;
-//   };
-// }
 
 // 响应式数据
 const loading = ref(false);
@@ -68,19 +37,6 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// // 初始化 areaStore
-// const areaStore = useAreaStore();
-
-// const emit = defineEmits<{
-//   areaSearch: [area: AreaNode] // 注意这里是 areaSearch，不是 area-search
-// }>();
-// const handleNodeClick = (data: AreaNode) => {
-//   areaStore.setSelectedArea(data);
-//   console.log('选中的地区:', data);
-  
-//   // 发送区域搜索事件给父组件
-//   emit('areaSearch', data); // 确保这里调用了 emit
-// };
 
 const {
   areaFilter,
@@ -156,51 +112,6 @@ const handleItemCityChange = () => {
   handleCityChange(itemForm.value);
 };
 
-// 搜索表单
-// const searchForm = ref({
-//   cabinetCode: '',
-//   cabinetName: '',
-//   materialCode: '',
-//   materialName: '',
-//   rfid: '',
-//   experimentDate: '',
-//   isDelete: ''
-// });
-// 分离区域筛选和表单搜索
-// const areaFilter = ref({
-//   province: '',
-//   city: '',
-//   district: ''
-// });
-
-// // 处理区域搜索事件，左侧areaSelect组件
-// const handleAreaSearch = (area: AreaNode) => {
-//   console.log('接收到区域搜索事件:', area);
-  
-//   // 清空区域筛选
-//   areaFilter.value = { province: '', city: '', district: '' };
-  
-//   // 设置新的区域筛选
-//   fillAreaFilter(area);
-  
-//   // 自动执行搜索
-//   handleSearch();
-// };
-// const fillAreaFilter = (area: AreaNode) => {
-//   const code = area.code;
-//   const label = area.label;
-  
-//   if (code.endsWith('0000')) {
-//     areaFilter.value.province = label;
-//   } else if (code.endsWith('00')) {
-//     areaFilter.value.city = label;
-//   } else {
-//     areaFilter.value.district = label;
-//   }
-  
-//   console.log('区域筛选已设置:', areaFilter.value); // 添加调试日志
-//   ElMessage.info(`区域筛选已设置为: ${label}`);
-// };
 
 // 新增物料相关数据
 const dialogVisible = ref(false);
@@ -253,58 +164,6 @@ const deleteStatusOptions = [
   { label: '已删除', value: 0 }
 ];
 
-// 从API获取物料列表
-// const getItemListApi = async (params: any = {}) => {
-//   try {
-//     // 构建查询参数
-//     const queryParams = new URLSearchParams();
-    
-//     // 添加分页参数
-//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-//     // 添加搜索参数
-//     //if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-//     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-//     if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-//     if (params.materialName) queryParams.append('materialName', params.materialName);
-//     //if (params.rfid) queryParams.append('rfid', params.rfid);
-//     if (params.province) queryParams.append('province', params.province);
-//     if (params.city) queryParams.append('city', params.city);
-//     if (params.district) queryParams.append('district', params.district);
-//     //if (params.experimentDate) queryParams.append('experimentDate', params.experimentDate);
-//     // if (params.isDelete !== '' && params.isDelete !== undefined) {
-//     //   queryParams.append('isDelete', params.isDelete);
-//     // }
-    
-//     // 构建完整的URL
-//     const baseUrl = `/api/power/material/page`;
-//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-//     console.log('物料API请求URL:', url);
-    
-//     // 发送GET请求
-//     const response = await fetch(url, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         // 如果需要认证，添加token
-//         // 'Authorization': `Bearer ${getToken()}`
-//       }
-//     });
-    
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-    
-//     const data: ApiResponse = await response.json();
-//     return data;
-    
-//   } catch (error) {
-//     console.error('物料API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 修改：获取物料列表（使用 API 方法）
 const getItemList = async () => {
@@ -431,44 +290,6 @@ const handleCabinetSizeChange = (size: number) => {
   getCabinetList();
 };
 
-// // 搜索
-// const handleSearch = () => {
-//   currentPage.value = 1;
-//   getItemList();
-// };
-
-// // 重置搜索
-// const handleReset = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     materialCode: '',
-//     materialName: '',
-//     rfid: '',
-//     experimentDate: '',
-//     isDelete: ''
-//   };
-//   handleSearch();
-// };
-
-// // 清空所有搜索条件
-// const handleClearAll = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     materialCode: '',
-//     materialName: '',
-//     rfid: '',
-//     experimentDate: '',
-//     isDelete: ''
-//   };
-//   areaFilter.value = {
-//     province: '',
-//     city: '',
-//     district: ''
-//   };
-//   handleSearch();
-// };
 
 // 打开新增物料弹窗
 const handleAddItem = () => {
@@ -592,28 +413,6 @@ const updateItem = async () => {
   }
 };
 
-// 删除物料API调用
-// const deleteItemApi = async (id: number) => {
-//   try {
-//     const response = await fetch(`/api/power/material/${id}`, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除物料API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 修改：删除物料（使用 API 方法）
 const handleDelete = async (row: MaterialData) => {

@@ -26,29 +26,6 @@ defineOptions({
 // 初始化 areaStore
 const areaStore = useAreaStore();
 
-// // 部门数据接口
-// interface DepartmentData {
-//   id: number;
-//   departmentName: string;
-//   province: string;
-//   city: string;
-//   district: string;
-//   createTime: string;
-//   updatedTime: string;
-// }
-
-// // API响应接口
-// interface ApiResponse {
-//   code: number;
-//   msg: string;
-//   data: {
-//     records: DepartmentData[];
-//     total: number;
-//     current: number;
-//     size: number;
-//     pages: number;
-//   };
-// }
 
 // 响应式数据
 const loading = ref(false);
@@ -62,17 +39,6 @@ const dialogTitle = ref('');
 const isEdit = ref(false);
 const currentEditId = ref<number | null>(null);
 
-// 分离区域筛选和表单搜索
-// const areaFilter = ref({
-//   province: '',
-//   city: '',
-//   district: ''
-// });
-
-// 搜索表单
-// const searchForm = ref({
-//   departmentName: ''
-// });
 
 const {
   areaFilter,
@@ -93,35 +59,6 @@ const {
   }
 );
 
-// 处理区域搜索事件，左侧areaSelect组件
-// const handleAreaSearch = (area: AreaNode) => {
-//   console.log('🎯 department.vue 接收到区域搜索事件:', area);
-  
-//   // 清空区域筛选
-//   areaFilter.value = { province: '', city: '', district: '' };
-  
-//   // 设置新的区域筛选
-//   fillAreaFilter(area);
-  
-//   // 自动执行搜索
-//   handleSearch();
-// };
-
-// const fillAreaFilter = (area: AreaNode) => {
-//   const code = area.code;
-//   const label = area.label;
-  
-//   if (code.endsWith('0000')) {
-//     areaFilter.value.province = label;
-//   } else if (code.endsWith('00')) {
-//     areaFilter.value.city = label;
-//   } else {
-//     areaFilter.value.district = label;
-//   }
-  
-//   console.log('区域筛选已设置:', areaFilter.value);
-//   ElMessage.info(`区域筛选已设置为: ${label}`);
-// };
 
 // 表单数据
 const formData = ref<DepartmentFormData>({
@@ -186,152 +123,6 @@ const formRules = {
 // 🔥 表单引用
 const formRef = ref();
 
-// // 🔥 省市县数据 - 使用现有的区域工具
-// import { transformPcaToTree } from "@/utils/area";
-// const areaData = transformPcaToTree();
-
-// // 🔥 省份选项
-// const provinceOptions = computed(() => {
-//   return areaData.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   }));
-// });
-// // 🔥 城市选项
-// const cityOptions = computed(() => {
-//   if (!formData.value.province) return [];
-//   const province = areaData.find(item => item.label === formData.value.province);
-//   return province ? province.children.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   })) : [];
-// });
-// // 🔥 区域选项
-// const districtOptions = computed(() => {
-//   if (!formData.value.province || !formData.value.city) return [];
-//   const province = areaData.find(item => item.label === formData.value.province);
-//   if (!province) return [];
-//   const city = province.children.find(item => item.label === formData.value.city);
-//   return city ? city.children.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   })) : [];
-// });
-
-
-// 从API获取部门列表
-// const getDepartmentListApi = async (params: any = {}) => {
-//   try {
-//     // 构建查询参数
-//     const queryParams = new URLSearchParams();
-    
-//     // 添加分页参数
-//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-//     // 添加搜索参数
-//     if (params.departmentName) queryParams.append('departmentName', params.departmentName);
-//     if (params.province) queryParams.append('province', params.province);
-//     if (params.city) queryParams.append('city', params.city);
-//     if (params.district) queryParams.append('district', params.district);
-    
-//     // 构建完整的URL
-//     const baseUrl = `/api/power/department/page`;
-//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-//     console.log('部门API请求URL:', url);
-    
-//     // 发送GET请求
-//     const response = await fetch(url, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-    
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-    
-//     const data: ApiResponse = await response.json();
-//     return data;
-    
-//   } catch (error) {
-//     console.error('部门API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 新增部门API
-// const addDepartmentApi = async (data: any) => {
-//   try {
-//     const response = await fetch('/api/power/department/save', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(data)
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('新增部门API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('新增部门API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 编辑部门API
-// const updateDepartmentApi = async (data: any) => {
-//   try {
-//     const response = await fetch('/api/power/department/update', {
-//       method: 'PUT',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(data)
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('编辑部门API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('编辑部门API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 删除部门API
-// const deleteDepartmentApi = async (id: number) => {
-//   try {
-//     const response = await fetch(`/api/power/department/${id}`, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('删除部门API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除部门API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 提交表单
 const handleSubmit = async () => {
@@ -436,32 +227,6 @@ const getDepartmentList = async () => {
   }
 };
 
-// // 搜索
-// const handleSearch = () => {
-//   currentPage.value = 1;
-//   getDepartmentList();
-// };
-
-// // 重置搜索
-// const handleReset = () => {
-//   searchForm.value = {
-//     departmentName: ''
-//   };
-//   handleSearch();
-// };
-
-// // 清空所有筛选条件
-// const handleClearAll = () => {
-//   searchForm.value = {
-//     departmentName: ''
-//   };
-//   areaFilter.value = {
-//     province: '',
-//     city: '',
-//     district: ''
-//   };
-//   handleSearch();
-// };
 
 // 查看部门详情
 const handleView = (row: DepartmentData) => {

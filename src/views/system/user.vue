@@ -37,39 +37,6 @@ defineOptions({
   name: "UserManagement"
 });
 const areaStore = useAreaStore();
-// 用户数据接口
-// interface UserData {
-//   id: number;
-//   userName: string;
-//   department: string | null;
-//   bindCard: string;
-//   employeeId: string;
-//   password: string;
-//   userType: number; // 用户类型：1-普通用户, 2-管理员等
-//   adminLevel: number; // 管理员级别：1-区级, 2-市级, 3-省级, 4-超级管理员
-//   province: string | null;
-//   city: string | null;
-//   district: string | null;
-//   address: string | null;
-//   status: number; // 状态：1-启用, 0-禁用，🔥 已不在业务中使用
-//   cabinetManagement: string | null;
-//   faceRecognition: string | null;
-//   fingerprintRecognition: string | null;
-//   createTime: string;
-//   updatedTime: string;
-// }
-// API响应接口
-// interface ApiResponse {
-//   code: number;
-//   msg: string;
-//   data: {
-//     records: UserData[];
-//     total: number;
-//     current: number;
-//     size: number;
-//     pages: number;
-//   };
-// }
 
 // 响应式数据
 const loading = ref(false);
@@ -78,21 +45,6 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// // 区域筛选和表单搜索
-// const areaFilter = ref({
-//   province: '',
-//   city: '',
-//   district: ''
-// });
-// // 搜索表单
-// const searchForm = ref({
-//   userName: '',
-//   department: '',
-//   // employeeId: '',
-//   // userType: '',
-//   // adminLevel: '',
-//   // status: ''
-// });
 
 // 🔥 使用页面搜索工具类
 const {
@@ -115,35 +67,6 @@ const {
   }
 );
 
-// 处理区域搜索事件，左侧areaSelect组件
-// const handleAreaSearch = (area: AreaNode) => {
-//   console.log('🎯 user.vue 接收到区域搜索事件:', area);
-  
-//   // 清空区域筛选
-//   areaFilter.value = { province: '', city: '', district: '' };
-  
-//   // 设置新的区域筛选
-//   fillAreaFilter(area);
-  
-//   // 自动执行搜索
-//   handleSearch();
-// };
-
-// const fillAreaFilter = (area: AreaNode) => {
-//   const code = area.code;
-//   const label = area.label;
-  
-//   if (code.endsWith('0000')) {
-//     areaFilter.value.province = label;
-//   } else if (code.endsWith('00')) {
-//     areaFilter.value.city = label;
-//   } else {
-//     areaFilter.value.district = label;
-//   }
-  
-//   console.log('区域筛选已设置:', areaFilter.value);
-//   ElMessage.info(`区域筛选已设置为: ${label}`);
-// };
 
 // 用户表单数据
 const userForm = ref<UserFormData>({
@@ -171,33 +94,6 @@ const {
   hasPermissionData
 } = useAreaSelect(userForm);
 
-// // 🔥 省份选项
-// const provinceOptions = computed(() => {
-//   return areaData.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   }));
-// });
-// // 🔥 城市选项
-// const cityOptions = computed(() => {
-//   if (!userForm.value.province) return [];
-//   const province = areaData.find(item => item.label === userForm.value.province);
-//   return province ? province.children.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   })) : [];
-// });
-// // 🔥 区域选项
-// const districtOptions = computed(() => {
-//   if (!userForm.value.province || !userForm.value.city) return [];
-//   const province = areaData.find(item => item.label === userForm.value.province);
-//   if (!province) return [];
-//   const city = province.children.find(item => item.label === userForm.value.city);
-//   return city ? city.children.map(item => ({
-//     label: item.label,
-//     value: item.label
-//   })) : [];
-// });
 
 // 🔥 修改省市区改变事件处理
 const handleUserProvinceChange = () => {
@@ -363,314 +259,12 @@ const userIcCards = ref<UserIcCard[]>([]);
 const icCardLoading = ref(false);
 const addIcCardVisible = ref(false);
 const newIcCard = ref('');
-// 🔥 IC卡数据接口
-// interface UserIcCard {
-//   icCard: string;
-// }
-// 🔥 IC卡API响应接口
-// interface IcCardApiResponse {
-//   code: number;
-//   msg: string;
-//   data: string[];
-// }
 // 🔥 添加绑定柜子相关数据
 const userCabinets = ref<UserCabinet[]>([]);
 const cabinetLoading = ref(false);
 const addCabinetVisible = ref(false);
 const newCabinetId = ref('');
 const newCabinetName = ref('');
-// 🔥 绑定柜子数据接口
-// interface UserCabinet {
-//   id: number;
-//   userId: number;
-//   cabinetId: number;
-//   cabinetName: string;
-// }
-// 🔥 绑定柜子API响应接口
-// interface CabinetApiResponse {
-//   code: number;
-//   msg: string;
-//   data: Record<string, string>; // 对象形式，key是柜子ID，value是柜子名称
-// }
-
-// 从API获取用户列表
-// const getUserListApi = async (params: any = {}) => {
-//   loading.value = true;
-//   try {
-//     // 构建查询参数
-//     const queryParams = new URLSearchParams();
-    
-//     // 添加分页参数
-//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-//     // 添加搜索参数
-//     if (params.userName) queryParams.append('userName', params.userName);
-//     if (params.department) queryParams.append('department', params.department);
-//     // if (params.employeeId) queryParams.append('employeeId', params.employeeId);
-//     // if (params.userType !== '' && params.userType !== undefined) {
-//     //   queryParams.append('userType', params.userType);
-//     // }
-//     // if (params.adminLevel !== '' && params.adminLevel !== undefined) {
-//     //   queryParams.append('adminLevel', params.adminLevel);
-//     // }
-//     if (params.province) queryParams.append('province', params.province);
-//     if (params.city) queryParams.append('city', params.city);
-//     if (params.district) queryParams.append('district', params.district);
-//     // if (params.status !== '' && params.status !== undefined) {
-//     //   queryParams.append('status', params.status);
-//     // }
-    
-//     // 构建完整的URL
-//     const baseUrl = `/api/power/user/page`;
-//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-//     console.log('用户API请求URL:', url);
-    
-//     // 发送GET请求
-//     const response = await fetch(url, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         // 如果需要认证，添加token
-//         // 'Authorization': `Bearer ${getToken()}`
-//       }
-//     });
-    
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-    
-//     const data: ApiResponse = await response.json();
-//     return data;
-    
-//   } catch (error) {
-//     console.error('用户API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 获取用户IC卡列表API
-// const getUserIcCardsApi = async (userId: number) => {
-//   try {
-//     const response = await fetch(`/api/power/user-ic/${userId}`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result: IcCardApiResponse = await response.json();
-//     console.log('获取用户IC卡API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('获取用户IC卡API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 添加用户IC卡API
-// const addUserIcCardApi = async (data: Partial<UserIcCard>) => {
-//   try {
-//     const response = await fetch('/api/power/user-ic/save', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(data)
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('添加用户IC卡API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('添加用户IC卡API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 删除用户IC卡API
-// const deleteUserIcCardApi = async (userId: number, icCard: string) => {
-//   try {
-//     const response = await fetch(`/api/power/user-ic/${userId}/${icCard}`, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('删除用户IC卡API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除用户IC卡API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 获取用户绑定柜子列表API
-// const getUserCabinetsApi = async (userId: number) => {
-//   try {
-//     const response = await fetch(`/api/power/user-cabinet-relation/getCabinets/${userId}`, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result: CabinetApiResponse = await response.json();
-//     console.log('获取用户绑定柜子API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('获取用户绑定柜子API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 添加用户绑定柜子API
-// const addUserCabinetApi = async (data: Partial<UserCabinet>) => {
-//   try {
-//     const response = await fetch('/api/power/user-cabinet-relation/save', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify(data)
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('添加用户绑定柜子API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('添加用户绑定柜子API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 🔥 删除用户绑定柜子API
-// const deleteUserCabinetApi = async (userId: number, cabinetId: number) => {
-//   try {
-//     const response = await fetch(`/api/power/user-cabinet-relation/delete/${userId}/${cabinetId}`, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('删除用户绑定柜子API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除用户绑定柜子API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 获取用户人脸信息API
-// const getUserFacesApi = async (userId: number) => {
-//   try {
-//     // 🔥 添加缓存控制参数，强制重新获取
-//     const timestamp = Date.now();
-//     const response = await fetch(`/api/power/minio/view/${userId}?t=${timestamp}`, {
-//       method: 'GET',
-//       headers: {
-//         // 🔥 添加缓存控制头
-//         'Cache-Control': 'no-cache, no-store, must-revalidate',
-//         'Pragma': 'no-cache',
-//         'Expires': '0'
-//       }
-//     });
-
-//     if (!response.ok) {
-//       if (response.status === 404) {
-//         return { code: 404, msg: '用户暂无人脸照片' };
-//       }
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const blob = await response.blob();
-//     const imageUrl = URL.createObjectURL(blob);
-    
-//     console.log('获取人脸信息API响应: 图片URL已创建');
-    
-//     return { 
-//       code: 200, 
-//       msg: '获取成功', 
-//       data: imageUrl
-//     };
-    
-//   } catch (error) {
-//     console.error('获取人脸信息API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 上传人脸照片API
-// const uploadFaceApi = async (userId: number, file: File) => {
-//   try {
-//     const formData = new FormData();
-//     formData.append('file', file);
-
-//     const response = await fetch(`/api/power/minio/upload/${userId}`, {
-//       method: 'POST',
-//       body: formData
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('上传人脸照片API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('上传人脸照片API请求失败:', error);
-//     throw error;
-//   }
-// };
-// 删除人脸照片API
-// const deleteFaceApi = async (userId: number) => {
-//   try {
-//     const response = await fetch(`/api/power/minio/delete/${userId}`, {
-//       method: 'DELETE'
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     console.log('删除人脸照片API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除人脸照片API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 修改：获取用户列表（使用 API 方法）
 const getUserList = async () => {
@@ -704,43 +298,6 @@ const getUserList = async () => {
   }
 };
 
-// // 搜索
-// const handleSearch = () => {
-//   currentPage.value = 1;
-//   getUserList();
-// };
-
-// // 重置搜索
-// const handleReset = () => {
-//   searchForm.value = {
-//     userName: '',
-//     department: '',
-//     //employeeId: '',
-//     // userType: '',
-//     // adminLevel: '',
-//     // status: ''
-//   };
-//   // 不清空区域筛选，保持用户选择的区域
-//   handleSearch();
-// };
-
-// // 添加清空所有筛选条件函数
-// const handleClearAll = () => {
-//   searchForm.value = {
-//     userName: '',
-//     department: '',
-//     //employeeId: '',
-//     // userType: '',
-//     // adminLevel: '',
-//     // status: ''
-//   };
-//   areaFilter.value = {
-//     province: '',
-//     city: '',
-//     district: ''
-//   };
-//   handleSearch();
-// };
 
 // 打开新增用户弹窗
 const handleAddUser = () => {
@@ -870,28 +427,6 @@ const updateUser = async () => {
   }
 };
 
-// 删除用户API调用
-// const deleteUserApi = async (id: number) => {
-//   try {
-//     const response = await fetch(`/api/power/user/${id}`, {
-//       method: 'DELETE',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result = await response.json();
-//     return result;
-    
-//   } catch (error) {
-//     console.error('删除用户API请求失败:', error);
-//     throw error;
-//   }
-// };
 
 // 🔥 修改：删除用户（使用 API 方法）
 const handleDelete = async (row: UserData) => {
@@ -1146,63 +681,6 @@ const selectedCabinet = ref<CabinetListItem | null>(null);
 const cabinetListCurrentPage = ref(1);
 const cabinetListPageSize = ref(10);
 const cabinetListTotal = ref(0);
-// 🔥 柜子列表项接口
-// interface CabinetListItem {
-//   id: number;
-//   cabinetCode: string;
-//   cabinetName: string;
-//   province?: string;
-//   city?: string;
-//   district?: string;
-//   address?: string;
-//   onlineStatus?: number;
-// }
-// 🔥 柜子列表API响应接口
-// interface CabinetListApiResponse {
-//   code: number;
-//   msg: string;
-//   data: {
-//     records: CabinetListItem[];
-//     total: number;
-//     current: number;
-//     size: number;
-//     pages: number;
-//   };
-// }
-// 🔥 获取柜子列表API
-// const getCabinetListApi = async (params: any = {}) => {
-//   try {
-//     const queryParams = new URLSearchParams();
-    
-//     // 添加分页参数
-//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-//     const baseUrl = `/api/power/cabinet/page`;
-//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-//     console.log('获取柜子列表API请求URL:', url);
-    
-//     const response = await fetch(url, {
-//       method: 'GET',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       }
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const result: CabinetListApiResponse = await response.json();
-//     console.log('获取柜子列表API响应:', result);
-//     return result;
-    
-//   } catch (error) {
-//     console.error('获取柜子列表API请求失败:', error);
-//     throw error;
-//   }
-// };
 // 🔥 修改：加载用户绑定柜子信息（使用 API 方法）
 const loadUserCabinets = async (userId: number) => {
   cabinetLoading.value = true;
