@@ -6,6 +6,23 @@ import { View, Download, Search, Clock } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
+import { usePageSearch } from "@/utils/useAreaFilter";
+
+// 🔥 新增：导入领用记录 API
+import { 
+  getBorrowRecordsList as getBorrowRecordsListApi,
+  exportBorrowRecords as exportBorrowRecordsApi,
+  calculateBorrowDuration,
+  formatDateTime,
+  getBorrowStatus,
+  validateExportParams,
+  getDefaultExportDateRange,
+  getQuantityTagType,
+  type BorrowRecordData,
+  type BorrowRecordQueryParams,
+  type ExportParams
+} from '@/api/requisition';
+
 
 defineOptions({
   name: "BorrowRecords"
@@ -13,34 +30,6 @@ defineOptions({
 
 // 初始化 areaStore
 const areaStore = useAreaStore();
-
-// 领用记录数据接口
-interface BorrowRecordData {
-  id: number;
-  cabinetId: number;
-  cabinetCode: string;
-  cabinetName: string;
-  materialId: number;
-  materialCode: string;
-  materialName: string;
-  usageQuantity: number;
-  borrowName: string;
-  createTime: string;
-  updatedTime: string;
-}
-
-// API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: BorrowRecordData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
 
 // 响应式数据
 const loading = ref(false);
@@ -50,133 +39,58 @@ const pageSize = ref(10);
 const total = ref(0);
 // 导出相关的响应式数据
 const exportDialogVisible = ref(false);
-const exportForm = ref({
+const exportForm = ref<ExportParams>({
   startDate: '',
   endDate: ''
 });
 const exportLoading = ref(false);
 
-// 分离区域筛选和表单搜索
-const areaFilter = ref({
-  province: '',
-  city: '',
-  district: ''
-});
-
-// 搜索表单
-const searchForm = ref({
-  cabinetCode: '',
-  cabinetName: '',
-  materialCode: '',
-  materialName: '',
-  borrowName: '',
-  createTimeStart: '',
-  createTimeEnd: '',
-  usageQuantityMin: null as number | null, 
-  usageQuantityMax: null as number | null
-});
-
-// 处理区域搜索事件
-// const handleAreaSearch = (area: AreaNode) => {
-//   console.log('🎯 borrow-records.vue 接收到区域搜索事件:', area);
-  
-//   // 清空区域筛选
-//   areaFilter.value = { province: '', city: '', district: '' };
-  
-//   // 设置新的区域筛选
-//   fillAreaFilter(area);
-  
-//   // 自动执行搜索
-//   handleSearch();
-// };
-
-const fillAreaFilter = (area: AreaNode) => {
-  const code = area.code;
-  const label = area.label;
-  
-  if (code.endsWith('0000')) {
-    areaFilter.value.province = label;
-  } else if (code.endsWith('00')) {
-    areaFilter.value.city = label;
-  } else {
-    areaFilter.value.district = label;
+// 🔥 使用页面搜索工具类
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    cabinetCode: '',
+    cabinetName: '',
+    materialCode: '',
+    materialName: '',
+    borrowName: '',
+    createTimeStart: '',
+    createTimeEnd: '',
+    usageQuantityMin: null as number | null,
+    usageQuantityMax: null as number | null
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getBorrowRecordsList();
   }
-  
-  console.log('区域筛选已设置:', areaFilter.value);
-  ElMessage.info(`区域筛选已设置为: ${label}`);
-};
+);
 
-// 从API获取领用记录列表
-const getBorrowRecordsApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    
-    // 添加分页参数
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-    // 后端暂未设置搜索参数
-    // if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    // if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    // if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-    // if (params.materialName) queryParams.append('materialName', params.materialName);
-    // if (params.borrowName) queryParams.append('borrowName', params.borrowName);
-    // if (params.province) queryParams.append('province', params.province);
-    // if (params.city) queryParams.append('city', params.city);
-    // if (params.district) queryParams.append('district', params.district);
-    // if (params.createTimeStart) queryParams.append('createTimeStart', params.createTimeStart);
-    // if (params.createTimeEnd) queryParams.append('createTimeEnd', params.createTimeEnd);
-    // if (params.usageQuantityMin) queryParams.append('usageQuantityMin', params.usageQuantityMin);
-    // if (params.usageQuantityMax) queryParams.append('usageQuantityMax', params.usageQuantityMax);
-    
-    // 构建完整的URL
-    const baseUrl = `/api/power/borrowed-records/borrowRecords`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-    console.log('领用记录API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    return data;
-    
-  } catch (error) {
-    console.error('领用记录API请求失败:', error);
-    throw error;
-  }
-};
 
-// 获取领用记录列表
+
+// 🔥 修改：获取领用记录列表（使用 API 方法）
 const getBorrowRecordsList = async () => {
   loading.value = true;
   try {
-    // 合并区域筛选和表单搜索条件
-    const searchParams = {
+    // 🔥 使用 API 方法和类型，包含区域筛选
+    const params: BorrowRecordQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      //搜素条件暂未设置
-      // ...areaFilter.value,
-      // ...searchForm.value
+      ...areaFilter.value,
+      ...searchForm.value
     };
     
-    console.log('领用记录搜索参数:', searchParams);
+    console.log('领用记录搜索参数:', params);
     
-    const response = await getBorrowRecordsApi(searchParams);
+    const response = await getBorrowRecordsListApi(params);
     
-    // 处理API响应
     if (response.code === 200) {
       tableData.value = response.data.records;
       total.value = response.data.total;
@@ -193,48 +107,6 @@ const getBorrowRecordsList = async () => {
   }
 };
 
-// 搜索
-// const handleSearch = () => {
-//   currentPage.value = 1;
-//   getBorrowRecordsList();
-// };
-
-// 重置搜索
-// const handleReset = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     materialCode: '',
-//     materialName: '',
-//     borrowName: '',
-//     createTimeStart: '',
-//     createTimeEnd: '',
-//     usageQuantityMin: null,
-//     usageQuantityMax: null
-//   };
-//   handleSearch();
-// };
-
-// 清空所有筛选条件
-// const handleClearAll = () => {
-//   searchForm.value = {
-//     cabinetCode: '',
-//     cabinetName: '',
-//     materialCode: '',
-//     materialName: '',
-//     borrowName: '',
-//     createTimeStart: '',
-//     createTimeEnd: '',
-//     usageQuantityMin: null,
-//     usageQuantityMax: null
-//   };
-//   areaFilter.value = {
-//     province: '',
-//     city: '',
-//     district: ''
-//   };
-//   handleSearch();
-// };
 
 // 查看记录详情
 const handleView = (row: BorrowRecordData) => {
@@ -242,46 +114,28 @@ const handleView = (row: BorrowRecordData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
-// 导出记录
+// 🔥 修改：导出记录（使用工具函数）
 const handleExport = () => {
   // 打开导出弹窗
   exportDialogVisible.value = true;
   
-  // 设置默认日期范围（最近30天）
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  
-  exportForm.value = {
-    startDate: thirtyDaysAgo.toISOString().split('T')[0], // YYYY-MM-DD 格式
-    endDate: today.toISOString().split('T')[0]
-  };
+  // 🔥 使用工具函数获取默认日期范围
+  exportForm.value = getDefaultExportDateRange();
 };
-// 确认导出
+
+// 🔥 修改：确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
-  if (!exportForm.value.startDate || !exportForm.value.endDate) {
-    ElMessage.error('请选择导出日期范围');
-    return;
-  }
-  
-  // 验证日期范围
-  const startDate = new Date(exportForm.value.startDate);
-  const endDate = new Date(exportForm.value.endDate);
-  
-  if (startDate > endDate) {
-    ElMessage.error('开始日期不能大于结束日期');
-    return;
-  }
-  
-  // 验证日期范围不超过365天
-  const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays > 365) {
-    ElMessage.error('导出日期范围不能超过365天');
+  // 🔥 使用工具函数验证参数
+  const validation = validateExportParams(exportForm.value);
+  if (!validation.valid) {
+    ElMessage.error(validation.message);
     return;
   }
   
   try {
     exportLoading.value = true;
-    await downloadBorrowedRecords(exportForm.value.startDate, exportForm.value.endDate);
+    // 🔥 使用 API 方法导出
+    await exportBorrowRecordsApi(exportForm.value);
     exportDialogVisible.value = false;
     ElMessage.success('导出成功');
   } catch (error) {
@@ -291,6 +145,7 @@ const confirmExport = async () => {
     exportLoading.value = false;
   }
 };
+
 // 取消导出
 const cancelExport = () => {
   exportDialogVisible.value = false;
@@ -299,73 +154,7 @@ const cancelExport = () => {
     endDate: ''
   };
 };
-// 调用导出API
-const downloadBorrowedRecords = async (startDate: string, endDate: string) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    queryParams.append('startDate', startDate);
-    queryParams.append('endDate', endDate);
-    
-    // 构建完整的URL
-    const url = `/api/power/borrowed-records/download/borrowed?${queryParams.toString()}`;
-    
-    console.log('导出API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    // 获取文件名
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let fileName = '领用记录.xlsx'; // 默认文件名
-    
-    if (contentDisposition) {
-      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (fileNameMatch && fileNameMatch[1]) {
-        fileName = fileNameMatch[1].replace(/['"]/g, '');
-      }
-    }
-    
-    // 如果文件名没有扩展名，添加.xlsx
-    if (!fileName.includes('.')) {
-      fileName += '.xlsx';
-    }
-    
-    // 获取文件blob
-    const blob = await response.blob();
-    
-    // 创建下载链接
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-    
-    console.log('文件下载成功:', fileName);
-    
-  } catch (error) {
-    console.error('导出API请求失败:', error);
-    throw error;
-  }
-};
+
 
 // 分页改变
 const handlePageChange = (page: number) => {
@@ -379,46 +168,6 @@ const handleSizeChange = (size: number) => {
   getBorrowRecordsList();
 };
 
-// 计算领用时长（从领用到现在）
-const calculateBorrowDuration = (createTime: string) => {
-  const borrowed = new Date(createTime);
-  const now = new Date();
-  const diffMs = now.getTime() - borrowed.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  
-  if (diffDays > 0) {
-    return `${diffDays}天${diffHours}小时`;
-  } else {
-    return `${diffHours}小时`;
-  }
-};
-
-// 格式化日期时间
-const formatDateTime = (dateTime: string) => {
-  return new Date(dateTime).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 根据领用时长判断状态
-const getBorrowStatus = (createTime: string) => {
-  const borrowed = new Date(createTime);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - borrowed.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffDays <= 1) {
-    return { type: 'success' as const, text: '正常' };
-  } else if (diffDays <= 7) {
-    return { type: 'warning' as const, text: '提醒' };
-  } else {
-    return { type: 'danger' as const, text: '超期' };
-  }
-};
 
 
 // 生命周期

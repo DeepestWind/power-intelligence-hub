@@ -3,41 +3,35 @@
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { View, Clock, Warning } from '@element-plus/icons-vue';
+import AreaSelect from "@/components/AreaSelect/index.vue";
+import type { AreaNode } from "@/utils/area";
+import { useAreaStore } from "@/store/modules/area";
+import { usePageSearch } from "@/utils/useAreaFilter";
+
+// 🔥 新增：导入超时记录 API
+import { 
+  getOvertimeRecordsList as getOvertimeRecordsListApi,
+  exportOvertimeRecords as exportOvertimeRecordsApi,
+  calculateOvertimeDuration,
+  getOvertimeSeverity,
+  formatMaterialStatus,
+  formatDateTime,
+  validateExportParams,
+  getDefaultExportDateRange,
+  isOvertime,
+  getOvertimeDays,
+  type OvertimeRecordData,
+  type OvertimeRecordQueryParams,
+  type ExportParams
+} from '@/api/overtime';
 
 defineOptions({
   name: "OvertimeRecord"
 });
 
-// 超时记录数据接口
-interface OvertimeRecordData {
-  id: number;
-  cabinetId: number;
-  cabinetCode: string;
-  cabinetName: string;
-  materialId: number;
-  materialCode: string;
-  materialName: string;
-  materialStatus: number;
-  lentOutTime: string;
-  plannedReturnTime: string;
-  actualReturnTime: string | null;
-  operatorName: string;
-  createTime: string;
-  updatedTime: string;
-}
+// 初始化 areaStore
+const areaStore = useAreaStore();
 
-// API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: OvertimeRecordData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
 
 // 响应式数据
 const loading = ref(false);
@@ -46,58 +40,62 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 从API获取超时记录列表
-const getOvertimeRecordsApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    
-    // 只添加分页参数
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
-    // 构建完整的URL
-    const baseUrl = `/api/power/material-status/overdueRecords`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-    console.log('超时记录API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    return data;
-    
-  } catch (error) {
-    console.error('超时记录API请求失败:', error);
-    throw error;
-  }
-};
+// 导出相关的响应式数据
+const exportDialogVisible = ref(false);
+const exportForm = ref<ExportParams>({
+  startDate: '',
+  endDate: ''
+});
+const exportLoading = ref(false);
 
-// 获取超时记录列表
+// 🔥 使用页面搜索工具类
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    cabinetCode: '',
+    cabinetName: '',
+    materialCode: '',
+    materialName: '',
+    operatorName: '',
+    materialStatus: undefined as number | undefined,
+    lentOutTimeStart: '',
+    lentOutTimeEnd: '',
+    plannedReturnTimeStart: '',
+    plannedReturnTimeEnd: '',
+    actualReturnTimeStart: '',
+    actualReturnTimeEnd: ''
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getOvertimeRecordsList();
+  }
+);
+
+
+// 🔥 修改：获取超时记录列表（使用 API 方法）
 const getOvertimeRecordsList = async () => {
   loading.value = true;
   try {
-    // 只传递分页参数
-    const searchParams = {
+    // 🔥 使用 API 方法和类型，包含区域筛选
+    const params: OvertimeRecordQueryParams = {
       pageNum: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
+      ...areaFilter.value,
+      ...searchForm.value
     };
     
-    console.log('超时记录搜索参数:', searchParams);
+    console.log('超时记录搜索参数:', params);
     
-    const response = await getOvertimeRecordsApi(searchParams);
+    const response = await getOvertimeRecordsListApi(params);
     
-    // 处理API响应
     if (response.code === 200) {
       tableData.value = response.data.records;
       total.value = response.data.total;
@@ -120,6 +118,47 @@ const handleView = (row: OvertimeRecordData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
+// 🔥 新增：导出记录（使用工具函数）
+const handleExport = () => {
+  // 打开导出弹窗
+  exportDialogVisible.value = true;
+  
+  // 🔥 使用工具函数获取默认日期范围
+  exportForm.value = getDefaultExportDateRange();
+};
+
+// 🔥 新增：确认导出（使用 API 方法和验证工具函数）
+const confirmExport = async () => {
+  // 🔥 使用工具函数验证参数
+  const validation = validateExportParams(exportForm.value);
+  if (!validation.valid) {
+    ElMessage.error(validation.message);
+    return;
+  }
+  
+  try {
+    exportLoading.value = true;
+    // 🔥 使用 API 方法导出
+    await exportOvertimeRecordsApi(exportForm.value);
+    exportDialogVisible.value = false;
+    ElMessage.success('导出成功');
+  } catch (error) {
+    ElMessage.error('导出失败，请稍后重试');
+    console.error('导出失败:', error);
+  } finally {
+    exportLoading.value = false;
+  }
+};
+
+// 🔥 新增：取消导出
+const cancelExport = () => {
+  exportDialogVisible.value = false;
+  exportForm.value = {
+    startDate: '',
+    endDate: ''
+  };
+};
+
 // 分页改变
 const handlePageChange = (page: number) => {
   currentPage.value = page;
@@ -132,71 +171,6 @@ const handleSizeChange = (size: number) => {
   getOvertimeRecordsList();
 };
 
-// 计算超时时长
-const calculateOvertimeDuration = (plannedReturnTime: string, actualReturnTime: string | null) => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
-  
-  if (actual <= planned) {
-    return '未超时';
-  }
-  
-  const diffMs = actual.getTime() - planned.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (diffDays > 0) {
-    return `${diffDays}天${diffHours}小时`;
-  } else if (diffHours > 0) {
-    return `${diffHours}小时${diffMinutes}分钟`;
-  } else {
-    return `${diffMinutes}分钟`;
-  }
-};
-
-// 格式化日期时间
-const formatDateTime = (dateTime: string) => {
-  return new Date(dateTime).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 获取超时严重程度
-const getOvertimeSeverity = (plannedReturnTime: string, actualReturnTime: string | null) => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
-  
-  if (actual <= planned) {
-    return { type: 'success' as const, text: '未超时' };
-  }
-  
-  const diffHours = (actual.getTime() - planned.getTime()) / (1000 * 60 * 60);
-  
-  if (diffHours <= 2) {
-    return { type: 'warning' as const, text: '轻微超时' };
-  } else if (diffHours <= 24) {
-    return { type: 'danger' as const, text: '严重超时' };
-  } else {
-    return { type: 'danger' as const, text: '极度超时' };
-  }
-};
-
-// 格式化物料状态
-const formatMaterialStatus = (status: number) => {
-  const statusMap = {
-    0: { label: '借出', type: 'warning' as const },
-    1: { label: '归还', type: 'success' as const },
-    2: { label: '丢失', type: 'danger' as const },
-    3: { label: '损坏', type: 'danger' as const }
-  };
-  
-  return statusMap[status] || { label: '未知', type: 'info' as const };
-};
 
 // 生命周期
 onMounted(() => {

@@ -6,6 +6,21 @@ import { View, Download, Search, Box } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
+import { usePageSearch } from "@/utils/useAreaFilter";
+
+// 🔥 新增：导入上架记录 API
+import { 
+  getShelfRecordsList as getShelfRecordsListApi,
+  exportShelfRecords as exportShelfRecordsApi,
+  calculateShelfDuration,
+  formatDateTime,
+  getShelfStatus,
+  validateExportParams,
+  getDefaultExportDateRange,
+  type ShelfRecordData,
+  type ShelfRecordQueryParams,
+  type ExportParams
+} from '@/api/shelving';
 
 defineOptions({
   name: "ShelvingRecord"
@@ -14,33 +29,6 @@ defineOptions({
 // 初始化 areaStore
 const areaStore = useAreaStore();
 
-// 上架记录数据接口
-interface ShelfRecordData {
-  id: number;
-  cabinetId: number;
-  cabinetCode: string;
-  cabinetName: string;
-  materialId: number;
-  materialCode: string;
-  materialName: string;
-  shelfQuantity: number;
-  operatorName: string;
-  createTime: string;
-  updatedTime: string;
-}
-
-// API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: ShelfRecordData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
 
 // 响应式数据
 const loading = ref(false);
@@ -57,112 +45,45 @@ const exportForm = ref({
 });
 const exportLoading = ref(false);
 
-// 分离区域筛选和表单搜索
-const areaFilter = ref({
-  province: '',
-  city: '',
-  district: ''
-});
-
-// 搜索表单
-const searchForm = ref({
-  materialName: '',
-  cabinetName: '',
-  startTime: '',
-  endTime: ''
-});
-
-// 处理区域搜索事件
-const handleAreaSearch = (area: AreaNode) => {
-  console.log('🎯 shelving.vue 接收到区域搜索事件:', area);
-  
-  // 清空区域筛选
-  areaFilter.value = { province: '', city: '', district: '' };
-  
-  // 设置新的区域筛选
-  fillAreaFilter(area);
-  
-  // 自动执行搜索
-  handleSearch();
-};
-
-const fillAreaFilter = (area: AreaNode) => {
-  const code = area.code;
-  const label = area.label;
-  
-  if (code.endsWith('0000')) {
-    areaFilter.value.province = label;
-  } else if (code.endsWith('00')) {
-    areaFilter.value.city = label;
-  } else {
-    areaFilter.value.district = label;
+// 🔥 使用页面搜索工具类
+const {
+  areaFilter,
+  searchForm,
+  handleAreaSearch,
+  handleSearch,
+  handleReset,
+  handleClearAll
+} = usePageSearch(
+  // 初始搜索数据
+  {
+    materialName: '',
+    cabinetName: '',
+    startTime: '',
+    endTime: ''
+  },
+  // 搜索回调函数
+  () => {
+    currentPage.value = 1;
+    getShelfRecordsList();
   }
-  
-  console.log('区域筛选已设置:', areaFilter.value);
-  ElMessage.info(`区域筛选已设置为: ${label}`);
-};
+);
 
-// 从API获取上架记录列表
-const getShelfRecordsApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    if (params.materialName) queryParams.append('materialName', params.materialName);
-    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    if (params.startTime) queryParams.append('startTime', params.startTime);
-    if (params.endTime) queryParams.append('endTime', params.endTime);
 
-    // 构建完整的URL
-    const baseUrl = `/api/power/shelf-records/page`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
-    
-    console.log('上架记录API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data: ApiResponse = await response.json();
-    return data;
-    
-  } catch (error) {
-    console.error('上架记录API请求失败:', error);
-    throw error;
-  }
-};
-
-// 获取上架记录列表
+// 🔥 修改：获取上架记录列表（使用 API 方法）
 const getShelfRecordsList = async () => {
   loading.value = true;
   try {
-    // 合并区域筛选和表单搜索条件
-    const searchParams = {
+    // 🔥 使用 API 方法和类型，包含区域筛选
+    const params: ShelfRecordQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      materialName: searchForm.value.materialName,
-      cabinetName: searchForm.value.cabinetName,
-      startTime: searchForm.value.startTime,
-      endTime: searchForm.value.endTime
+      ...areaFilter.value,
+      ...searchForm.value
     };
-    // 过滤空值
-    const filteredParams = Object.fromEntries(
-      Object.entries(searchParams).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
-    );
     
-    console.log('上架记录搜索参数:', searchParams);
+    console.log('上架记录搜索参数:', params);
     
-    const response = await getShelfRecordsApi(searchParams);
+    const response = await getShelfRecordsListApi(params);
     
     // 处理API响应
     if (response.code === 200) {
@@ -181,33 +102,6 @@ const getShelfRecordsList = async () => {
   }
 };
 
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  getShelfRecordsList();
-};
-
-// 重置搜索
-const handleReset = () => {
-  searchForm.value = {
-    materialName: '',
-    cabinetName: '',
-    startTime: '',
-    endTime: ''
-  };
-  handleSearch();
-};
-
-// 清空所有筛选条件
-const handleClearAll = () => {
-  searchForm.value = {
-    materialName: '',
-    cabinetName: '',
-    startTime: '',
-    endTime: ''
-  };
-  handleSearch();
-};
 
 // 查看记录详情
 const handleView = (row: ShelfRecordData) => {
@@ -215,47 +109,28 @@ const handleView = (row: ShelfRecordData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
-// 导出记录
+// 🔥 修改：导出记录（使用工具函数）
 const handleExport = () => {
   // 打开导出弹窗
   exportDialogVisible.value = true;
   
-  // 设置默认日期范围（最近30天）
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  
-  exportForm.value = {
-    startDate: thirtyDaysAgo.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0]
-  };
+  // 🔥 使用工具函数获取默认日期范围
+  exportForm.value = getDefaultExportDateRange();
 };
 
-// 确认导出
+// 🔥 修改：确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
-  if (!exportForm.value.startDate || !exportForm.value.endDate) {
-    ElMessage.error('请选择导出日期范围');
-    return;
-  }
-  
-  // 验证日期范围
-  const startDate = new Date(exportForm.value.startDate);
-  const endDate = new Date(exportForm.value.endDate);
-  
-  if (startDate > endDate) {
-    ElMessage.error('开始日期不能大于结束日期');
-    return;
-  }
-  
-  // 验证日期范围不超过365天
-  const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays > 365) {
-    ElMessage.error('导出日期范围不能超过365天');
+  // 🔥 使用工具函数验证参数
+  const validation = validateExportParams(exportForm.value);
+  if (!validation.valid) {
+    ElMessage.error(validation.message);
     return;
   }
   
   try {
     exportLoading.value = true;
-    await downloadShelfRecords(exportForm.value.startDate, exportForm.value.endDate);
+    // 🔥 使用 API 方法
+    await exportShelfRecordsApi(exportForm.value.startDate, exportForm.value.endDate);
     exportDialogVisible.value = false;
     ElMessage.success('导出成功');
   } catch (error) {
@@ -275,71 +150,6 @@ const cancelExport = () => {
   };
 };
 
-// 调用导出API
-const downloadShelfRecords = async (startDate: string, endDate: string) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    queryParams.append('startDate', startDate);
-    queryParams.append('endDate', endDate);
-    
-    // 构建完整的URL
-    const url = `/api/power/shelf-records/download/shelf?${queryParams.toString()}`;
-    
-    console.log('导出API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    // 获取文件名
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let fileName = '上架记录.xlsx'; // 默认文件名
-    
-    if (contentDisposition) {
-      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (fileNameMatch && fileNameMatch[1]) {
-        fileName = fileNameMatch[1].replace(/['"]/g, '');
-      }
-    }
-    
-    // 如果文件名没有扩展名，添加.xlsx
-    if (!fileName.includes('.')) {
-      fileName += '.xlsx';
-    }
-    
-    // 获取文件blob
-    const blob = await response.blob();
-    
-    // 创建下载链接
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-    
-    console.log('文件下载成功:', fileName);
-    
-  } catch (error) {
-    console.error('导出API请求失败:', error);
-    throw error;
-  }
-};
 
 // 分页改变
 const handlePageChange = (page: number) => {
@@ -353,46 +163,6 @@ const handleSizeChange = (size: number) => {
   getShelfRecordsList();
 };
 
-// 计算上架时长（从上架到现在）
-const calculateShelfDuration = (createTime: string) => {
-  const shelved = new Date(createTime);
-  const now = new Date();
-  const diffMs = now.getTime() - shelved.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  
-  if (diffDays > 0) {
-    return `${diffDays}天${diffHours}小时`;
-  } else {
-    return `${diffHours}小时`;
-  }
-};
-
-// 格式化日期时间
-const formatDateTime = (dateTime: string) => {
-  return new Date(dateTime).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 根据上架时长判断状态
-const getShelfStatus = (createTime: string) => {
-  const shelved = new Date(createTime);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - shelved.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (diffDays <= 7) {
-    return { type: 'success' as const, text: '新上架' };
-  } else if (diffDays <= 30) {
-    return { type: 'primary' as const, text: '正常' };
-  } else {
-    return { type: 'warning' as const, text: '长期' };
-  }
-};
 
 // 生命周期
 onMounted(() => {
@@ -410,7 +180,7 @@ onMounted(() => {
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域 -->
-        <el-card class="search-card">
+        <!-- <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
             <el-form-item label="柜子名称">
               <el-input 
@@ -455,9 +225,12 @@ onMounted(() => {
               <el-button @click="handleReset">
                 重置
               </el-button>
+              <el-button @click="handleClearAll">
+                清空所有
+              </el-button>
             </el-form-item>
           </el-form>
-        </el-card>
+        </el-card> -->
 
         <!-- 表格区域 -->
         <el-card class="table-card">
