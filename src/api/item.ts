@@ -1,5 +1,7 @@
 // ==================== 类型定义 ====================
 
+import { number } from "echarts/types/src/echarts.all.js";
+
 // 物料数据接口
 export interface MaterialData {
   id: number;
@@ -36,6 +38,13 @@ export interface MaterialFormData {
   isDelete: number;
   createTime?: string;
   updatedTime?: string;
+}
+
+// 物料下架参数接口
+export interface MaterialOfflineParams {
+  id: number;
+  //isDelete?: number;
+  remark: string;
 }
 
 // 物料查询参数接口
@@ -192,18 +201,27 @@ export const updateMaterial = async (data: MaterialFormData): Promise<BaseApiRes
   }
 };
 
+
+// 修改：物料下架（替换原来的删除功能）
 /**
- * 删除物料
+ * 物料下架
  * @param id 物料ID
  * @returns API响应结果
  */
-export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
+export const offlineMaterial = async (params: MaterialOfflineParams): Promise<BaseApiResponse> => {
   try {
-    const response = await fetch(`/api/power/material/${id}`, {
-      method: 'DELETE',
+    // 🔥 修改：将 remark 作为查询参数添加到 URL 中
+    const url = `/api/power/material/status/${params.id}?remark=${encodeURIComponent(params.remark)}`;
+    
+    
+    console.log('物料下架API请求数据:', url);
+
+    const response = await fetch(url, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       }
+      // 🔥 修改：移除 body，因为 remark 现在在 URL 查询参数中
     });
 
     if (!response.ok) {
@@ -211,14 +229,36 @@ export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
     }
 
     const result: BaseApiResponse = await response.json();
-    console.log('删除物料API响应:', result);
+    console.log('物料下架API响应:', result);
     return result;
     
   } catch (error) {
-    console.error('删除物料API请求失败:', error);
+    console.error('物料下架API请求失败:', error);
     throw error;
   }
 };
+// export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
+//   try {
+//     const response = await fetch(`/api/power/material/${id}`, {
+//       method: 'DELETE',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+
+//     const result: BaseApiResponse = await response.json();
+//     console.log('删除物料API响应:', result);
+//     return result;
+    
+//   } catch (error) {
+//     console.error('删除物料API请求失败:', error);
+//     throw error;
+//   }
+// };
 
 // ==================== 默认导出 ====================
 
@@ -226,5 +266,5 @@ export default {
   getMaterialList,
   addMaterial,
   updateMaterial,
-  deleteMaterial
+  offlineMaterial
 };

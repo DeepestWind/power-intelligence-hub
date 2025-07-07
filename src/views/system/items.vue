@@ -13,10 +13,11 @@ import {
   getMaterialList as getMaterialListApi, 
   addMaterial as addMaterialApi, 
   updateMaterial as updateMaterialApi, 
-  deleteMaterial as deleteMaterialApi,
+  offlineMaterial as offlineMaterialApi, 
   type MaterialData,
   type MaterialFormData,
-  type MaterialQueryParams
+  type MaterialQueryParams,
+  type MaterialOfflineParams // 新增：下架参数类型
 } from '@/api/item';
 
 // 🔥 新增：导入柜子相关的 API 方法和类型（复用）
@@ -76,6 +77,15 @@ const cabinetSearchForm = ref({
   cabinetCode: '',
   cabinetName: ''
 });
+
+// 🔥 新增：物料下架相关数据
+const offlineDialogVisible = ref(false);
+const offlineForm = ref({
+  id: 0,
+  materialName: '',
+  remark: ''
+});
+const offlineLoading = ref(false);
 
 // 物料表单数据
 const itemForm = ref<MaterialFormData>({
@@ -157,6 +167,16 @@ const itemFormRules = {
 };
 
 const itemFormRef = ref();
+
+// 🔥 新增：下架表单验证规则
+const offlineFormRules = {
+  remark: [
+    { required: true, message: '请输入下架备注', trigger: 'blur' },
+    { min: 2, max: 200, message: '2-200个字符', trigger: 'blur' }
+  ]
+};
+
+const offlineFormRef = ref();
 
 // 状态选项
 const deleteStatusOptions = [
@@ -414,38 +434,69 @@ const updateItem = async () => {
 };
 
 
-// 🔥 修改：删除物料（使用 API 方法）
-const handleDelete = async (row: MaterialData) => {
+// 🔥 修改：物料下架（替换删除功能）
+const handleOffline = async (row: MaterialData) => {
+  // 设置下架表单数据
+  offlineForm.value = {
+    id: row.id,
+    materialName: row.materialName,
+    remark: ''
+  };
+  
+  // 打开下架弹窗
+  offlineDialogVisible.value = true;
+  
+  // 清除表单验证
+  nextTick(() => {
+    if (offlineFormRef.value) {
+      offlineFormRef.value.clearValidate();
+    }
+  });
+};
+// 🔥 新增：确认下架
+const handleConfirmOffline = async () => {
+  if (!offlineFormRef.value) return;
+  
   try {
-    await ElMessageBox.confirm(
-      `确定要删除物料 "${row.materialName}" 吗？删除后无法恢复！`,
-      '删除确认',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
+    await offlineFormRef.value.validate();
+    
+    offlineLoading.value = true;
+    
+    const params: MaterialOfflineParams = {
+      id: Number(offlineForm.value.id),
+      remark: offlineForm.value.remark,
+      //isDelete: 0, // 字符串类型，0表示下架
+      
+    };
+    console.log('下架参数:', params); // 🔥 新增：调试日志
     
     // 🔥 使用 API 方法
-    const result = await deleteMaterialApi(row.id);
+    const result = await offlineMaterialApi(params);
     
     if (result.code === 200) {
-      ElMessage.success('物料删除成功');
-      console.log('删除物料成功:', result);
+      ElMessage.success('物料下架成功');
+      console.log('下架物料成功:', result);
+      offlineDialogVisible.value = false;
       getItemList();
     } else {
-      ElMessage.error(result.msg || '物料删除失败');
+      ElMessage.error(result.msg || '物料下架失败');
     }
     
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('物料删除失败，请检查网络连接');
-      console.error('删除物料错误:', error);
-    } else {
-      ElMessage.info('已取消删除');
-    }
+    ElMessage.error('物料下架失败，请检查网络连接');
+    console.error('下架物料错误:', error);
+  } finally {
+    offlineLoading.value = false;
   }
+};
+// 🔥 新增：取消下架
+const handleCancelOffline = () => {
+  offlineDialogVisible.value = false;
+  offlineForm.value = {
+    id: 0,
+    materialName: '',
+    remark: ''
+  };
 };
 
 // 🔥 修改：编辑物料
@@ -492,7 +543,7 @@ const handleSizeChange = (size: number) => {
 
 // 格式化删除状态
 const formatDeleteStatus = (isDelete: number) => {
-  return isDelete === 1 ? '正常' : '已删除';
+  return isDelete === 1 ? '正常' : '已下架';
 };
 
 // 生命周期
@@ -664,9 +715,10 @@ onMounted(async () => {
                   type="danger" 
                   size="small" 
                   :icon="Delete"
-                  @click="handleDelete(row)"
+                  @click="handleOffline(row)"
+                  :disabled="row.isDelete === 0"
                 >
-                  删除
+                  下架
                 </el-button>
               </template>
             </el-table-column>
@@ -917,6 +969,66 @@ onMounted(async () => {
         </span>
       </template>
     </el-dialog>
+
+    <!-- 🔥 新增：物料下架弹窗 -->
+    <el-dialog
+      v-model="offlineDialogVisible"
+      title="物料下架"
+      width="500px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+    >
+      <el-form 
+        ref="offlineFormRef" 
+        :model="offlineForm" 
+        :rules="offlineFormRules" 
+        label-width="100px"
+      >
+        <el-form-item label="物料名称">
+          <el-input
+            v-model="offlineForm.materialName"
+            readonly
+            disabled
+          />
+        </el-form-item>
+        <el-form-item label="下架备注" prop="remark">
+          <el-input
+            v-model="offlineForm.remark"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入下架原因或备注信息（5-200字符）"
+            show-word-limit
+            maxlength="200"
+          />
+        </el-form-item>
+      </el-form>
+
+      <el-alert
+        title="下架提示"
+        type="warning"
+        :closable="false"
+        style="margin-top: 15px"
+      >
+        <template #default>
+          <p>物料下架后将无法进行正常使用，请确保已做好相关处理。</p>
+        </template>
+      </el-alert>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleCancelOffline" :disabled="offlineLoading">
+            取消
+          </el-button>
+          <el-button 
+            type="warning" 
+            @click="handleConfirmOffline"
+            :loading="offlineLoading"
+          >
+            {{ offlineLoading ? '下架中...' : '确认下架' }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>    
 
     <!-- 🔥 新增：柜子选择弹窗 -->
     <el-dialog
