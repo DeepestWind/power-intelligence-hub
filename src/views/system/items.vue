@@ -8,45 +8,62 @@ import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
+// 🔥 新增：导入物料相关的 API 方法和类型
+import { 
+  getMaterialList as getMaterialListApi, 
+  addMaterial as addMaterialApi, 
+  updateMaterial as updateMaterialApi, 
+  deleteMaterial as deleteMaterialApi,
+  type MaterialData,
+  type MaterialFormData,
+  type MaterialQueryParams
+} from '@/api/item';
+
+// 🔥 新增：导入柜子相关的 API 方法和类型（复用）
+import { 
+  getCabinetList as getCabinetListApi,
+  type CabinetData
+} from '@/api/cabinet';
+
 defineOptions({
   name: "ItemsManagement"
 });
 
 // 物料数据接口
-interface ItemData {
-  id: number;
-  cabinetId: number;
-  cabinetCode: string;
-  cabinetName: string;
-  materialCode: string;
-  materialName: string;
-  rfid: string;
-  experimentDate: string;
-  province: string;
-  city: string;
-  district: string;
-  address: string;
-  isDelete: number; // 1-正常, 0-已删除
-  createTime: string;
-  updatedTime: string;
-}
+// interface ItemData {
+//   id: number;
+//   cabinetId: number;
+//   cabinetCode: string;
+//   cabinetName: string;
+//   materialCode: string;
+//   materialName: string;
+//   rfid: string;
+//   experimentDate: string;
+//   province: string;
+//   city: string;
+//   district: string;
+//   address: string;
+//   isDelete: number; // 1-正常, 0-已删除
+//   createTime: string;
+//   updatedTime: string;
+// }
 
 // API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: ItemData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
+// interface ApiResponse {
+//   code: number;
+//   msg: string;
+//   data: {
+//     records: ItemData[];
+//     total: number;
+//     current: number;
+//     size: number;
+//     pages: number;
+//   };
+// }
 
 // 响应式数据
 const loading = ref(false);
-const tableData = ref<ItemData[]>([]);
+const tableData = ref<MaterialData[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
@@ -90,8 +107,22 @@ const {
   }
 );
 
+// 🔥 新增：柜子选择相关数据
+const cabinetSelectDialogVisible = ref(false);
+const cabinetListData = ref<CabinetData[]>([]);
+const cabinetLoading = ref(false);
+const cabinetCurrentPage = ref(1);
+const cabinetPageSize = ref(10);
+const cabinetTotal = ref(0);
+
+// 🔥 新增：柜子搜索表单
+const cabinetSearchForm = ref({
+  cabinetCode: '',
+  cabinetName: ''
+});
+
 // 物料表单数据
-const itemForm = ref({
+const itemForm = ref<MaterialFormData>({
   cabinetId: null,
   cabinetCode: '',
   cabinetName: '',
@@ -175,7 +206,7 @@ const handleItemCityChange = () => {
 const dialogVisible = ref(false);
 const dialogTitle = ref('新增物料');
 const isEdit = ref(false);
-const currentEditItem = ref<ItemData | null>(null);
+const currentEditItem = ref<MaterialData | null>(null);
 
 // 🔥 修改表单验证规则，改为下拉选择并添加权限验证
 const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
@@ -191,14 +222,13 @@ const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
     callback();
   }
 };
-// 表单验证规则
+// 🔥 修改：表单验证规则（移除柜子相关字段的手动验证）
 const itemFormRules = {
-  cabinetCode: [
-    { required: true, message: '请输入柜子编号', trigger: 'blur' }
+  // 🔥 新增：柜子选择验证
+  cabinetId: [
+    { required: true, message: '请选择所属柜子', trigger: 'change' }
   ],
-  cabinetName: [
-    { required: true, message: '请输入柜子名称', trigger: 'blur' }
-  ],
+  // 🔥 保留：物料相关字段验证
   materialCode: [
     { required: true, message: '请输入物料编号', trigger: 'blur' },
     { min: 3, max: 20, message: '物料编号长度为3-20个字符', trigger: 'blur' }
@@ -212,21 +242,6 @@ const itemFormRules = {
   ],
   experimentDate: [
     { required: true, message: '请选择实验日期', trigger: 'change' }
-  ],
-  province: [
-    { required: true, message: '请选择省份', trigger: 'change' },
-    { validator: validateAreaPermissionRule, trigger: 'change' }
-  ],
-  city: [
-    { required: true, message: '请选择城市', trigger: 'change' },
-    { validator: validateAreaPermissionRule, trigger: 'change' }
-  ],
-  district: [
-    { required: true, message: '请选择区域', trigger: 'change' },
-    { validator: validateAreaPermissionRule, trigger: 'change' }
-  ],
-  address: [
-    { required: true, message: '请输入地址', trigger: 'blur' }
   ]
 };
 
@@ -239,75 +254,74 @@ const deleteStatusOptions = [
 ];
 
 // 从API获取物料列表
-const getItemListApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
+// const getItemListApi = async (params: any = {}) => {
+//   try {
+//     // 构建查询参数
+//     const queryParams = new URLSearchParams();
     
-    // 添加分页参数
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+//     // 添加分页参数
+//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
-    // 添加搜索参数
-    //if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-    if (params.materialName) queryParams.append('materialName', params.materialName);
-    //if (params.rfid) queryParams.append('rfid', params.rfid);
-    if (params.province) queryParams.append('province', params.province);
-    if (params.city) queryParams.append('city', params.city);
-    if (params.district) queryParams.append('district', params.district);
-    //if (params.experimentDate) queryParams.append('experimentDate', params.experimentDate);
-    // if (params.isDelete !== '' && params.isDelete !== undefined) {
-    //   queryParams.append('isDelete', params.isDelete);
-    // }
+//     // 添加搜索参数
+//     //if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+//     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+//     if (params.materialCode) queryParams.append('materialCode', params.materialCode);
+//     if (params.materialName) queryParams.append('materialName', params.materialName);
+//     //if (params.rfid) queryParams.append('rfid', params.rfid);
+//     if (params.province) queryParams.append('province', params.province);
+//     if (params.city) queryParams.append('city', params.city);
+//     if (params.district) queryParams.append('district', params.district);
+//     //if (params.experimentDate) queryParams.append('experimentDate', params.experimentDate);
+//     // if (params.isDelete !== '' && params.isDelete !== undefined) {
+//     //   queryParams.append('isDelete', params.isDelete);
+//     // }
     
-    // 构建完整的URL
-    const baseUrl = `/api/power/material/page`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+//     // 构建完整的URL
+//     const baseUrl = `/api/power/material/page`;
+//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
     
-    console.log('物料API请求URL:', url);
+//     console.log('物料API请求URL:', url);
     
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      }
-    });
+//     // 发送GET请求
+//     const response = await fetch(url, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         // 如果需要认证，添加token
+//         // 'Authorization': `Bearer ${getToken()}`
+//       }
+//     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
     
-    const data: ApiResponse = await response.json();
-    return data;
+//     const data: ApiResponse = await response.json();
+//     return data;
     
-  } catch (error) {
-    console.error('物料API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('物料API请求失败:', error);
+//     throw error;
+//   }
+// };
 
-// 获取物料列表
+// 🔥 修改：获取物料列表（使用 API 方法）
 const getItemList = async () => {
   loading.value = true;
   try {
-    // 合并区域筛选和表单搜索条件
-    const searchParams = {
+    // 🔥 使用 API 方法和类型
+    const params: MaterialQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      ...areaFilter.value,  //添加区域筛选条件
-      ...searchForm.value   //表单搜索条件
+      ...areaFilter.value,
+      ...searchForm.value
     };
     
-    console.log('物料搜索参数:', searchParams); // 添加日志查看参数
+    console.log('物料搜索参数:', params);
+
+    const response = await getMaterialListApi(params);
     
-    const response = await getItemListApi(searchParams);
-    
-    // 处理API响应
     if (response.code === 200) {
       tableData.value = response.data.records;
       total.value = response.data.total;
@@ -322,6 +336,99 @@ const getItemList = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// 🔥 新增：获取柜子列表
+const getCabinetList = async () => {
+  cabinetLoading.value = true;
+  try {
+    const response = await getCabinetListApi({
+      pageNum: cabinetCurrentPage.value,
+      pageSize: cabinetPageSize.value,
+      ...cabinetSearchForm.value
+    });
+    
+    if (response.code === 200) {
+      cabinetListData.value = response.data.records;
+      cabinetTotal.value = response.data.total;
+      console.log('获取到的柜子数据:', cabinetListData.value);
+    } else {
+      ElMessage.error(response.msg || '获取柜子列表失败');
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取柜子列表失败，请检查网络连接');
+    console.error('获取柜子列表错误:', error);
+  } finally {
+    cabinetLoading.value = false;
+  }
+};
+
+// 🔥 新增：打开柜子选择弹窗
+const handleSelectCabinet = () => {
+  cabinetSelectDialogVisible.value = true;
+  cabinetCurrentPage.value = 1;
+  cabinetSearchForm.value = {
+    cabinetCode: '',
+    cabinetName: ''
+  };
+  getCabinetList();
+};
+
+// 🔥 新增：确认选择柜子
+const handleConfirmCabinetSelect = (cabinet: CabinetData) => {
+  itemForm.value.cabinetId = cabinet.id;
+  itemForm.value.cabinetCode = cabinet.cabinetCode;
+  itemForm.value.cabinetName = cabinet.cabinetName;
+  itemForm.value.province = cabinet.province;
+  itemForm.value.city = cabinet.city;
+  itemForm.value.district = cabinet.district;
+  itemForm.value.address = cabinet.address;
+  
+  cabinetSelectDialogVisible.value = false;
+  
+  ElMessage.success(`已选择柜子: ${cabinet.cabinetName}`);
+  console.log('选择的柜子:', cabinet);
+};
+
+// 🔥 新增：清空选择的柜子
+const handleClearCabinetSelect = () => {
+  itemForm.value.cabinetId = null;
+  itemForm.value.cabinetCode = '';
+  itemForm.value.cabinetName = '';
+  itemForm.value.province = '';
+  itemForm.value.city = '';
+  itemForm.value.district = '';
+  itemForm.value.address = '';
+  
+  ElMessage.info('已清空柜子选择');
+};
+
+// 🔥 新增：柜子搜索
+const handleCabinetSearch = () => {
+  cabinetCurrentPage.value = 1;
+  getCabinetList();
+};
+
+// 🔥 新增：重置柜子搜索
+const handleCabinetReset = () => {
+  cabinetSearchForm.value = {
+    cabinetCode: '',
+    cabinetName: ''
+  };
+  handleCabinetSearch();
+};
+
+// 🔥 新增：柜子列表分页
+const handleCabinetPageChange = (page: number) => {
+  cabinetCurrentPage.value = page;
+  getCabinetList();
+};
+
+const handleCabinetSizeChange = (size: number) => {
+  cabinetPageSize.value = size;
+  cabinetCurrentPage.value = 1;
+  getCabinetList();
 };
 
 // // 搜索
@@ -384,7 +491,7 @@ const handleAddItem = () => {
   });
 };
 
-// 重置表单
+// 🔥 修改：重置表单
 const resetItemForm = () => {
   itemForm.value = {
     cabinetId: null,
@@ -400,6 +507,7 @@ const resetItemForm = () => {
     address: '',
     isDelete: 1
   };
+  currentEditItem.value = null;
   if (itemFormRef.value) {
     itemFormRef.value.clearValidate();
   }
@@ -411,19 +519,12 @@ const handleCancel = () => {
   resetItemForm();
 };
 
-// 确认提交
+// 🔥 修改：确认提交（移除省市区权限验证）
 const handleConfirm = async () => {
   if (!itemFormRef.value) return;
   
   try {
     await itemFormRef.value.validate();
-
-    // 🔥 使用工具类的权限验证
-    const { province, city, district } = itemForm.value;
-    if (!validateAreaPermission(province, city, district)) {
-      ElMessage.error('您没有权限在该区域创建物料，请重新选择');
-      return;
-    }
     
     if (isEdit.value) {
       await updateItem();
@@ -440,41 +541,11 @@ const handleConfirm = async () => {
   }
 };
 
-// 物料API调用
+// 🔥 修改：新增物料（使用 API 方法）
 const addItem = async () => {
   try {
-    const requestData = {
-      cabinetId: itemForm.value.cabinetId,
-      cabinetCode: itemForm.value.cabinetCode,
-      cabinetName: itemForm.value.cabinetName,
-      materialCode: itemForm.value.materialCode,
-      materialName: itemForm.value.materialName,
-      rfid: itemForm.value.rfid,
-      experimentDate: itemForm.value.experimentDate,
-      province: itemForm.value.province,
-      city: itemForm.value.city,
-      district: itemForm.value.district,
-      address: itemForm.value.address,
-      isDelete: itemForm.value.isDelete,
-      createTime: new Date().toISOString(),
-      updatedTime: new Date().toISOString()
-    };
-    
-    console.log('发送新增物料请求:', requestData);
-
-    const response = await fetch('/api/power/material/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    // 🔥 使用 API 方法
+    const result = await addMaterialApi(itemForm.value);
     
     if (result.code === 200) {
       ElMessage.success('物料新增成功');
@@ -491,43 +562,61 @@ const addItem = async () => {
   }
 };
 
-// 更新物料API调用
+// 🔥 修改：更新物料（使用 API 方法）
 const updateItem = async () => {
   try {
-    ElMessage.success('物料更新成功');
-    console.log('更新物料数据:', itemForm.value);
+    if (!currentEditItem.value?.id) {
+      throw new Error('缺少物料ID，无法更新');
+    }
+
+    const requestData: MaterialFormData = {
+      ...itemForm.value,
+      id: currentEditItem.value.id
+    };
+    
+    // 🔥 使用 API 方法
+    const result = await updateMaterialApi(requestData);
+    
+    if (result.code === 200) {
+      ElMessage.success('物料更新成功');
+      console.log('更新物料成功:', result);
+    } else {
+      ElMessage.error(result.msg || '物料更新失败');
+      throw new Error(result.msg || '物料更新失败');
+    }
+    
   } catch (error) {
-    ElMessage.error('物料更新失败');
+    ElMessage.error('物料更新失败，请检查网络连接');
     console.error('更新物料错误:', error);
     throw error;
   }
 };
 
 // 删除物料API调用
-const deleteItemApi = async (id: number) => {
-  try {
-    const response = await fetch(`/api/power/material/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+// const deleteItemApi = async (id: number) => {
+//   try {
+//     const response = await fetch(`/api/power/material/${id}`, {
+//       method: 'DELETE',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const result = await response.json();
-    return result;
+//     const result = await response.json();
+//     return result;
     
-  } catch (error) {
-    console.error('删除物料API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('删除物料API请求失败:', error);
+//     throw error;
+//   }
+// };
 
-// 删除物料
-const handleDelete = async (row: ItemData) => {
+// 🔥 修改：删除物料（使用 API 方法）
+const handleDelete = async (row: MaterialData) => {
   try {
     await ElMessageBox.confirm(
       `确定要删除物料 "${row.materialName}" 吗？删除后无法恢复！`,
@@ -539,7 +628,8 @@ const handleDelete = async (row: ItemData) => {
       }
     );
     
-    const result = await deleteItemApi(row.id);
+    // 🔥 使用 API 方法
+    const result = await deleteMaterialApi(row.id);
     
     if (result.code === 200) {
       ElMessage.success('物料删除成功');
@@ -559,8 +649,8 @@ const handleDelete = async (row: ItemData) => {
   }
 };
 
-// 编辑物料
-const handleEdit = (row: ItemData) => {
+// 🔥 修改：编辑物料
+const handleEdit = (row: MaterialData) => {
   dialogTitle.value = '编辑物料';
   isEdit.value = true;
   currentEditItem.value = row;
@@ -585,9 +675,8 @@ const handleEdit = (row: ItemData) => {
 };
 
 // 查看物料详情
-const handleView = (row: ItemData) => {
+const handleView = (row: MaterialData) => {
   ElMessage.info(`查看物料: ${row.materialName}`);
-  // 这里可以打开详情弹窗或跳转到详情页
 };
 
 // 分页改变
@@ -814,7 +903,59 @@ onMounted(async () => {
         :rules="itemFormRules" 
         label-width="120px"
       >
-        <el-row :gutter="20">
+        <!-- 🔥 修改：柜子选择区域 -->
+        <el-form-item label="所属柜子" prop="cabinetId">
+          <div class="cabinet-select-area">
+            <div v-if="itemForm.cabinetId" class="selected-cabinet">
+              <el-card class="cabinet-info-card">
+                <div class="cabinet-info">
+                  <div class="cabinet-main">
+                    <span class="cabinet-name">{{ itemForm.cabinetName }}</span>
+                    <span class="cabinet-code">{{ itemForm.cabinetCode }}</span>
+                  </div>
+                  <div class="cabinet-location">
+                    <span class="location-text">
+                      {{ `${itemForm.province}${itemForm.city}${itemForm.district}` }}
+                    </span>
+                  </div>
+                  <div class="cabinet-address">
+                    <span class="address-text">{{ itemForm.address }}</span>
+                  </div>
+                </div>
+                <div class="cabinet-actions">
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    @click="handleSelectCabinet"
+                  >
+                    重新选择
+                  </el-button>
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    @click="handleClearCabinetSelect"
+                  >
+                    清空选择
+                  </el-button>
+                </div>
+              </el-card>
+            </div>
+            <div v-else class="empty-cabinet">
+              <el-empty 
+                description="请选择所属柜子" 
+                :image-size="80"
+              >
+                <el-button 
+                  type="primary" 
+                  @click="handleSelectCabinet"
+                >
+                  选择柜子
+                </el-button>
+              </el-empty>
+            </div>
+          </div>
+        </el-form-item>
+        <!-- <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="柜子编号" prop="cabinetCode">
               <el-input
@@ -833,7 +974,7 @@ onMounted(async () => {
               />
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
 
         <el-row :gutter="20">
           <el-col :span="12">
@@ -881,7 +1022,8 @@ onMounted(async () => {
         </el-row>
 
         <!-- 🔥 修改：省市区改为下拉选择 -->
-        <el-row :gutter="20">
+        <!-- 🔥 删除：省市区选择和地址输入 -->
+        <!-- <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
               <el-select
@@ -934,9 +1076,9 @@ onMounted(async () => {
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
 
-        <el-row>
+        <!-- <el-row>
           <el-col :span="24">
             <el-form-item label="地址" prop="address">
               <el-input
@@ -947,9 +1089,9 @@ onMounted(async () => {
               />
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
 
-        <el-row>
+        <!-- <el-row>
           <el-col :span="12">
             <el-form-item label="状态" prop="isDelete">
               <el-select
@@ -966,7 +1108,7 @@ onMounted(async () => {
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
       </el-form>
 
       <template #footer>
@@ -976,6 +1118,99 @@ onMounted(async () => {
         </span>
       </template>
     </el-dialog>
+
+    <!-- 🔥 新增：柜子选择弹窗 -->
+    <el-dialog
+      v-model="cabinetSelectDialogVisible"
+      title="选择柜子"
+      width="1000px"
+      :close-on-click-modal="false"
+    >
+      <!-- 柜子搜索区域 -->
+      <div class="cabinet-search-area">
+        <el-form :model="cabinetSearchForm" :inline="true">
+          <el-form-item label="设备编号">
+            <el-input 
+              v-model="cabinetSearchForm.cabinetCode" 
+              placeholder="请输入设备编号" 
+              clearable
+              style="width: 200px"
+            />
+          </el-form-item>
+          <el-form-item label="设备名称">
+            <el-input 
+              v-model="cabinetSearchForm.cabinetName" 
+              placeholder="请输入设备名称" 
+              clearable
+              style="width: 200px"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleCabinetSearch">
+              搜索
+            </el-button>
+            <el-button @click="handleCabinetReset">
+              重置
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 柜子列表表格 -->
+      <el-table 
+        :data="cabinetListData" 
+        v-loading="cabinetLoading"
+        style="width: 100%"
+        stripe
+        border
+        max-height="400px"
+      >
+        <el-table-column prop="cabinetCode" label="设备编号" width="120" />
+        <el-table-column prop="cabinetName" label="设备名称" width="150" />
+        <el-table-column label="省市区" width="200">
+          <template #default="{ row }">
+            {{ `${row.province}${row.city}${row.district}` }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="address" label="具体地址" min-width="220" show-overflow-tooltip />
+        <el-table-column label="在线状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag 
+              :type="row.onlineStatus === 1 ? 'success' : 
+                     row.onlineStatus === 0 ? 'danger' : 'info'"
+            >
+              {{ row.onlineStatus === 1 ? '在线' : 
+                 row.onlineStatus === 0 ? '离线' : '未知' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button 
+              type="primary" 
+              size="small"
+              @click="handleConfirmCabinetSelect(row)"
+            >
+              选择
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 柜子列表分页 -->
+      <div class="cabinet-pagination">
+        <el-pagination
+          v-model:current-page="cabinetCurrentPage"
+          v-model:page-size="cabinetPageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="cabinetTotal"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleCabinetSizeChange"
+          @current-change="handleCabinetPageChange"
+        />
+      </div>
+    </el-dialog>    
+
   </div>
 </template>
 
@@ -1027,6 +1262,94 @@ onMounted(async () => {
         }
       }
     }
+  }
+}
+
+// 🔥 新增：柜子选择相关样式
+.cabinet-select-area {
+  .selected-cabinet {
+    .cabinet-info-card {
+      .cabinet-info {
+        .cabinet-main {
+          display: flex;
+          align-items: center;
+          margin-bottom: 8px;
+          
+          .cabinet-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #303133;
+            margin-right: 12px;
+          }
+          
+          .cabinet-code {
+            font-size: 14px;
+            color: #909399;
+            background: #f5f7fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+          }
+        }
+        
+        .cabinet-location {
+          margin-bottom: 4px;
+          
+          .location-text {
+            font-size: 14px;
+            color: #606266;
+          }
+        }
+        
+        .cabinet-address {
+          .address-text {
+            font-size: 12px;
+            color: #909399;
+            line-height: 1.4;
+          }
+        }
+      }
+      
+      .cabinet-actions {
+        margin-top: 12px;
+        text-align: right;
+        
+        .el-button + .el-button {
+          margin-left: 8px;
+        }
+      }
+    }
+  }
+  
+  .empty-cabinet {
+    text-align: center;
+    padding: 20px;
+  }
+}
+// 🔥 新增：柜子选择弹窗样式
+.cabinet-search-area {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.cabinet-pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+// 表格样式调整
+:deep(.el-table) {
+  .el-button + .el-button {
+    margin-left: 4px;
+  }
+}
+
+// 弹窗样式
+:deep(.el-dialog) {
+  .dialog-footer {
+    text-align: center;
   }
 }
 

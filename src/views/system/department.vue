@@ -8,6 +8,17 @@ import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
+// 🔥 新增：导入 API 方法和类型
+import { 
+  getDepartmentList as getDepartmentListApi, 
+  addDepartment as addDepartmentApi, 
+  updateDepartment as updateDepartmentApi, 
+  deleteDepartment as deleteDepartmentApi,
+  type DepartmentData,
+  type DepartmentFormData,
+  type DepartmentQueryParams
+} from '@/api/department';
+
 defineOptions({
   name: "DepartmentManagement"
 });
@@ -15,29 +26,29 @@ defineOptions({
 // 初始化 areaStore
 const areaStore = useAreaStore();
 
-// 部门数据接口
-interface DepartmentData {
-  id: number;
-  departmentName: string;
-  province: string;
-  city: string;
-  district: string;
-  createTime: string;
-  updatedTime: string;
-}
+// // 部门数据接口
+// interface DepartmentData {
+//   id: number;
+//   departmentName: string;
+//   province: string;
+//   city: string;
+//   district: string;
+//   createTime: string;
+//   updatedTime: string;
+// }
 
-// API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: DepartmentData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
+// // API响应接口
+// interface ApiResponse {
+//   code: number;
+//   msg: string;
+//   data: {
+//     records: DepartmentData[];
+//     total: number;
+//     current: number;
+//     size: number;
+//     pages: number;
+//   };
+// }
 
 // 响应式数据
 const loading = ref(false);
@@ -113,7 +124,7 @@ const {
 // };
 
 // 表单数据
-const formData = ref({
+const formData = ref<DepartmentFormData>({
   departmentName: '',
   province: '',
   city: '',
@@ -209,118 +220,118 @@ const formRef = ref();
 
 
 // 从API获取部门列表
-const getDepartmentListApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
+// const getDepartmentListApi = async (params: any = {}) => {
+//   try {
+//     // 构建查询参数
+//     const queryParams = new URLSearchParams();
     
-    // 添加分页参数
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+//     // 添加分页参数
+//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
-    // 添加搜索参数
-    if (params.departmentName) queryParams.append('departmentName', params.departmentName);
-    if (params.province) queryParams.append('province', params.province);
-    if (params.city) queryParams.append('city', params.city);
-    if (params.district) queryParams.append('district', params.district);
+//     // 添加搜索参数
+//     if (params.departmentName) queryParams.append('departmentName', params.departmentName);
+//     if (params.province) queryParams.append('province', params.province);
+//     if (params.city) queryParams.append('city', params.city);
+//     if (params.district) queryParams.append('district', params.district);
     
-    // 构建完整的URL
-    const baseUrl = `/api/power/department/page`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+//     // 构建完整的URL
+//     const baseUrl = `/api/power/department/page`;
+//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
     
-    console.log('部门API请求URL:', url);
+//     console.log('部门API请求URL:', url);
     
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+//     // 发送GET请求
+//     const response = await fetch(url, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
     
-    const data: ApiResponse = await response.json();
-    return data;
+//     const data: ApiResponse = await response.json();
+//     return data;
     
-  } catch (error) {
-    console.error('部门API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('部门API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 新增部门API
-const addDepartmentApi = async (data: any) => {
-  try {
-    const response = await fetch('/api/power/department/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
+// const addDepartmentApi = async (data: any) => {
+//   try {
+//     const response = await fetch('/api/power/department/save', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify(data)
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const result = await response.json();
-    console.log('新增部门API响应:', result);
-    return result;
+//     const result = await response.json();
+//     console.log('新增部门API响应:', result);
+//     return result;
     
-  } catch (error) {
-    console.error('新增部门API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('新增部门API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 编辑部门API
-const updateDepartmentApi = async (data: any) => {
-  try {
-    const response = await fetch('/api/power/department/update', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
+// const updateDepartmentApi = async (data: any) => {
+//   try {
+//     const response = await fetch('/api/power/department/update', {
+//       method: 'PUT',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify(data)
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const result = await response.json();
-    console.log('编辑部门API响应:', result);
-    return result;
+//     const result = await response.json();
+//     console.log('编辑部门API响应:', result);
+//     return result;
     
-  } catch (error) {
-    console.error('编辑部门API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('编辑部门API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 删除部门API
-const deleteDepartmentApi = async (id: number) => {
-  try {
-    const response = await fetch(`/api/power/department/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+// const deleteDepartmentApi = async (id: number) => {
+//   try {
+//     const response = await fetch(`/api/power/department/${id}`, {
+//       method: 'DELETE',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const result = await response.json();
-    console.log('删除部门API响应:', result);
-    return result;
+//     const result = await response.json();
+//     console.log('删除部门API响应:', result);
+//     return result;
     
-  } catch (error) {
-    console.error('删除部门API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('删除部门API请求失败:', error);
+//     throw error;
+//   }
+// };
 
 // 🔥 提交表单
 const handleSubmit = async () => {
@@ -336,7 +347,7 @@ const handleSubmit = async () => {
     }
 
     // 修改：根据操作类型构建不同的提交数据
-    let submitData: any;
+    let submitData: DepartmentFormData;
     // 构建提交数据
     // const submitData = {
     //   ...formData.value,
@@ -354,16 +365,13 @@ const handleSubmit = async () => {
     if (isEdit.value) {
       // 编辑时包含ID
       submitData = {
-        id: currentEditId.value,
-        ...formData.value,
-        updatedTime: new Date().toISOString()
+        id: currentEditId.value!,
+        ...formData.value
       };
     } else {
       // 新增时不包含ID
       submitData = {
-        ...formData.value,
-        createTime: new Date().toISOString(),
-        updatedTime: new Date().toISOString()
+        ...formData.value
       };
     }
     
@@ -396,23 +404,22 @@ const handleCancel = () => {
   dialogVisible.value = false;
 };
 
-// 获取部门列表
+// 🔥 修改：获取部门列表（使用 API 方法）
 const getDepartmentList = async () => {
   loading.value = true;
   try {
-    // 合并区域筛选和表单搜索条件
-    const searchParams = {
+    // 🔥 使用 API 方法和类型
+    const params: DepartmentQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       ...areaFilter.value,
       ...searchForm.value
     };
     
-    console.log('部门搜索参数:', searchParams);
+    console.log('部门搜索参数:', params);
     
-    const response = await getDepartmentListApi(searchParams);
+    const response = await getDepartmentListApi(params);
     
-    // 处理API响应
     if (response.code === 200) {
       tableData.value = response.data.records;
       total.value = response.data.total;
@@ -484,7 +491,7 @@ const handleEdit = (row: DepartmentData) => {
   });
 };
 
-// 删除部门
+// 🔥 修改：删除部门（使用 API 方法）
 const handleDelete = async (row: DepartmentData) => {
   try {
     await ElMessageBox.confirm(
@@ -497,7 +504,7 @@ const handleDelete = async (row: DepartmentData) => {
       }
     );
     
-    // 🔥 调用删除API
+    // 🔥 使用 API 方法
     const result = await deleteDepartmentApi(row.id);
     
     if (result.code === 200) {

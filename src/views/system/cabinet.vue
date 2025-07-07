@@ -8,6 +8,21 @@ import { useAreaStore } from "@/store/modules/area"; // 🔥 导入 AreaStore
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter"; 
 
+
+// 🔥 新增：导入 API 方法和类型
+import { 
+  getCabinetList as getCabinetListApi, 
+  addCabinet as addCabinetApi, 
+  updateCabinet as updateCabinetApi, 
+  deleteCabinet as deleteCabinetApi,
+  getOnlineDevices as getOnlineDevicesApi,
+  openCabinet as openCabinetApi,
+  checkDeviceStatus as checkDeviceStatusApi,
+  type CabinetData,
+  type CabinetFormData,
+  type CabinetQueryParams
+} from '@/api/cabinet';
+
 defineOptions({
   name: "CabinetManagement"
 });
@@ -15,55 +30,55 @@ defineOptions({
 // 🔥 使用 AreaStore
 const areaStore = useAreaStore();
 
-// 柜子数据接口（根据API返回数据调整）
-interface CabinetData {
-  id: number;
-  cabinetCode: string;
-  cabinetName: string;
-  province: string;
-  city: string;
-  district: string;
-  address: string;
-  onlineStatus?: number | null; // 🔥 改为可选字段，通过其他API更新
-  createTime?: string;
-  updatedTime?: string;
-}
+// // 柜子数据接口（根据API返回数据调整）
+// interface CabinetData {
+//   id: number;
+//   cabinetCode: string;
+//   cabinetName: string;
+//   province: string;
+//   city: string;
+//   district: string;
+//   address: string;
+//   onlineStatus?: number | null; // 🔥 改为可选字段，通过其他API更新
+//   createTime?: string;
+//   updatedTime?: string;
+// }
 // 🔥 新增：在线状态相关接口
-interface OnlineStatusApiResponse {
-  code: number;
-  msg: string;
-  data: string[];
-}
-// 🔥 新增：一键开柜API请求接口
-interface OpenCabinetRequest {
-  cabinetCode: string;
-  type: string;
-}
-// 🔥 新增：一键开柜API响应接口
-interface OpenCabinetApiResponse {
-  code: number;
-  msg: string;
-  data?: any;
-}
-// 🔥 新增：单个设备状态检查API响应接口
-interface DeviceStatusApiResponse {
-  code: number;
-  msg: string;
-  data: boolean; // true-在线, false-离线
-}
+// interface OnlineStatusApiResponse {
+//   code: number;
+//   msg: string;
+//   data: string[];
+// }
+// // 🔥 新增：一键开柜API请求接口
+// interface OpenCabinetRequest {
+//   cabinetCode: string;
+//   type: string;
+// }
+// // 🔥 新增：一键开柜API响应接口
+// interface OpenCabinetApiResponse {
+//   code: number;
+//   msg: string;
+//   data?: any;
+// }
+// // 🔥 新增：单个设备状态检查API响应接口
+// interface DeviceStatusApiResponse {
+//   code: number;
+//   msg: string;
+//   data: boolean; // true-在线, false-离线
+// }
 
-// API响应接口
-interface ApiResponse {
-  code: number;
-  msg: string;
-  data: {
-    records: CabinetData[];
-    total: number;
-    current: number;
-    size: number;
-    pages: number;
-  };
-}
+// // API响应接口
+// interface ApiResponse {
+//   code: number;
+//   msg: string;
+//   data: {
+//     records: CabinetData[];
+//     total: number;
+//     current: number;
+//     size: number;
+//     pages: number;
+//   };
+// }
 
 // 响应式数据
 const loading = ref(false);
@@ -73,7 +88,7 @@ const pageSize = ref(10);
 const total = ref(0);
 
 // 设备表单数据
-const deviceForm = ref({
+const deviceForm = ref<CabinetFormData>({
   cabinetCode: '',
   cabinetName: '',
   province: '',
@@ -328,155 +343,151 @@ const deviceFormRules = {
 const deviceFormRef = ref();
 
 // 从api获取数据
-const getCabinetListApi = async (params: any = {}) => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
+// const getCabinetListApi = async (params: any = {}) => {
+//   try {
+//     // 构建查询参数
+//     const queryParams = new URLSearchParams();
     
-    // 添加分页参数
-    if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
-    if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+//     // 添加分页参数
+//     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
+//     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
     
-    // 添加搜索参数
-    if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    // 最终生成类似: /api/power/cabinet/page?cabinetCode=2
-    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
-    if (params.province) queryParams.append('province', params.province);
-    if (params.city) queryParams.append('city', params.city);
-    if (params.district) queryParams.append('district', params.district);
+//     // 添加搜索参数
+//     if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
+//     // 最终生成类似: /api/power/cabinet/page?cabinetCode=2
+//     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+//     if (params.province) queryParams.append('province', params.province);
+//     if (params.city) queryParams.append('city', params.city);
+//     if (params.district) queryParams.append('district', params.district);
     
-    // 构建完整的URL
-    const baseUrl = `/api/power/cabinet/page`;
-    const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+//     // 构建完整的URL
+//     const baseUrl = `/api/power/cabinet/page`;
+//     const url = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
     
-    console.log('API请求URL:', url); // 添加日志查看请求URL
+//     console.log('API请求URL:', url); // 添加日志查看请求URL
     
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      }
-    });
+//     // 发送GET请求
+//     const response = await fetch(url, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         // 如果需要认证，添加token
+//         // 'Authorization': `Bearer ${getToken()}`
+//       }
+//     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
     
-    const data: ApiResponse = await response.json();
-    return data;
+//     const data: ApiResponse = await response.json();
+//     return data;
     
-  } catch (error) {
-    console.error('API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 新增：获取在线设备列表的API
-const getOnlineDevicesApi = async (): Promise<OnlineStatusApiResponse> => {
-  try {
-    const response = await fetch('/api/power/dtu/devices', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+// const getOnlineDevicesApi = async (): Promise<OnlineStatusApiResponse> => {
+//   try {
+//     const response = await fetch('/api/power/dtu/devices', {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const data: OnlineStatusApiResponse = await response.json();
-    console.log('获取在线设备API响应:', data);
-    return data;
+//     const data: OnlineStatusApiResponse = await response.json();
+//     console.log('获取在线设备API响应:', data);
+//     return data;
     
-  } catch (error) {
-    console.error('获取在线设备API请求失败:', error);
-    throw error;
-  }
-};
-
+//   } catch (error) {
+//     console.error('获取在线设备API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 新增：一键开柜API调用
-const openCabinetApi = async (cabinetCode: string, type: string = 'open'): Promise<OpenCabinetApiResponse> => {
-  try {
-    const requestData: OpenCabinetRequest = {
-      cabinetCode,
-      type
-    };
+// const openCabinetApi = async (cabinetCode: string, type: string = 'open'): Promise<OpenCabinetApiResponse> => {
+//   try {
+//     const requestData: OpenCabinetRequest = {
+//       cabinetCode,
+//       type
+//     };
     
-    console.log('发送开柜请求:', requestData);
+//     console.log('发送开柜请求:', requestData);
     
-    const response = await fetch('/api/power/dtu/devices/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData)
-    });
+//     const response = await fetch('/api/power/dtu/devices/send', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify(requestData)
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const data: OpenCabinetApiResponse = await response.json();
-    console.log('开柜API响应:', data);
-    return data;
+//     const data: OpenCabinetApiResponse = await response.json();
+//     console.log('开柜API响应:', data);
+//     return data;
     
-  } catch (error) {
-    console.error('开柜API请求失败:', error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error('开柜API请求失败:', error);
+//     throw error;
+//   }
+// };
 // 🔥 新增：检查单个设备状态API
-const checkDeviceStatusApi = async (cabinetCode: string): Promise<DeviceStatusApiResponse> => {
-  try {
-    const response = await fetch(`/api/power/dtu/devices/status/${cabinetCode}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+// const checkDeviceStatusApi = async (cabinetCode: string): Promise<DeviceStatusApiResponse> => {
+//   try {
+//     const response = await fetch(`/api/power/dtu/devices/status/${cabinetCode}`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const data: DeviceStatusApiResponse = await response.json();
-    console.log(`设备 ${cabinetCode} 状态检查响应:`, data);
-    return data;
+//     const data: DeviceStatusApiResponse = await response.json();
+//     console.log(`设备 ${cabinetCode} 状态检查响应:`, data);
+//     return data;
     
-  } catch (error) {
-    console.error(`检查设备 ${cabinetCode} 状态失败:`, error);
-    throw error;
-  }
-};
+//   } catch (error) {
+//     console.error(`检查设备 ${cabinetCode} 状态失败:`, error);
+//     throw error;
+//   }
+// };
 
+// 🔥 修改：更新设备在线状态（使用 API 方法）
 const updateDeviceOnlineStatus = async () => {
   try {
     console.log('开始更新设备在线状态...');
     
-    // 获取在线设备列表
+    // 🔥 使用 API 方法
     const response = await getOnlineDevicesApi();
     
     if (response.code === 200) {
-      const onlineDeviceCodes = response.data; // 在线设备编号列表
+      const onlineDeviceCodes = response.data;
       console.log('在线设备列表:', onlineDeviceCodes);
       
-      // 更新当前表格数据的在线状态
       tableData.value = tableData.value.map(device => {
-        // 检查设备编号是否在在线列表中
         const isOnline = onlineDeviceCodes.includes(device.cabinetCode);
-        
         return {
           ...device,
-          onlineStatus: isOnline ? 1 : 0 // 1-在线, 0-离线
+          onlineStatus: isOnline ? 1 : 0
         };
       });
       
       console.log('设备在线状态更新完成');
       
-      // 🔥 可选：显示更新结果统计
       const onlineCount = tableData.value.filter(device => device.onlineStatus === 1).length;
       const totalCount = tableData.value.length;
       console.log(`在线状态更新完成: ${onlineCount}/${totalCount} 设备在线`);
@@ -492,20 +503,18 @@ const updateDeviceOnlineStatus = async () => {
   }
 };
 
-// 🔥 新增：检查单个设备状态
+// 🔥 修改：检查单个设备状态（使用 API 方法）
 const handleCheckDeviceStatus = async (row: CabinetData) => {
-  // 显示检查中的加载状态
   const loadingMessage = ElMessage({
     message: `正在检查设备 "${row.cabinetName}" 的在线状态...`,
     type: 'info',
-    duration: 0 // 不自动关闭
+    duration: 0
   });
   
   try {
-    // 调用状态检查API
+    // 🔥 使用 API 方法
     const result = await checkDeviceStatusApi(row.cabinetCode);
     
-    // 关闭加载提示
     loadingMessage.close();
     
     if (result.code === 200) {
@@ -513,13 +522,11 @@ const handleCheckDeviceStatus = async (row: CabinetData) => {
       const statusText = isOnline ? '在线' : '离线';
       const statusType = isOnline ? 'success' : 'warning';
       
-      // 更新表格中该设备的状态
       const deviceIndex = tableData.value.findIndex(device => device.cabinetCode === row.cabinetCode);
       if (deviceIndex !== -1) {
         tableData.value[deviceIndex].onlineStatus = isOnline ? 1 : 0;
       }
       
-      // 显示检查结果
       ElMessage({
         message: `设备 "${row.cabinetName}" 当前状态：${statusText}`,
         type: statusType,
@@ -534,34 +541,34 @@ const handleCheckDeviceStatus = async (row: CabinetData) => {
     }
     
   } catch (error) {
-    // 关闭加载提示
     loadingMessage.close();
     ElMessage.error('设备状态检查失败，请检查网络连接');
     console.error('设备状态检查API调用失败:', error);
   }
 };
 
-// 获取柜子列表
+// 🔥 修改：获取柜子列表（使用 API 方法）
 const getCabinetList = async () => {
   loading.value = true;
   try {
-    const response = await getCabinetListApi({
+    // 🔥 使用 API 方法和类型
+    const params: CabinetQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       ...areaFilter.value,
       ...searchForm.value
-    });
+    };
+    
+    const response = await getCabinetListApi(params);
     
     if (response.code === 200) {
-      // 🔥 修改：先设置数据，在线状态暂时设为null
       tableData.value = response.data.records.map(item => ({
         ...item,
-        onlineStatus: null // 🔥 初始设为null，等待状态更新
+        onlineStatus: null
       }));
       total.value = response.data.total;
       console.log('获取到的柜子数据:', tableData.value);
       
-      // 🔥 新增：获取数据后立即更新在线状态
       await updateDeviceOnlineStatus();
       
     } else {
@@ -684,49 +691,12 @@ const initPermissionData = async () => {
   }
 };
 
-// 新增设备API调用
+// 🔥 修改：新增设备（使用 API 方法）
 const addDevice = async () => {
   try {
-    // 这里调用新增设备的API
-    // 构建请求体数据
-    const requestData = {
-      cabinetCode: deviceForm.value.cabinetCode,
-      cabinetName: deviceForm.value.cabinetName,
-      province: deviceForm.value.province,
-      city: deviceForm.value.city,
-      district: deviceForm.value.district,
-      address: deviceForm.value.address,
-      //onlineStatus: 0, 
-      createTime: new Date().toISOString(),
-      updatedTime: new Date().toISOString()
-      // maxTemperature: deviceForm.value.maxTemperature,
-      // minTemperature: deviceForm.value.minTemperature,
-      // maxHumidity: deviceForm.value.maxHumidity,
-      // minHumidity: deviceForm.value.minHumidity,
-      // operationMode: deviceForm.value.operationMode,
-      // maxTemperatureDifference: deviceForm.value.maxTemperatureDifference
-    };
+    // 🔥 使用 API 方法
+    const result = await addCabinetApi(deviceForm.value);
     
-    console.log('发送新增设备请求:', requestData);
-
-    // 发送POST请求到后端API
-    const response = await fetch('/api/power/cabinet/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      },
-      body: JSON.stringify(requestData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
-    // 处理API响应
     if (result.code === 200) {
       ElMessage.success('设备新增成功');
       console.log('新增设备成功:', result);
@@ -741,17 +711,22 @@ const addDevice = async () => {
     throw error;
   }
 };
-// 更新设备API调用
+// 🔥 修改：更新设备（使用 API 方法）
 const updateDevice = async () => {
   try {
-    // 这里调用更新设备的API
-    // const response = await updateDeviceApi(deviceForm.value);
+    // 🔥 使用 API 方法
+    const result = await updateCabinetApi(deviceForm.value);
     
-    ElMessage.success('设备更新成功');
-    console.log('更新设备数据:', deviceForm.value);
+    if (result.code === 200) {
+      ElMessage.success('设备更新成功');
+      console.log('更新设备成功:', result);
+    } else {
+      ElMessage.error(result.msg || '设备更新失败');
+      throw new Error(result.msg || '设备更新失败');
+    }
     
   } catch (error) {
-    ElMessage.error('设备更新失败');
+    ElMessage.error('设备更新失败，请检查网络连接');
     console.error('更新设备错误:', error);
     throw error;
   }
@@ -759,9 +734,8 @@ const updateDevice = async () => {
 
 
 
-// 一键开柜
+// 🔥 修改：一键开柜（使用 API 方法）
 const handleOpenCabinet = async (row: CabinetData) => {
-  // 检查设备在线状态
   if (row.onlineStatus === null || row.onlineStatus === undefined) {
     ElMessage.warning('设备状态未知，无法执行开柜操作');
     return;
@@ -783,28 +757,25 @@ const handleOpenCabinet = async (row: CabinetData) => {
       }
     );
     
-    // 🔥 新增：显示开柜中的加载状态
     const loadingMessage = ElMessage({
       message: '正在发送开柜命令...',
       type: 'info',
-      duration: 0 // 不自动关闭
+      duration: 0
     });
     
     try {
-      // 🔥 新增：调用开柜API
+      // 🔥 使用 API 方法
       const result = await openCabinetApi(row.cabinetCode, 'open');
       
-      // 关闭加载提示
       loadingMessage.close();
       
       if (result.code === 200) {
         ElMessage.success(`设备 "${row.cabinetName}" 开柜命令发送成功！`);
         console.log('开柜成功:', result);
         
-        // 🔥 可选：开柜成功后刷新在线状态
         setTimeout(() => {
           updateDeviceOnlineStatus();
-        }, 2000); // 2秒后刷新状态
+        }, 2000);
         
       } else {
         ElMessage.error(result.msg || '开柜命令发送失败');
@@ -812,7 +783,6 @@ const handleOpenCabinet = async (row: CabinetData) => {
       }
       
     } catch (error) {
-      // 关闭加载提示
       loadingMessage.close();
       ElMessage.error('开柜命令发送失败，请检查网络连接');
       console.error('开柜API调用失败:', error);
@@ -826,30 +796,30 @@ const handleOpenCabinet = async (row: CabinetData) => {
 };
 
 // 删除柜子API调用
-const deleteCabinetApi = async (id: number) => {
-  try {
-    const response = await fetch(`/api/power/cabinet/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加token
-        // 'Authorization': `Bearer ${getToken()}`
-      }
-    });
+// const deleteCabinetApi = async (id: number) => {
+//   try {
+//     const response = await fetch(`/api/power/cabinet/${id}`, {
+//       method: 'DELETE',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         // 如果需要认证，添加token
+//         // 'Authorization': `Bearer ${getToken()}`
+//       }
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
 
-    const result = await response.json();
-    return result;
+//     const result = await response.json();
+//     return result;
     
-  } catch (error) {
-    console.error('删除设备API请求失败:', error);
-    throw error;
-  }
-};
-// 删除柜子（修改注释和提示文本）
+//   } catch (error) {
+//     console.error('删除设备API请求失败:', error);
+//     throw error;
+//   }
+// };
+// 🔥 修改：删除柜子（使用 API 方法）
 const handleDelete = async (row: CabinetData) => {
   try {
     await ElMessageBox.confirm(
@@ -862,21 +832,19 @@ const handleDelete = async (row: CabinetData) => {
       }
     );
     
-    // 调用删除API
+    // 🔥 使用 API 方法
     const result = await deleteCabinetApi(row.id);
     
-    // 处理API响应
     if (result.code === 200) {
       ElMessage.success('设备删除成功');
       console.log('删除设备成功:', result);
-      // 刷新列表
       getCabinetList();
     } else {
       ElMessage.error(result.msg || '设备删除失败');
     }
     
   } catch (error) {
-    if (error !== 'cancel') { // 用户取消删除时不显示错误信息
+    if (error !== 'cancel') {
       ElMessage.error('设备删除失败，请检查网络连接');
       console.error('删除设备错误:', error);
     } else {
@@ -898,11 +866,11 @@ const handleSizeChange = (size: number) => {
 };
 
 // 面板大小改变回调，已弃用
-const handlePanelResize = (width: number) => {
-  console.log('Panel width changed to:', width);
-  // 可以在这里保存用户的布局偏好到 localStorage
-  localStorage.setItem('cabinet-sidebar-width', width.toString());
-};
+// const handlePanelResize = (width: number) => {
+//   console.log('Panel width changed to:', width);
+//   // 可以在这里保存用户的布局偏好到 localStorage
+//   localStorage.setItem('cabinet-sidebar-width', width.toString());
+// };
 
 // 生命周期（修改函数调用）
 onMounted(async () => {
