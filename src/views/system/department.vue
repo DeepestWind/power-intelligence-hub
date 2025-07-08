@@ -8,7 +8,7 @@ import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入 API 方法和类型
+// 导入 API 方法和类型
 import { 
   getDepartmentList as getDepartmentListApi, 
   addDepartment as addDepartmentApi, 
@@ -79,7 +79,7 @@ const {
   hasPermissionData
 } = useAreaSelect(formData);
 
-// 🔥 省份改变时清空城市和区域
+// 省份改变时清空城市和区域
 const handleFormProvinceChange = () => {
   handleProvinceChange(formData.value);
 };
@@ -101,7 +101,7 @@ const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
   }
 };
 
-// 🔥 表单验证规则
+// 表单验证规则
 const formRules = {
   departmentName: [
     { required: true, message: '请输入部门名称', trigger: 'blur' },
@@ -120,17 +120,17 @@ const formRules = {
     { validator: validateAreaPermissionRule, trigger: 'change' }
   ]
 };
-// 🔥 表单引用
+// 表单引用
 const formRef = ref();
 
 
-// 🔥 提交表单
+// 提交表单
 const handleSubmit = async () => {
   try {
     // 表单验证
     await formRef.value.validate();
 
-    // 🔥 使用工具类的权限验证
+    // 使用工具类的权限验证
     const { province, city, district } = formData.value;
     if (!validateAreaPermission(province, city, district)) {
       ElMessage.error('您没有权限在该区域创建部门，请重新选择');
@@ -184,16 +184,16 @@ const handleSubmit = async () => {
     }
   }
 };
-// 🔥 取消操作
+// 取消操作
 const handleCancel = () => {
   dialogVisible.value = false;
 };
 
-// 🔥 修改：获取部门列表（使用 API 方法）
+// 获取部门列表（使用 API 方法）
 const getDepartmentList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: DepartmentQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -250,7 +250,7 @@ const handleEdit = (row: DepartmentData) => {
   });
 };
 
-// 🔥 修改：删除部门（使用 API 方法）
+// 删除部门（使用 API 方法）
 const handleDelete = async (row: DepartmentData) => {
   try {
     await ElMessageBox.confirm(
@@ -263,7 +263,7 @@ const handleDelete = async (row: DepartmentData) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteDepartmentApi(row.id);
     
     if (result.code === 200) {
@@ -332,7 +332,7 @@ const formatDateTime = (dateTime: string) => {
 
 // 生命周期
 onMounted(async () => {
-  // 🔥 使用工具类初始化权限数据
+  // 使用工具类初始化权限数据
   await initAreaSelectData();
   // 获取部门列表
   await getDepartmentList();
@@ -618,7 +618,7 @@ onMounted(async () => {
     margin-left: 4px;
   }
 }
-// 🔥 添加弹窗样式
+// 添加弹窗样式
 :deep(.el-dialog) {
   .el-form {
     padding: 0 20px;

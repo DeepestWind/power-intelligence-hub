@@ -10,7 +10,7 @@ import { usePageSearch } from "@/utils/useAreaFilter";
 import { useUserStoreHook } from '@/store/modules/user';
 //import { transformPcaToTree } from "@/utils/area";
 
-// 🔥 新增：导入 API 方法和类型
+// 导入 API 方法和类型
 import { 
   getUserList as getUserListApi, 
   addUser as addUserApi, 
@@ -58,7 +58,7 @@ const departmentOptions = ref<Array<{ label: string; value: string }>>([]);
 const departmentLoading = ref(false);
 
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -95,7 +95,7 @@ const userForm = ref({
   address: '',
 });
 
-// 🔥 使用通用的省市区选择器工具类
+// 使用通用的省市区选择器工具类
 const {
   provinceOptions,
   cityOptions,
@@ -108,7 +108,7 @@ const {
 } = useAreaSelect(userForm);
 
 
-// 🔥 修改省市区改变事件处理
+// 修改省市区改变事件处理
 const handleUserProvinceChange = () => {
   handleProvinceChange(userForm.value);
 };
@@ -123,7 +123,7 @@ const dialogTitle = ref('新增用户');
 const isEdit = ref(false);
 
 
-// 🔥 添加用户类型和管理员级别的自定义验证规则
+// 添加用户类型和管理员级别的自定义验证规则
 const validateAdminLevel = (rule: any, value: any, callback: any) => {
   const { userType } = userForm.value;
   
@@ -137,7 +137,7 @@ const validateAdminLevel = (rule: any, value: any, callback: any) => {
     callback();
   }
 };
-// 🔥 添加区域权限验证到表单验证规则
+// 添加区域权限验证到表单验证规则
 const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
   const { province, city, district } = userForm.value;
   
@@ -172,10 +172,10 @@ const userFormRules = {
   ],
   adminLevel: [
     { required: true, message: '请选择管理员级别', trigger: 'change' },
-    { validator: validateAdminLevel, trigger: 'change' } // 🔥 添加自定义验证
+    { validator: validateAdminLevel, trigger: 'change' } // 添加自定义验证
   ],
-  // 🔥 省市区验证规则
-  // 🔥 添加区域权限验证
+  // 省市区验证规则
+  // 添加区域权限验证
   province: [
     { 
       validator: (rule: any, value: any, callback: any) => {
@@ -212,7 +212,7 @@ const userTypeOptions = [
   { label: '超级管理员', value: 2 }
 ];
 
-// 🔥 管理员级别选项 - 根据用户类型动态显示
+// 管理员级别选项 - 根据用户类型动态显示
 const adminLevelOptions = computed(() => {
   switch (userForm.value.userType) {
     case 0: // 普通用户
@@ -235,7 +235,7 @@ const adminLevelOptions = computed(() => {
       ];
   }
 });
-// 🔥 用户类型改变时的处理函数
+// 用户类型改变时的处理函数
 const handleUserTypeChange = () => {
   // 根据用户类型设置对应的管理员级别
   switch (userForm.value.userType) {
@@ -250,7 +250,7 @@ const handleUserTypeChange = () => {
       break;
     case 2: // 超级管理员
       userForm.value.adminLevel = 3; // 强制设置为省级
-      // 🔥 超级管理员清空城市和区域
+      // 超级管理员清空城市和区域
       userForm.value.province = '';
       userForm.value.city = '';
       userForm.value.district = '';
@@ -259,12 +259,12 @@ const handleUserTypeChange = () => {
       userForm.value.adminLevel = 0;
   }
   
-  // 🔥 根据新的管理员级别清理不适用的地区选择
+  // 根据新的管理员级别清理不适用的地区选择
   handleAdminLevelChange();
   
   console.log('用户类型改变:', userForm.value.userType, '管理员级别:', userForm.value.adminLevel);
 };
-// 🔥 添加管理员级别改变时的处理函数
+// 添加管理员级别改变时的处理函数
 const handleAdminLevelChange = () => {
   const { userType, adminLevel } = userForm.value;
   
@@ -281,37 +281,37 @@ const handleAdminLevelChange = () => {
 };
 
 
-// 🔥 添加查看弹窗相关数据
+// 添加查看弹窗相关数据
 const manageDialogVisible = ref(false);
 const currentManageUser = ref<UserData | null>(null);
-// 🔥 IC卡管理相关数据
+// IC卡管理相关数据
 const userIcCards = ref<UserIcCard[]>([]);
 const icCardLoading = ref(false);
 const addIcCardVisible = ref(false);
 const newIcCard = ref('');
-// 🔥 添加绑定柜子相关数据
+// 添加绑定柜子相关数据
 const userCabinets = ref<UserCabinet[]>([]);
 const cabinetLoading = ref(false);
 const addCabinetVisible = ref(false);
 const newCabinetId = ref('');
 const newCabinetName = ref('');
 
-// 🔥 新增：绑定部门管理相关数据
+// 绑定部门管理相关数据
 const userDepartments = ref<Array<{ id: string; name: string }>>([]);
 const departmentManageLoading = ref(false);
 const addDepartmentVisible = ref(false);
 const availableDepartments = ref<Array<{ id: string; name: string }>>([]);
 const departmentListLoading = ref(false);
-// 🔥 新增：选择部门相关数据
+// 选择部门相关数据
 const selectedDepartment = ref<{ id: string; name: string } | null>(null);
 
 
-// 🔥 新增：获取部门下拉选项
+// 获取部门下拉选项
 const loadDepartmentOptions = async () => {
   departmentLoading.value = true;
   try {
 
-    // 🔥 修改：从 store 中获取当前用户ID
+    // 从 store 中获取当前用户ID
     const userStore = useUserStoreHook();
     const currentUserId = userStore.getCurrentUserId;
     
@@ -326,7 +326,7 @@ const loadDepartmentOptions = async () => {
     if (result.code === 200) {
       departmentOptions.value = Object.entries(result.data).map(([id, name]) => ({
         label: name,
-        value: name // 🔥 使用部门名称作为搜索值
+        value: name // 使用部门名称作为搜索值
       }));
       console.log('获取部门选项成功:', departmentOptions.value);
     } else {
@@ -343,11 +343,11 @@ const loadDepartmentOptions = async () => {
   }
 };
 
-// 🔥 修改：获取用户列表（使用 API 方法）
+// 获取用户列表（使用 API 方法）
 const getUserList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: UserQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -386,7 +386,7 @@ const handleAddUser = () => {
   isEdit.value = false;
   resetUserForm();
   dialogVisible.value = true;
-  // 🔥 使用 nextTick 确保表单渲染完成后再清除验证
+  // 使用 nextTick 确保表单渲染完成后再清除验证
   nextTick(() => {
     if (userFormRef.value) {
       userFormRef.value.clearValidate();
@@ -409,7 +409,7 @@ const resetUserForm = () => {
     district: '',
     address: '',
   };
-  // 🔥 清理当前编辑用户引用
+  // 清理当前编辑用户引用
   currentEditUser.value = null;
   if (userFormRef.value) {
     userFormRef.value.clearValidate();
@@ -428,7 +428,7 @@ const handleConfirm = async () => {
   
   try {
     await userFormRef.value.validate();
-    // 🔥 使用工具类的权限验证
+    // 使用工具类的权限验证
     const { province, city, district } = userForm.value;
     if (province && !validateAreaPermission(province, city, district)) {
       ElMessage.error('您没有权限在该区域创建用户，请重新选择');
@@ -452,10 +452,10 @@ const handleConfirm = async () => {
   }
 };
 
-// 🔥 修改：新增用户（使用 API 方法）
+// 新增用户（使用 API 方法）
 const addUser = async () => {
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await addUserApi(userForm.value);
     
     if (result.code === 200) {
@@ -475,7 +475,7 @@ const addUser = async () => {
 
 const currentEditUser = ref<UserData | null>(null);
 
-// 🔥 修改：更新用户（使用 API 方法）
+// 更新用户（使用 API 方法）
 const updateUser = async () => {
   try {
     if (!currentEditUser.value?.id) {
@@ -487,7 +487,7 @@ const updateUser = async () => {
       id: currentEditUser.value.id
     };
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await updateUserApi(requestData);
     
     if (result.code === 200) {
@@ -506,7 +506,7 @@ const updateUser = async () => {
 };
 
 
-// 🔥 修改：删除用户（使用 API 方法）
+// 删除用户（使用 API 方法）
 const handleDelete = async (row: UserData) => {
   try {
     await ElMessageBox.confirm(
@@ -519,7 +519,7 @@ const handleDelete = async (row: UserData) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteUserApi(row.id);
     
     if (result.code === 200) {
@@ -561,7 +561,7 @@ const handleEdit = (row: UserData) => {
     address: row.address || ''
   };
   
-  // 🔥 编辑时验证用户类型和管理员级别的一致性
+  // 编辑时验证用户类型和管理员级别的一致性
   nextTick(() => {
     validateUserTypeAndAdminLevel();
     if (userFormRef.value) {
@@ -571,7 +571,7 @@ const handleEdit = (row: UserData) => {
   
   dialogVisible.value = true;
 };
-// 🔥 验证用户类型和管理员级别的一致性
+// 验证用户类型和管理员级别的一致性
 const validateUserTypeAndAdminLevel = () => {
   const { userType, adminLevel } = userForm.value;
   
@@ -586,10 +586,10 @@ const validateUserTypeAndAdminLevel = () => {
     userForm.value.adminLevel = 1;
     ElMessage.warning('管理员的管理员级别已自动调整为区级');
   }
-  // 🔥 根据管理员级别验证和清理地区选择
+  // 根据管理员级别验证和清理地区选择
   validateAreaByAdminLevel();
 };
-// 🔥 添加根据管理员级别验证地区选择的函数
+// 添加根据管理员级别验证地区选择的函数
 const validateAreaByAdminLevel = () => {
   const { userType, adminLevel, city, district } = userForm.value;
   let hasChanges = false;
@@ -605,7 +605,7 @@ const validateAreaByAdminLevel = () => {
   }
   
 };
-// 🔥 判断根据管理员级别是否禁用某个级别的选择
+// 判断根据管理员级别是否禁用某个级别的选择
 const isDisabledByAdminLevel = (level: 'city' | 'district') => {
   const { userType, adminLevel } = userForm.value;
   
@@ -629,7 +629,7 @@ const isDisabledByAdminLevel = (level: 'city' | 'district') => {
   return false;
 };
 
-// 🔥 新增：查看用户功能
+// 查看用户功能
 const handleView = (row: UserData) => {
   // 这里实现新的查看功能
   ElMessage.info(`查看用户: ${row.userName}`);
@@ -651,7 +651,7 @@ const handleManage = async (row: UserData) => {
     currentManageUser.value = { ...row };
     manageDialogVisible.value = true;
     
-    // 🔥 分别加载数据，避免Promise.all可能的问题
+    // 分别加载数据，避免Promise.all可能的问题
     await loadUserIcCards(row.id);
     await loadUserCabinets(row.id);
     await loadUserDepartments(row.id);
@@ -663,11 +663,11 @@ const handleManage = async (row: UserData) => {
   }
 };
 
-// 🔥 新增：加载用户绑定部门信息
+// 加载用户绑定部门信息
 const loadUserDepartments = async (userId: number) => {
   departmentManageLoading.value = true;
   try {
-    // 🔥 修改：从当前查看用户中获取部门信息
+    // 从当前查看用户中获取部门信息
     if (currentManageUser.value?.departmentId && currentManageUser.value?.departmentName) {
       userDepartments.value = [{
         id: currentManageUser.value.departmentId.toString(),
@@ -687,7 +687,7 @@ const loadUserDepartments = async (userId: number) => {
   }
 };
 
-// 🔥 新增：获取可选部门列表
+// 获取可选部门列表
 const loadAvailableDepartments = async (userId: number) => {
   departmentListLoading.value = true;
   try {
@@ -713,12 +713,12 @@ const loadAvailableDepartments = async (userId: number) => {
   }
 };
 
-// 🔥 新增：选择部门
+// 选择部门
 const handleSelectDepartment = (department: { id: string; name: string }) => {
   selectedDepartment.value = department;
   console.log('选择部门:', department);
 };
-// 🔥 新增：确认添加部门
+// 确认添加部门
 const handleConfirmAddDepartment = async () => {
   if (!selectedDepartment.value) {
     ElMessage.warning('请选择要绑定的部门');
@@ -731,7 +731,7 @@ const handleConfirmAddDepartment = async () => {
   }
   
   try {
-    // 🔥 使用新的API方法
+    // 使用新的API方法
     const result = await addUserDepartmentApi(
       currentManageUser.value.id,
       parseInt(selectedDepartment.value.id),
@@ -743,7 +743,7 @@ const handleConfirmAddDepartment = async () => {
       addDepartmentVisible.value = false;
       selectedDepartment.value = null;
 
-      // 🔥 修改：更新当前查看用户的部门信息
+      // 更新当前查看用户的部门信息
       if (currentManageUser.value) {
         currentManageUser.value.departmentId = parseInt(selectedDepartment.value.id);
         currentManageUser.value.departmentName = selectedDepartment.value.name;
@@ -759,7 +759,7 @@ const handleConfirmAddDepartment = async () => {
     console.error('添加用户部门错误:', error);
   }
 };
-// 🔥 新增：删除用户部门
+// 删除用户部门
 const handleDeleteUserDepartment = async () => {
   if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
@@ -777,12 +777,12 @@ const handleDeleteUserDepartment = async () => {
       }
     );
     
-    // 🔥 使用新的API方法
+    // 使用新的API方法
     const result = await deleteUserDepartmentApi(currentManageUser.value.id);
     
     if (result.code === 200) {
       ElMessage.success('部门绑定移除成功');
-      // 🔥 修改：清空当前查看用户的部门信息
+      // 清空当前查看用户的部门信息
       if (currentManageUser.value) {
         currentManageUser.value.departmentId = null;
         currentManageUser.value.departmentName = null;
@@ -801,23 +801,23 @@ const handleDeleteUserDepartment = async () => {
   }
 };
 
-// 🔥 新增：打开添加部门弹窗
+// 打开添加部门弹窗
 const handleAddDepartment = async () => {
   if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
   
-  selectedDepartment.value = null; // 🔥 新增：重置选择状态
+  selectedDepartment.value = null; // 重置选择状态
   addDepartmentVisible.value = true;
   await loadAvailableDepartments(currentManageUser.value.id);
 };
 
-// 🔥 修改：加载用户IC卡信息（使用 API 方法）
+// 加载用户IC卡信息（使用 API 方法）
 const loadUserIcCards = async (userId: number) => {
   icCardLoading.value = true;
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await getUserIcCardsApi(userId);
     
     if (result.code === 200) {
@@ -838,13 +838,13 @@ const loadUserIcCards = async (userId: number) => {
     icCardLoading.value = false;
   }
 };
-// 🔥 打开添加IC卡弹窗
+// 打开添加IC卡弹窗
 const handleAddIcCard = () => {
   newIcCard.value = '';
   addIcCardVisible.value = true;
 };
 
-// 🔥 修改：确认添加IC卡（使用 API 方法）
+// 确认添加IC卡（使用 API 方法）
 const handleConfirmAddIcCard = async () => {
   if (!newIcCard.value.trim()) {
     ElMessage.warning('请输入IC卡号');
@@ -863,7 +863,7 @@ const handleConfirmAddIcCard = async () => {
       icCard: newIcCard.value.trim()
     };
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await addUserIcCardApi(cardData);
     
     if (result.code === 200) {
@@ -881,7 +881,7 @@ const handleConfirmAddIcCard = async () => {
   }
 };
 
-// 🔥 修改：删除IC卡（使用 API 方法）
+// 删除IC卡（使用 API 方法）
 const handleDeleteIcCard = async (icCard: UserIcCard) => {
   if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
@@ -899,7 +899,7 @@ const handleDeleteIcCard = async (icCard: UserIcCard) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteUserIcCardApi(currentManageUser.value.id, icCard.icCard);
     
     if (result.code === 200) {
@@ -917,18 +917,18 @@ const handleDeleteIcCard = async (icCard: UserIcCard) => {
   }
 };
 
-// 🔥 添加柜子列表相关数据
+// 添加柜子列表相关数据
 const cabinetListData = ref<CabinetListItem[]>([]);
 const cabinetListLoading = ref(false);
 const selectedCabinet = ref<CabinetListItem | null>(null);
 const cabinetListCurrentPage = ref(1);
 const cabinetListPageSize = ref(10);
 const cabinetListTotal = ref(0);
-// 🔥 修改：加载用户绑定柜子信息（使用 API 方法）
+// 加载用户绑定柜子信息（使用 API 方法）
 const loadUserCabinets = async (userId: number) => {
   cabinetLoading.value = true;
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await getUserCabinetsApi(userId);
     
     if (result.code === 200) {
@@ -954,20 +954,20 @@ const loadUserCabinets = async (userId: number) => {
     cabinetLoading.value = false;
   }
 };
-// 🔥 打开添加绑定柜子弹窗
+// 打开添加绑定柜子弹窗
 const handleAddCabinet = async () => {
   selectedCabinet.value = null;
   cabinetListCurrentPage.value = 1;
   addCabinetVisible.value = true;
   
-  // 🔥 打开弹窗时立即加载柜子列表
+  // 打开弹窗时立即加载柜子列表
   await loadCabinetList();
 };
-// 🔥 修改：加载柜子列表（使用 API 方法）
+// 加载柜子列表（使用 API 方法）
 const loadCabinetList = async () => {
   cabinetListLoading.value = true;
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await getCabinetListApi({
       pageNum: cabinetListCurrentPage.value,
       pageSize: cabinetListPageSize.value
@@ -990,7 +990,7 @@ const loadCabinetList = async () => {
     cabinetListLoading.value = false;
   }
 };
-// 🔥 柜子列表分页改变
+// 柜子列表分页改变
 const handleCabinetListPageChange = (page: number) => {
   cabinetListCurrentPage.value = page;
   loadCabinetList();
@@ -1000,12 +1000,12 @@ const handleCabinetListSizeChange = (size: number) => {
   cabinetListCurrentPage.value = 1;
   loadCabinetList();
 };
-// 🔥 选择柜子
+// 选择柜子
 const handleSelectCabinet = (cabinet: CabinetListItem) => {
   selectedCabinet.value = cabinet;
   console.log('选择柜子:', cabinet);
 };
-// 🔥 修改：确认添加绑定柜子（使用 API 方法）
+// 确认添加绑定柜子（使用 API 方法）
 const handleConfirmAddCabinet = async () => {
   if (!selectedCabinet.value) {
     ElMessage.warning('请选择要绑定的柜子');
@@ -1024,7 +1024,7 @@ const handleConfirmAddCabinet = async () => {
       cabinetName: selectedCabinet.value.cabinetName
     };
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await addUserCabinetApi(cabinetData);
     
     if (result.code === 200) {
@@ -1043,7 +1043,7 @@ const handleConfirmAddCabinet = async () => {
   }
 };
 
-// 🔥 修改：删除绑定柜子（使用 API 方法）
+// 删除绑定柜子（使用 API 方法）
 const handleDeleteCabinet = async (cabinet: UserCabinet) => {
   if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
@@ -1061,7 +1061,7 @@ const handleDeleteCabinet = async (cabinet: UserCabinet) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteUserCabinetApi(currentManageUser.value.id, cabinet.cabinetId);
     
     if (result.code === 200) {
@@ -1078,7 +1078,7 @@ const handleDeleteCabinet = async (cabinet: UserCabinet) => {
     }
   }
 };
-// 🔥 关闭查看弹窗
+// 关闭查看弹窗
 const closeManageDialog = () => {
   manageDialogVisible.value = false;
   currentManageUser.value = null;
@@ -1115,7 +1115,7 @@ const formatUserType = (userType: number) => {
 
 // 格式化管理员级别
 const formatAdminLevel = (adminLevel: number) => {
-  const option = adminLevelOptions.value.find(opt => opt.value === adminLevel); // 🔥 添加 .value
+  const option = adminLevelOptions.value.find(opt => opt.value === adminLevel); // 添加 .value
   return option ? option.label : '未知';
 };
 
@@ -1138,7 +1138,7 @@ const handleFaceRecognition = async (row: UserData) => {
   faceDialogVisible.value = true;
   await loadUserFaces();
 };
-// 🔥 修改：加载用户人脸信息（使用 API 方法）
+// 加载用户人脸信息（使用 API 方法）
 const loadUserFaces = async () => {
   if (!currentUserId.value) return;
   
@@ -1151,7 +1151,7 @@ const loadUserFaces = async () => {
   
   faceLoading.value = true;
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await getUserFacesApi(currentUserId.value);
     
     if (result.code === 200) {
@@ -1185,7 +1185,7 @@ const loadUserFaces = async () => {
 const triggerFileUpload = () => {
   fileInputRef.value?.click();
 };
-// 🔥 修改：处理文件上传（使用 API 方法）
+// 处理文件上传（使用 API 方法）
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -1204,7 +1204,7 @@ const handleFileUpload = async (event: Event) => {
   
   uploadLoading.value = true;
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await uploadFaceApi(currentUserId.value, file);
     
     if (result.code === 200) {
@@ -1222,7 +1222,7 @@ const handleFileUpload = async (event: Event) => {
     if (target) target.value = '';
   }
 };
-// 🔥 修改：删除人脸照片（使用 API 方法）
+// 删除人脸照片（使用 API 方法）
 const handleDeleteFace = async (imageUrl: string, index: number) => {
   if (!currentUserId.value) {
     ElMessage.error('无法获取用户信息，删除失败');
@@ -1240,7 +1240,7 @@ const handleDeleteFace = async (imageUrl: string, index: number) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteFaceApi(currentUserId.value);
     
     if (result.code === 200) {
@@ -1270,13 +1270,13 @@ const handleDeleteFace = async (imageUrl: string, index: number) => {
     }
   }
 };
-// 🔥 修改：验证删除状态（使用 API 方法）
+// 验证删除状态（使用 API 方法）
 const verifyDeletionStatus = async (userId: number, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
     try {
       await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
       
-      // 🔥 使用 API 方法
+      // 使用 API 方法
       const result = await getUserFacesApi(userId);
       if (result.code === 404) {
         return true;
@@ -1300,17 +1300,17 @@ const closeFaceDialog = () => {
   faceDialogVisible.value = false;
   currentUserId.value = null;
   currentUserName.value = '';
-  // 🔥 删除文件名清理逻辑
+  // 删除文件名清理逻辑
   // currentUserFaceFilename.value = null;
   faceImages.value = [];
 };
 
 // 生命周期
 onMounted(async () => {
-  // 🔥 使用工具类初始化权限数据
+  // 使用工具类初始化权限数据
   await initAreaSelectData();
   
-  // 🔥 新增：加载部门选项
+  // 加载部门选项
   await loadDepartmentOptions();
 
   // 获取用户列表
@@ -1596,7 +1596,7 @@ onMounted(async () => {
           </el-col>
         </el-row>
 
-        <!-- 🔥 修改省市区为下拉选择器，城市和区域改为非必选 -->
+        <!-- 修改省市区为下拉选择器，城市和区域改为非必选 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
@@ -1748,7 +1748,7 @@ onMounted(async () => {
         </div>
       </template>
     </el-dialog>    
-    <!-- 🔥 用户详情查看弹窗 -->
+    <!-- 用户详情查看弹窗 -->
     <el-dialog
       v-model="manageDialogVisible"
       :title="`${currentManageUser?.userName || ''} - 用户管理`"
@@ -1774,7 +1774,7 @@ onMounted(async () => {
           </div>
           
           <div class="departments-section">
-            <!-- 🔥 修改：简化为单行显示 -->
+            <!-- 简化为单行显示 -->
             <div v-if="userDepartments.length > 0" class="department-item">
               <div class="department-content">
                 <el-icon class="department-icon"><OfficeBuilding /></el-icon>
@@ -1790,7 +1790,7 @@ onMounted(async () => {
               />
             </div>
             
-            <!-- 🔥 空状态显示 -->
+            <!-- 空状态显示 -->
             <div v-else class="empty-department" v-loading="departmentManageLoading">
               <el-icon class="empty-icon"><OfficeBuilding /></el-icon>
               <span class="empty-text">暂无绑定的部门</span>
@@ -1949,7 +1949,7 @@ onMounted(async () => {
           </div>
         </div>
         
-        <!-- 🔥 部门列表表格 -->
+        <!-- 部门列表表格 -->
         <el-table
           :data="availableDepartments"
           v-loading="departmentListLoading"
@@ -2003,7 +2003,7 @@ onMounted(async () => {
       </template>
     </el-dialog>
 
-    <!-- 🔥 添加IC卡弹窗 -->
+    <!-- 添加IC卡弹窗 -->
     <el-dialog
       v-model="addIcCardVisible"
       title="添加IC卡"
@@ -2029,7 +2029,7 @@ onMounted(async () => {
         </div>
       </template>
     </el-dialog>
-    <!-- 🔥 修改添加绑定柜子弹窗 -->
+    <!-- 修改添加绑定柜子弹窗 -->
     <el-dialog
       v-model="addCabinetVisible"
       title="添加绑定柜子"
@@ -2047,7 +2047,7 @@ onMounted(async () => {
           </div>
         </div>
         
-        <!-- 🔥 柜子列表表格 -->
+        <!-- 柜子列表表格 -->
         <el-table
           :data="cabinetListData"
           v-loading="cabinetListLoading"
@@ -2092,14 +2092,14 @@ onMounted(async () => {
             </template>
           </el-table-column>
           
-          <!-- 🔥 删除省市区和在线状态列 -->
+          <!-- 删除省市区和在线状态列 -->
           <!-- <el-table-column prop="province" label="省份" width="100" />
           <el-table-column prop="city" label="城市" width="100" />
           <el-table-column prop="district" label="区域" width="100" />
           <el-table-column label="在线状态" width="80" align="center" /> -->
         </el-table>
         
-        <!-- 🔥 分页组件 -->
+        <!-- 分页组件 -->
         <div class="cabinet-pagination">
           <el-pagination
             v-model:current-page="cabinetListCurrentPage"
@@ -2278,7 +2278,7 @@ onMounted(async () => {
     flex-direction: column;
     gap: 20px;
     height: 600px;
-    // 🔥 新增：顶部部门管理面板样式
+    // 顶部部门管理面板样式
     .top-panel {
       border: 1px solid #e4e7ed;
       border-radius: 6px;
@@ -2314,7 +2314,7 @@ onMounted(async () => {
       }
       
       .departments-section {
-        padding: 16px 20px; // 🔥 减少内边距
+        padding: 16px 20px; // 减少内边距
         
         .department-item {
           display: flex;
@@ -2372,7 +2372,7 @@ onMounted(async () => {
         }
       }
     }
-    // 🔥 新增：底部面板容器
+    // 底部面板容器
     .bottom-panels {
       display: flex;
       gap: 20px;
@@ -2456,7 +2456,7 @@ onMounted(async () => {
       }
     }
   }
-  // 🔥 新增：部门选择弹窗样式
+  // 部门选择弹窗样式
   .department-selection-container {
     .selection-header {
       display: flex;
@@ -2566,7 +2566,7 @@ onMounted(async () => {
       
     }
   }
-  // 🔥 禁用状态的选择器样式优化
+  // 禁用状态的选择器样式优化
   .el-select.is-disabled {
     .el-input__wrapper {
       background-color: #f5f7fa;
@@ -2582,7 +2582,7 @@ onMounted(async () => {
     padding: 0;
   }
 }
-// 🔥 表格行选中样式优化
+// 表格行选中样式优化
 :deep(.el-table__row) {
   cursor: pointer;
   

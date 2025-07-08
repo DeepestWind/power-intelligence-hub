@@ -4,12 +4,12 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
-import { useAreaStore } from "@/store/modules/area"; // 🔥 导入 AreaStore
+import { useAreaStore } from "@/store/modules/area"; // 导入 AreaStore
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter"; 
 
 
-// 🔥 新增：导入 API 方法和类型
+// 导入 API 方法和类型
 import { 
   getCabinetList as getCabinetListApi, 
   addCabinet as addCabinetApi, 
@@ -27,7 +27,7 @@ defineOptions({
   name: "CabinetManagement"
 });
 
-// 🔥 使用 AreaStore
+// 使用 AreaStore
 const areaStore = useAreaStore();
 
 
@@ -48,7 +48,7 @@ const deviceForm = ref<CabinetFormData>({
   address: '',
 });
 //以下为省市区下拉框的实现
-// 🔥 使用通用的省市区选择器工具类
+// 使用通用的省市区选择器工具类
 const {
   provinceOptions,
   cityOptions,
@@ -60,7 +60,7 @@ const {
   hasPermissionData
 } = useAreaSelect(deviceForm);
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -112,12 +112,12 @@ const deviceFormRules = {
 const deviceFormRef = ref();
 
 
-// 🔥 修改：更新设备在线状态（使用 API 方法）
+// 更新设备在线状态（使用 API 方法）
 const updateDeviceOnlineStatus = async () => {
   try {
     console.log('开始更新设备在线状态...');
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const response = await getOnlineDevicesApi();
     
     if (response.code === 200) {
@@ -149,7 +149,7 @@ const updateDeviceOnlineStatus = async () => {
   }
 };
 
-// 🔥 修改：检查单个设备状态（使用 API 方法）
+// 检查单个设备状态（使用 API 方法）
 const handleCheckDeviceStatus = async (row: CabinetData) => {
   const loadingMessage = ElMessage({
     message: `正在检查设备 "${row.cabinetName}" 的在线状态...`,
@@ -158,7 +158,7 @@ const handleCheckDeviceStatus = async (row: CabinetData) => {
   });
   
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await checkDeviceStatusApi(row.cabinetCode);
     
     loadingMessage.close();
@@ -193,11 +193,11 @@ const handleCheckDeviceStatus = async (row: CabinetData) => {
   }
 };
 
-// 🔥 修改：获取柜子列表（使用 API 方法）
+// 获取柜子列表（使用 API 方法）
 const getCabinetList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: CabinetQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -283,7 +283,7 @@ const handleConfirm = async () => {
   try {
     await deviceFormRef.value.validate();
 
-    // 🔥 使用工具类的权限验证
+    // 使用工具类的权限验证
     const { province, city, district } = deviceForm.value;
     if (!validateAreaPermission(province, city, district)) {
       ElMessage.error('您没有权限在该区域新增设备，请重新选择');
@@ -308,10 +308,10 @@ const handleConfirm = async () => {
 };
 
 
-// 🔥 修改：新增设备（使用 API 方法）
+// 新增设备（使用 API 方法）
 const addDevice = async () => {
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await addCabinetApi(deviceForm.value);
     
     if (result.code === 200) {
@@ -328,10 +328,10 @@ const addDevice = async () => {
     throw error;
   }
 };
-// 🔥 修改：更新设备（使用 API 方法）
+// 更新设备（使用 API 方法）
 const updateDevice = async () => {
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await updateCabinetApi(deviceForm.value);
     
     if (result.code === 200) {
@@ -351,7 +351,7 @@ const updateDevice = async () => {
 
 
 
-// 🔥 修改：一键开柜（使用 API 方法）
+// 一键开柜（使用 API 方法）
 const handleOpenCabinet = async (row: CabinetData) => {
   if (row.onlineStatus === null || row.onlineStatus === undefined) {
     ElMessage.warning('设备状态未知，无法执行开柜操作');
@@ -381,7 +381,7 @@ const handleOpenCabinet = async (row: CabinetData) => {
     });
     
     try {
-      // 🔥 使用 API 方法
+      // 使用 API 方法
       const result = await openCabinetApi(row.cabinetCode, 'open');
       
       loadingMessage.close();
@@ -412,7 +412,7 @@ const handleOpenCabinet = async (row: CabinetData) => {
   }
 };
 
-// 🔥 修改：删除柜子（使用 API 方法）
+// 删除柜子（使用 API 方法）
 const handleDelete = async (row: CabinetData) => {
   try {
     await ElMessageBox.confirm(
@@ -425,7 +425,7 @@ const handleDelete = async (row: CabinetData) => {
       }
     );
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await deleteCabinetApi(row.id);
     
     if (result.code === 200) {
@@ -461,7 +461,7 @@ const handleSizeChange = (size: number) => {
 
 // 生命周期（修改函数调用）
 onMounted(async () => {
-  // 🔥 使用工具类初始化权限数据
+  // 使用工具类初始化权限数据
   await initAreaSelectData();
   // 获取柜子列表数据
   await getCabinetList();
@@ -517,7 +517,7 @@ onMounted(async () => {
               <span class="title">设备列表</span>
 
               <div class="header-actions">
-                <!-- 🔥 新增：刷新在线状态按钮 -->
+                <!-- 刷新在线状态按钮 -->
                 <el-button 
                   type="success" 
                   size="small" 
@@ -757,7 +757,7 @@ onMounted(async () => {
             font-weight: 500;
             color: #303133;
           }
-          // 🔥 新增：头部操作按钮样式
+          // 头部操作按钮样式
           .header-actions {
             display: flex;
             gap: 10px;

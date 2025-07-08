@@ -8,7 +8,7 @@ import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入物料相关的 API 方法和类型
+// 导入物料相关的 API 方法和类型
 import { 
   getMaterialList as getMaterialListApi, 
   addMaterial as addMaterialApi, 
@@ -20,7 +20,7 @@ import {
   type MaterialOfflineParams // 新增：下架参数类型
 } from '@/api/item';
 
-// 🔥 新增：导入柜子相关的 API 方法和类型（复用）
+// 导入柜子相关的 API 方法和类型（复用）
 import { 
   getCabinetList as getCabinetListApi,
   type CabinetData
@@ -64,7 +64,7 @@ const {
   }
 );
 
-// 🔥 新增：柜子选择相关数据
+// 柜子选择相关数据
 const cabinetSelectDialogVisible = ref(false);
 const cabinetListData = ref<CabinetData[]>([]);
 const cabinetLoading = ref(false);
@@ -72,13 +72,13 @@ const cabinetCurrentPage = ref(1);
 const cabinetPageSize = ref(10);
 const cabinetTotal = ref(0);
 
-// 🔥 新增：柜子搜索表单
+// 柜子搜索表单
 const cabinetSearchForm = ref({
   cabinetCode: '',
   cabinetName: ''
 });
 
-// 🔥 新增：物料下架相关数据
+// 物料下架相关数据
 const offlineDialogVisible = ref(false);
 const offlineForm = ref({
   id: 0,
@@ -129,7 +129,7 @@ const dialogTitle = ref('新增物料');
 const isEdit = ref(false);
 const currentEditItem = ref<MaterialData | null>(null);
 
-// 🔥 修改表单验证规则，改为下拉选择并添加权限验证
+// 修改表单验证规则，改为下拉选择并添加权限验证
 const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
   const { province, city, district } = itemForm.value;
   
@@ -143,13 +143,13 @@ const validateAreaPermissionRule = (rule: any, value: any, callback: any) => {
     callback();
   }
 };
-// 🔥 修改：表单验证规则（移除柜子相关字段的手动验证）
+// 表单验证规则（移除柜子相关字段的手动验证）
 const itemFormRules = {
-  // 🔥 新增：柜子选择验证
+  // 柜子选择验证
   cabinetId: [
     { required: true, message: '请选择所属柜子', trigger: 'change' }
   ],
-  // 🔥 保留：物料相关字段验证
+  // 保留：物料相关字段验证
   materialCode: [
     { required: true, message: '请输入物料编号', trigger: 'blur' },
     { min: 3, max: 20, message: '物料编号长度为3-20个字符', trigger: 'blur' }
@@ -168,7 +168,7 @@ const itemFormRules = {
 
 const itemFormRef = ref();
 
-// 🔥 新增：下架表单验证规则
+// 下架表单验证规则
 const offlineFormRules = {
   remark: [
     { required: true, message: '请输入下架备注', trigger: 'blur' },
@@ -185,11 +185,11 @@ const deleteStatusOptions = [
 ];
 
 
-// 🔥 修改：获取物料列表（使用 API 方法）
+// 获取物料列表（使用 API 方法）
 const getItemList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: MaterialQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -217,7 +217,7 @@ const getItemList = async () => {
   }
 };
 
-// 🔥 新增：获取柜子列表
+// 获取柜子列表
 const getCabinetList = async () => {
   cabinetLoading.value = true;
   try {
@@ -243,7 +243,7 @@ const getCabinetList = async () => {
   }
 };
 
-// 🔥 新增：打开柜子选择弹窗
+// 打开柜子选择弹窗
 const handleSelectCabinet = () => {
   cabinetSelectDialogVisible.value = true;
   cabinetCurrentPage.value = 1;
@@ -254,7 +254,7 @@ const handleSelectCabinet = () => {
   getCabinetList();
 };
 
-// 🔥 新增：确认选择柜子
+// 确认选择柜子
 const handleConfirmCabinetSelect = (cabinet: CabinetData) => {
   itemForm.value.cabinetId = cabinet.id;
   itemForm.value.cabinetCode = cabinet.cabinetCode;
@@ -270,7 +270,7 @@ const handleConfirmCabinetSelect = (cabinet: CabinetData) => {
   console.log('选择的柜子:', cabinet);
 };
 
-// 🔥 新增：清空选择的柜子
+// 清空选择的柜子
 const handleClearCabinetSelect = () => {
   itemForm.value.cabinetId = null;
   itemForm.value.cabinetCode = '';
@@ -283,13 +283,13 @@ const handleClearCabinetSelect = () => {
   ElMessage.info('已清空柜子选择');
 };
 
-// 🔥 新增：柜子搜索
+// 柜子搜索
 const handleCabinetSearch = () => {
   cabinetCurrentPage.value = 1;
   getCabinetList();
 };
 
-// 🔥 新增：重置柜子搜索
+// 重置柜子搜索
 const handleCabinetReset = () => {
   cabinetSearchForm.value = {
     cabinetCode: '',
@@ -298,7 +298,7 @@ const handleCabinetReset = () => {
   handleCabinetSearch();
 };
 
-// 🔥 新增：柜子列表分页
+// 柜子列表分页
 const handleCabinetPageChange = (page: number) => {
   cabinetCurrentPage.value = page;
   getCabinetList();
@@ -332,7 +332,7 @@ const handleAddItem = () => {
   });
 };
 
-// 🔥 修改：重置表单
+// 重置表单
 const resetItemForm = () => {
   itemForm.value = {
     cabinetId: null,
@@ -360,7 +360,7 @@ const handleCancel = () => {
   resetItemForm();
 };
 
-// 🔥 修改：确认提交（移除省市区权限验证）
+// 确认提交（移除省市区权限验证）
 const handleConfirm = async () => {
   if (!itemFormRef.value) return;
   
@@ -382,10 +382,10 @@ const handleConfirm = async () => {
   }
 };
 
-// 🔥 修改：新增物料（使用 API 方法）
+// 新增物料（使用 API 方法）
 const addItem = async () => {
   try {
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await addMaterialApi(itemForm.value);
     
     if (result.code === 200) {
@@ -403,7 +403,7 @@ const addItem = async () => {
   }
 };
 
-// 🔥 修改：更新物料（使用 API 方法）
+// 更新物料（使用 API 方法）
 const updateItem = async () => {
   try {
     if (!currentEditItem.value?.id) {
@@ -415,7 +415,7 @@ const updateItem = async () => {
       id: currentEditItem.value.id
     };
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await updateMaterialApi(requestData);
     
     if (result.code === 200) {
@@ -434,7 +434,7 @@ const updateItem = async () => {
 };
 
 
-// 🔥 修改：物料下架（替换删除功能）
+// 物料下架（替换删除功能）
 const handleOffline = async (row: MaterialData) => {
   // 设置下架表单数据
   offlineForm.value = {
@@ -453,7 +453,7 @@ const handleOffline = async (row: MaterialData) => {
     }
   });
 };
-// 🔥 新增：确认下架
+// 确认下架
 const handleConfirmOffline = async () => {
   if (!offlineFormRef.value) return;
   
@@ -468,9 +468,9 @@ const handleConfirmOffline = async () => {
       //isDelete: 0, // 字符串类型，0表示下架
       
     };
-    console.log('下架参数:', params); // 🔥 新增：调试日志
+    console.log('下架参数:', params); // 调试日志
     
-    // 🔥 使用 API 方法
+    // 使用 API 方法
     const result = await offlineMaterialApi(params);
     
     if (result.code === 200) {
@@ -489,7 +489,7 @@ const handleConfirmOffline = async () => {
     offlineLoading.value = false;
   }
 };
-// 🔥 新增：取消下架
+// 取消下架
 const handleCancelOffline = () => {
   offlineDialogVisible.value = false;
   offlineForm.value = {
@@ -499,7 +499,7 @@ const handleCancelOffline = () => {
   };
 };
 
-// 🔥 修改：编辑物料
+// 编辑物料
 const handleEdit = (row: MaterialData) => {
   dialogTitle.value = '编辑物料';
   isEdit.value = true;
@@ -548,7 +548,7 @@ const formatDeleteStatus = (isDelete: number) => {
 
 // 生命周期
 onMounted(async () => {
-  // 🔥 使用工具类初始化权限数据
+  // 使用工具类初始化权限数据
   await initAreaSelectData();
   // 获取物料列表
   await getItemList();
@@ -638,7 +638,7 @@ onMounted(async () => {
               <el-button @click="handleReset">
                 重置
               </el-button>
-              <!-- 🔥 修改10：可选择添加清空所有按钮 -->
+              <!-- 修改10：可选择添加清空所有按钮 -->
               <el-button @click="handleClearAll">
                 清空所有
               </el-button>
@@ -754,7 +754,7 @@ onMounted(async () => {
         :rules="itemFormRules" 
         label-width="120px"
       >
-        <!-- 🔥 修改：柜子选择区域 -->
+        <!-- 柜子选择区域 -->
         <el-form-item label="所属柜子" prop="cabinetId">
           <div class="cabinet-select-area">
             <div v-if="itemForm.cabinetId" class="selected-cabinet">
@@ -872,8 +872,8 @@ onMounted(async () => {
           </el-col>
         </el-row>
 
-        <!-- 🔥 修改：省市区改为下拉选择 -->
-        <!-- 🔥 删除：省市区选择和地址输入 -->
+        <!-- 省市区改为下拉选择 -->
+        <!-- 删除：省市区选择和地址输入 -->
         <!-- <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份" prop="province">
@@ -970,7 +970,7 @@ onMounted(async () => {
       </template>
     </el-dialog>
 
-    <!-- 🔥 新增：物料下架弹窗 -->
+    <!-- 物料下架弹窗 -->
     <el-dialog
       v-model="offlineDialogVisible"
       title="物料下架"
@@ -1030,7 +1030,7 @@ onMounted(async () => {
       </template>
     </el-dialog>    
 
-    <!-- 🔥 新增：柜子选择弹窗 -->
+    <!-- 柜子选择弹窗 -->
     <el-dialog
       v-model="cabinetSelectDialogVisible"
       title="选择柜子"
@@ -1176,7 +1176,7 @@ onMounted(async () => {
   }
 }
 
-// 🔥 新增：柜子选择相关样式
+// 柜子选择相关样式
 .cabinet-select-area {
   .selected-cabinet {
     .cabinet-info-card {
@@ -1236,7 +1236,7 @@ onMounted(async () => {
     padding: 20px;
   }
 }
-// 🔥 新增：柜子选择弹窗样式
+// 柜子选择弹窗样式
 .cabinet-search-area {
   margin-bottom: 20px;
   padding: 16px;

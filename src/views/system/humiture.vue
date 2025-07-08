@@ -6,7 +6,7 @@ import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入 API 方法和类型
+// 导入 API 方法和类型
 import { 
   getHumitureList as getHumitureListApi, 
   updateHumiture as updateHumitureApi,
@@ -32,7 +32,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -70,12 +70,12 @@ const humitureForm = ref<HumitureFormData>({
   operationMode: 0,
   maxTemperatureDifference: null
 });
-// 🔥 新增：设备信息（用于弹窗显示）
+// 设备信息（用于弹窗显示）
 const currentDevice = ref({
   cabinetCode: '',
   cabinetName: ''
 });
-// 🔥 修改：表单验证规则（简化，部分验证逻辑移到工具函数）
+// 表单验证规则（简化，部分验证逻辑移到工具函数）
 const humitureFormRules = ref<FormRules<HumitureFormData>>({
   maxTemperature: [
     { required: true, message: '请输入最高温度', trigger: 'blur' },
@@ -105,11 +105,11 @@ const humitureFormRules = ref<FormRules<HumitureFormData>>({
 const humitureFormRef = ref<FormInstance>();
 
 
-// 🔥 修改：获取温湿度设备列表（使用 API 方法）
+// 获取温湿度设备列表（使用 API 方法）
 const getHumitureList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: HumitureQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -138,7 +138,7 @@ const getHumitureList = async () => {
 };
 
 
-// 🔥 修改：打开温湿度设置弹窗
+// 打开温湿度设置弹窗
 const handleEditHumiture = (row: HumitureData) => {
   dialogTitle.value = `${row.cabinetName} - 温湿度设置`;
   
@@ -162,7 +162,7 @@ const handleEditHumiture = (row: HumitureData) => {
   dialogVisible.value = true;
 };
 
-// 🔥 修改：重置表单
+// 重置表单
 const resetHumitureForm = () => {
   humitureForm.value = {
     id: 0,
@@ -190,21 +190,21 @@ const handleCancel = () => {
   resetHumitureForm();
 };
 
-// 🔥 修改：确认提交（使用 API 方法和验证工具函数）
+// 确认提交（使用 API 方法和验证工具函数）
 const handleConfirm = async () => {
   if (!humitureFormRef.value) return;
   
   try {
     await humitureFormRef.value.validate();
     
-    // 🔥 使用工具函数进行自定义验证
+    // 使用工具函数进行自定义验证
     const validation = validateHumitureData(humitureForm.value);
     if (!validation.valid) {
       ElMessage.error(validation.message);
       return;
     }
     
-    // 🔥 使用 API 方法更新温湿度设置
+    // 使用 API 方法更新温湿度设置
     const result = await updateHumitureApi(humitureForm.value);
     
     if (result.code === 200) {
@@ -616,7 +616,7 @@ onMounted(() => {
                 placeholder="请选择运行模式"
                 style="width: 100%"
               >
-                <!-- 🔥 使用导入的常量 -->
+                <!-- 使用导入的常量 -->
                 <el-option
                   v-for="option in OPERATION_MODE_OPTIONS"
                   :key="option.value"
