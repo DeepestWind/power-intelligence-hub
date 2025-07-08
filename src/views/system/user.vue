@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Edit, Delete, View, Setting, Plus, CreditCard, Box } from '@element-plus/icons-vue';
+import { Edit, Delete, View, Setting, Plus, CreditCard, Box, OfficeBuilding } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
@@ -26,6 +26,8 @@ import {
   getUserFaces as getUserFacesApi,
   uploadFace as uploadFaceApi,
   deleteFace as deleteFaceApi,
+  addUserDepartment as addUserDepartmentApi,
+  deleteUserDepartment as deleteUserDepartmentApi,
   type UserData,
   type UserFormData,
   type UserQueryParams,
@@ -35,7 +37,8 @@ import {
 } from '@/api/userManage';
 
 import { 
-  getDepartmentByCurrentUser // 导入部门 API
+  getDepartmentByCurrentUser, // 导入部门 API
+  getDepartmentByUserId
 } from '@/api/department';
 
 defineOptions({
@@ -67,7 +70,7 @@ const {
   // 初始搜索数据
   {
     userName: '',
-    department: '',
+    departmentName: '',
   },
   // 搜索回调函数
   () => {
@@ -78,9 +81,10 @@ const {
 
 
 // 用户表单数据
-const userForm = ref<UserFormData>({
+const userForm = ref({
   userName: '',
-  department: '',
+  departmentId: null,
+  departmentName: '',
   employeeId: '',
   password: '',
   userType: 1,
@@ -173,8 +177,23 @@ const userFormRules = {
   // 🔥 省市区验证规则
   // 🔥 添加区域权限验证
   province: [
-    { required: true, message: '请选择省份', trigger: 'change' },
-    { validator: validateAreaPermissionRule, trigger: 'change' }
+    { 
+      validator: (rule: any, value: any, callback: any) => {
+        // 超级管理员不需要省份
+        if (userForm.value.userType === 2) {
+          callback();
+          return;
+        }
+        // 其他用户类型需要省份
+        if (!value) {
+          callback(new Error('请选择省份'));
+          return;
+        }
+        // 验证区域权限
+        validateAreaPermissionRule(rule, value, callback);
+      }, 
+      trigger: 'change' 
+    }
   ],
   city: [
     { validator: validateAreaPermissionRule, trigger: 'change' }
@@ -232,6 +251,7 @@ const handleUserTypeChange = () => {
     case 2: // 超级管理员
       userForm.value.adminLevel = 3; // 强制设置为省级
       // 🔥 超级管理员清空城市和区域
+      userForm.value.province = '';
       userForm.value.city = '';
       userForm.value.district = '';
       break;
@@ -251,6 +271,7 @@ const handleAdminLevelChange = () => {
   // 根据管理员级别清理不适用的地区选择
   if (userType === 2 || adminLevel === 3) {
     // 超级管理员或省级管理员：清空城市和区域
+    userForm.value.province = '';
     userForm.value.city = '';
     userForm.value.district = '';
   } else if (adminLevel === 2) {
@@ -274,6 +295,15 @@ const cabinetLoading = ref(false);
 const addCabinetVisible = ref(false);
 const newCabinetId = ref('');
 const newCabinetName = ref('');
+
+// 🔥 新增：绑定部门管理相关数据
+const userDepartments = ref<Array<{ id: string; name: string }>>([]);
+const departmentManageLoading = ref(false);
+const addDepartmentVisible = ref(false);
+const availableDepartments = ref<Array<{ id: string; name: string }>>([]);
+const departmentListLoading = ref(false);
+// 🔥 新增：选择部门相关数据
+const selectedDepartment = ref<{ id: string; name: string } | null>(null);
 
 
 // 🔥 新增：获取部门下拉选项
@@ -368,7 +398,8 @@ const handleAddUser = () => {
 const resetUserForm = () => {
   userForm.value = {
     userName: '',
-    department: '',
+    departmentId: null, 
+    departmentName: '', 
     employeeId: '',
     password: '',
     userType: 1,
@@ -518,7 +549,8 @@ const handleEdit = (row: UserData) => {
   // 填充表单数据
   userForm.value = {
     userName: row.userName,
-    department: row.department || '',
+    departmentId: row.departmentId,
+    departmentName: row.departmentName || '', 
     employeeId: row.employeeId,
     password: row.password,
     userType: row.userType,
@@ -579,6 +611,10 @@ const isDisabledByAdminLevel = (level: 'city' | 'district') => {
   
   // 只有管理员和超级管理员才有级别限制
   if (userType === 0) return false; // 普通用户无限制
+
+  // 超级管理员禁用所有地区选择
+  if (userType === 2) return true;
+  
   
   if (level === 'city') {
     // 省级管理员(3)和超级管理员(userType=2)不能选择城市
@@ -594,7 +630,7 @@ const isDisabledByAdminLevel = (level: 'city' | 'district') => {
 };
 
 
-// 查看用户 现有功能为IC卡管理和绑定柜子管理
+// 查看用户 现有功能为IC卡管理和绑定柜子管理和部门管理
 const handleView = async (row: UserData) => {
   try {
     console.log('查看用户详情:', row);
@@ -610,6 +646,7 @@ const handleView = async (row: UserData) => {
     // 🔥 分别加载数据，避免Promise.all可能的问题
     await loadUserIcCards(row.id);
     await loadUserCabinets(row.id);
+    await loadUserDepartments(row.id);
     
   } catch (error) {
     console.error('查看用户详情错误:', error);
@@ -617,6 +654,157 @@ const handleView = async (row: UserData) => {
     viewDialogVisible.value = false;
   }
 };
+
+// 🔥 新增：加载用户绑定部门信息
+const loadUserDepartments = async (userId: number) => {
+  departmentManageLoading.value = true;
+  try {
+    // 🔥 修改：从当前查看用户中获取部门信息
+    if (currentViewUser.value?.departmentId && currentViewUser.value?.departmentName) {
+      userDepartments.value = [{
+        id: currentViewUser.value.departmentId.toString(),
+        name: currentViewUser.value.departmentName
+      }];
+    } else {
+      userDepartments.value = [];
+    }
+    console.log('获取用户绑定部门成功:', userDepartments.value);
+    
+  } catch (error) {
+    ElMessage.error('获取绑定部门信息失败，请检查网络连接');
+    console.error('获取用户绑定部门错误:', error);
+    userDepartments.value = [];
+  } finally {
+    departmentManageLoading.value = false;
+  }
+};
+
+// 🔥 新增：获取可选部门列表
+const loadAvailableDepartments = async (userId: number) => {
+  departmentListLoading.value = true;
+  try {
+    const result = await getDepartmentByUserId(userId);
+    
+    if (result.code === 200) {
+      availableDepartments.value = Object.entries(result.data).map(([id, name]) => ({
+        id,
+        name
+      }));
+      console.log('获取可选部门成功:', availableDepartments.value);
+    } else {
+      ElMessage.error(result.msg || '获取可选部门失败');
+      availableDepartments.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取可选部门失败，请检查网络连接');
+    console.error('获取可选部门错误:', error);
+    availableDepartments.value = [];
+  } finally {
+    departmentListLoading.value = false;
+  }
+};
+
+// 🔥 新增：选择部门
+const handleSelectDepartment = (department: { id: string; name: string }) => {
+  selectedDepartment.value = department;
+  console.log('选择部门:', department);
+};
+// 🔥 新增：确认添加部门
+const handleConfirmAddDepartment = async () => {
+  if (!selectedDepartment.value) {
+    ElMessage.warning('请选择要绑定的部门');
+    return;
+  }
+  
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    // 🔥 使用新的API方法
+    const result = await addUserDepartmentApi(
+      currentViewUser.value.id,
+      parseInt(selectedDepartment.value.id),
+      selectedDepartment.value.name
+    );
+    
+    if (result.code === 200) {
+      ElMessage.success('部门绑定成功');
+      addDepartmentVisible.value = false;
+      selectedDepartment.value = null;
+
+      // 🔥 修改：更新当前查看用户的部门信息
+      if (currentViewUser.value) {
+        currentViewUser.value.departmentId = parseInt(selectedDepartment.value.id);
+        currentViewUser.value.departmentName = selectedDepartment.value.name;
+      }
+
+      await loadUserDepartments(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || '部门绑定失败');
+    }
+    
+  } catch (error) {
+    ElMessage.error('部门绑定失败，请检查网络连接');
+    console.error('添加用户部门错误:', error);
+  }
+};
+// 🔥 新增：删除用户部门
+const handleDeleteUserDepartment = async () => {
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      '确定要移除该用户的所有部门绑定吗？移除后无法恢复！',
+      '移除确认',
+      {
+        confirmButtonText: '确定移除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    // 🔥 使用新的API方法
+    const result = await deleteUserDepartmentApi(currentViewUser.value.id);
+    
+    if (result.code === 200) {
+      ElMessage.success('部门绑定移除成功');
+      // 🔥 修改：清空当前查看用户的部门信息
+      if (currentViewUser.value) {
+        currentViewUser.value.departmentId = null;
+        currentViewUser.value.departmentName = null;
+      }
+
+      await loadUserDepartments(currentViewUser.value.id);
+    } else {
+      ElMessage.error(result.msg || '部门绑定移除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('部门绑定移除失败，请检查网络连接');
+      console.error('移除用户部门错误:', error);
+    }
+  }
+};
+
+// 🔥 新增：打开添加部门弹窗
+const handleAddDepartment = async () => {
+  if (!currentViewUser.value) {
+    ElMessage.error('用户信息异常');
+    return;
+  }
+  
+  selectedDepartment.value = null; // 🔥 新增：重置选择状态
+  addDepartmentVisible.value = true;
+  await loadAvailableDepartments(currentViewUser.value.id);
+};
+
 // 🔥 修改：加载用户IC卡信息（使用 API 方法）
 const loadUserIcCards = async (userId: number) => {
   icCardLoading.value = true;
@@ -888,12 +1076,15 @@ const closeViewDialog = () => {
   currentViewUser.value = null;
   userIcCards.value = [];
   userCabinets.value = []; 
+  userDepartments.value = [];
   newIcCard.value = '';
   selectedCabinet.value = null;
+  selectedDepartment.value = null;
   cabinetListData.value = [];
   cabinetListCurrentPage.value = 1;
   addIcCardVisible.value = false;
   addCabinetVisible.value = false;
+  addDepartmentVisible.value = false;
 };
 
 // 分页改变
@@ -1138,7 +1329,7 @@ onMounted(async () => {
             </el-form-item>
             <el-form-item label="部门">
               <el-select
-                v-model="searchForm.department"
+                v-model="searchForm.departmentName"
                 placeholder="请选择部门"
                 clearable
                 :loading="departmentLoading"
@@ -1187,9 +1378,9 @@ onMounted(async () => {
           >
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="userName" label="用户名" width="100" />
-            <el-table-column prop="department" label="部门" width="120">
+            <el-table-column prop="departmentName" label="部门" width="120">
               <template #default="{ row }">
-                {{ row.department || '-' }}
+                {{ row.departmentName || '-' }}
               </template>
             </el-table-column>
             <el-table-column prop="employeeId" label="员工编号" width="120" />
@@ -1318,9 +1509,9 @@ onMounted(async () => {
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="部门" prop="department">
+            <el-form-item label="部门" prop="departmentName">
               <el-input
-                v-model="userForm.department"
+                v-model="userForm.departmentName"
                 placeholder="请输入部门"
                 clearable
               />
@@ -1398,6 +1589,7 @@ onMounted(async () => {
                 placeholder="请选择省份"
                 style="width: 100%"
                 @change="handleUserProvinceChange"
+                clearable
               >
                 <el-option
                   v-for="option in provinceOptions"
@@ -1549,129 +1741,169 @@ onMounted(async () => {
       @close="closeViewDialog"
     >
       <div class="user-detail-container">
-        <!-- 左侧：绑定卡号管理 -->
-        <div class="left-panel">
+        <!-- 顶部绑定部门管理 -->
+        <div class="top-panel">
           <div class="panel-header">
-            <h3 class="panel-title">绑定卡号管理</h3>
+            <div class="panel-info">
+              <h3 class="panel-title">绑定部门管理</h3>
+              <span class="panel-subtitle">该用户当前绑定的部门</span>
+            </div>
             <el-button 
               type="primary" 
               size="small" 
-              @click="handleAddIcCard"
+              @click="handleAddDepartment"
             >
-              添加IC卡
+              添加部门
             </el-button>
           </div>
           
-          <div class="ic-cards-section">
-            <!-- 🔥 改为表格形式 -->
-            <el-table
-              :data="userIcCards"
-              v-loading="icCardLoading"
-              style="width: 100%"
-              stripe
-              :show-header="true"
-              empty-text="暂无绑定的IC卡"
-              max-height="400"
-            >
-              <el-table-column 
-                prop="icCard" 
-                label="IC卡号" 
-                min-width="150"
-              >
-                <template #default="{ row }">
-                  <div class="card-info">
-                    <el-icon class="card-icon"><CreditCard /></el-icon>
-                    <span class="card-text">{{ row.icCard }}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              
-              
-              <el-table-column 
-                label="操作" 
-                width="80" 
-                align="center"
-              >
-                <template #default="{ row }">
-                  <el-button 
-                    type="danger" 
-                    size="small" 
-                    :icon="Delete"
-                    @click="handleDeleteIcCard(row)"
-                    circle
-                  />
-                </template>
-              </el-table-column>
-            </el-table>
+          <div class="departments-section">
+            <!-- 🔥 修改：简化为单行显示 -->
+            <div v-if="userDepartments.length > 0" class="department-item">
+              <div class="department-content">
+                <el-icon class="department-icon"><OfficeBuilding /></el-icon>
+                <span class="department-id">ID: {{ userDepartments[0].id }}</span>
+                <span class="department-name">{{ userDepartments[0].name }}</span>
+              </div>
+              <el-button 
+                type="danger" 
+                size="small" 
+                :icon="Delete"
+                @click="handleDeleteUserDepartment"
+                circle
+              />
+            </div>
+            
+            <!-- 🔥 空状态显示 -->
+            <div v-else class="empty-department" v-loading="departmentManageLoading">
+              <el-icon class="empty-icon"><OfficeBuilding /></el-icon>
+              <span class="empty-text">暂无绑定的部门</span>
+            </div>
           </div>
         </div>
-        
-        <!-- 右侧：绑定柜子管理 -->
-        <div class="right-panel">
-          <div class="panel-header">
-            <h3 class="panel-title">绑定柜子管理</h3>
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="handleAddCabinet"
-            >
-              添加柜子
-            </el-button>
+        <div class="bottom-panels">
+          <!-- 左侧：绑定卡号管理 -->
+          <div class="left-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">绑定卡号管理</h3>
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="handleAddIcCard"
+              >
+                添加IC卡
+              </el-button>
+            </div>
+            
+            <div class="ic-cards-section">
+              <el-table
+                :data="userIcCards"
+                v-loading="icCardLoading"
+                style="width: 100%"
+                stripe
+                :show-header="true"
+                empty-text="暂无绑定的IC卡"
+                max-height="400"
+              >
+                <el-table-column 
+                  prop="icCard" 
+                  label="IC卡号" 
+                  min-width="150"
+                >
+                  <template #default="{ row }">
+                    <div class="card-info">
+                      <el-icon class="card-icon"><CreditCard /></el-icon>
+                      <span class="card-text">{{ row.icCard }}</span>
+                    </div>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column 
+                  label="操作" 
+                  width="80" 
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      :icon="Delete"
+                      @click="handleDeleteIcCard(row)"
+                      circle
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
           
-          <div class="cabinets-section">
-            <el-table
-              :data="userCabinets"
-              v-loading="cabinetLoading"
-              style="width: 100%"
-              stripe
-              :show-header="true"
-              empty-text="暂无绑定的柜子"
-              max-height="400"
-            >
-              <el-table-column 
-                prop="cabinetId" 
-                label="柜子ID" 
-                width="80"
-                align="center"
+          <!-- 右侧：绑定柜子管理 -->
+          <div class="right-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">绑定柜子管理</h3>
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="handleAddCabinet"
               >
-                <template #default="{ row }">
-                  <el-tag type="info" size="small">
-                    {{ row.cabinetId || 0 }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              
-              <el-table-column 
-                prop="cabinetName" 
-                label="柜子名称" 
-                min-width="150"
+                添加柜子
+              </el-button>
+            </div>
+            
+            <div class="cabinets-section">
+              <el-table
+                :data="userCabinets"
+                v-loading="cabinetLoading"
+                style="width: 100%"
+                stripe
+                :show-header="true"
+                empty-text="暂无绑定的柜子"
+                max-height="400"
               >
-                <template #default="{ row }">
-                  <div v-if="row" class="cabinet-info">
-                    <el-icon class="cabinet-icon"><Box /></el-icon>
-                    <span class="cabinet-text">{{ row.cabinetName || '未知柜子' }}</span>
-                  </div>
-                </template>
-              </el-table-column>
-              
-              <el-table-column 
-                label="操作" 
-                width="80" 
-                align="center"
-              >
-                <template #default="{ row }">
-                  <el-button 
-                    v-if="row"
-                    type="danger" 
-                    size="small" 
-                    :icon="Delete"
-                    @click="handleDeleteCabinet(row)"
-                    circle
-                  />
-                </template>
-              </el-table-column>
-            </el-table>
+                <el-table-column 
+                  prop="cabinetId" 
+                  label="柜子ID" 
+                  width="80"
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <el-tag type="info" size="small">
+                      {{ row.cabinetId || 0 }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column 
+                  prop="cabinetName" 
+                  label="柜子名称" 
+                  min-width="150"
+                >
+                  <template #default="{ row }">
+                    <div v-if="row" class="cabinet-info">
+                      <el-icon class="cabinet-icon"><Box /></el-icon>
+                      <span class="cabinet-text">{{ row.cabinetName || '未知柜子' }}</span>
+                    </div>
+                  </template>
+                </el-table-column>
+                
+                <el-table-column 
+                  label="操作" 
+                  width="80" 
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <el-button 
+                      v-if="row"
+                      type="danger" 
+                      size="small" 
+                      :icon="Delete"
+                      @click="handleDeleteCabinet(row)"
+                      circle
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
         </div>
       </div>
@@ -1682,6 +1914,79 @@ onMounted(async () => {
         </div>
       </template>
     </el-dialog>
+
+    <!-- 添加部门弹窗 -->
+    <el-dialog
+      v-model="addDepartmentVisible"
+      title="添加绑定部门"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div class="department-selection-container">
+        <div class="selection-header">
+          <span class="selection-title">选择要绑定的部门</span>
+          <div class="selection-info">
+            <span v-if="selectedDepartment" class="selected-info">
+              已选择：{{ selectedDepartment.name }} (ID: {{ selectedDepartment.id }})
+            </span>
+            <span v-else class="no-selection">请选择一个部门</span>
+          </div>
+        </div>
+        
+        <!-- 🔥 部门列表表格 -->
+        <el-table
+          :data="availableDepartments"
+          v-loading="departmentListLoading"
+          style="width: 100%"
+          stripe
+          border
+          empty-text="暂无可绑定的部门"
+          max-height="400"
+          highlight-current-row
+          @current-change="handleSelectDepartment"
+        >
+          <el-table-column 
+            prop="id" 
+            label="部门ID" 
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag type="success" size="small">
+                {{ row.id }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <el-table-column 
+            prop="name" 
+            label="部门名称" 
+            min-width="300"
+          >
+            <template #default="{ row }">
+              <div class="department-name-cell">
+                <el-icon class="department-icon"><OfficeBuilding /></el-icon>
+                <span>{{ row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="addDepartmentVisible = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="handleConfirmAddDepartment"
+            :disabled="!selectedDepartment"
+          >
+            确定绑定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 🔥 添加IC卡弹窗 -->
     <el-dialog
       v-model="addIcCardVisible"
@@ -1954,8 +2259,109 @@ onMounted(async () => {
   }  
   .user-detail-container {
     display: flex;
+    flex-direction: column;
     gap: 20px;
-    height: 500px;
+    height: 600px;
+    // 🔥 新增：顶部部门管理面板样式
+    .top-panel {
+      border: 1px solid #e4e7ed;
+      border-radius: 6px;
+      overflow: hidden;
+      min-height: 100px;
+      
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e4e7ed;
+        
+        .panel-info {
+          display: flex;
+          flex-direction: column;
+          
+          .panel-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+            color: #303133;
+            line-height: 1.2;
+          }
+          
+          .panel-subtitle {
+            font-size: 12px;
+            color: #909399;
+            margin-top: 2px;
+          }
+        }
+      }
+      
+      .departments-section {
+        padding: 16px 20px; // 🔥 减少内边距
+        
+        .department-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background-color: #f8f9fa;
+          border-radius: 6px;
+          border: 1px solid #e4e7ed;
+          
+          .department-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            
+            .department-icon {
+              color: #409eff;
+              font-size: 18px;
+            }
+            
+            .department-id {
+              font-size: 12px;
+              color: #909399;
+              background-color: #e8f4fd;
+              padding: 2px 8px;
+              border-radius: 4px;
+            }
+            
+            .department-name {
+              font-size: 14px;
+              font-weight: 500;
+              color: #303133;
+            }
+          }
+        }
+        
+        .empty-department {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 20px;
+          color: #909399;
+          background-color: #fafafa;
+          border-radius: 6px;
+          border: 1px dashed #e4e7ed;
+          
+          .empty-icon {
+            font-size: 18px;
+          }
+          
+          .empty-text {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+    // 🔥 新增：底部面板容器
+    .bottom-panels {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+    }
     
     .left-panel,
     .right-panel {
@@ -2031,6 +2437,50 @@ onMounted(async () => {
           align-items: center;
           height: 200px;
         }
+      }
+    }
+  }
+  // 🔥 新增：部门选择弹窗样式
+  .department-selection-container {
+    .selection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 16px;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e4e7ed;
+      
+      .selection-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+      
+      .selected-info {
+        color: #67c23a;
+        font-weight: 500;
+        
+        &::before {
+          content: "✓ ";
+        }
+      }
+      
+      .no-selection {
+        color: #909399;
+        font-size: 14px;
+      }
+    }
+    
+    .department-name-cell {
+      display: flex;
+      align-items: center;
+      
+      .department-icon {
+        margin-right: 8px;
+        color: #409eff;
+        font-size: 16px;
       }
     }
   }

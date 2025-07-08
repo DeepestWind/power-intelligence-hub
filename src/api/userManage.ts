@@ -10,8 +10,8 @@ import {
 export interface UserData {
   id: number;
   userName: string;
-  department: string | null;
-  bindCard: string;
+  departmentId: number | null;
+  departmentName: string | null;
   employeeId: string;
   password: string;
   userType: number;
@@ -33,14 +33,16 @@ export interface UserFormData {
   id?: number;
   userName: string;
   department: string;
+  departmentId?: number | null; 
+  departmentName?: string | null; 
   employeeId: string;
   password: string;
   userType: number;
   adminLevel: number;
-  province: string;
-  city: string;
-  district: string;
-  address: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  address?: string;
   createTime?: string;
   updatedTime?: string;
 }
@@ -50,7 +52,7 @@ export interface UserQueryParams {
   pageNum?: number;
   pageSize?: number;
   userName?: string;
-  department?: string;
+  departmentName?: string;
   province?: string;
   city?: string;
   district?: string;
@@ -67,6 +69,13 @@ export interface UserApiResponse {
     size: number;
     pages: number;
   };
+}
+
+// 🔥 新增：用户部门操作参数接口
+export interface UserDepartmentParams {
+  userId: number;
+  departmentId: number;
+  departmentName: string;
 }
 
 // IC卡数据接口
@@ -138,7 +147,7 @@ export const getUserList = async (params: UserQueryParams = {}): Promise<UserApi
     
     // 添加搜索参数
     if (params.userName) queryParams.append('userName', params.userName);
-    if (params.department) queryParams.append('department', params.department);
+    if (params.departmentName) queryParams.append('departmentName', params.departmentName); 
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
@@ -269,6 +278,74 @@ export const deleteUser = async (id: number): Promise<BaseApiResponse> => {
     throw error;
   }
 };
+
+/**
+ * 为用户添加部门
+ * @param userId 用户ID
+ * @param departmentId 部门ID
+ * @param departmentName 部门名称
+ * @returns API响应结果
+ */
+export const addUserDepartment = async (userId: number, departmentId: number, departmentName: string): Promise<BaseApiResponse> => {
+  try {
+    const url = `/api/power/user/addDepartment/${userId}?departmentId=${departmentId}&departmentName=${encodeURIComponent(departmentName)}`;
+    
+    console.log('添加用户部门API请求URL:', url);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: BaseApiResponse = await response.json();
+    console.log('添加用户部门API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('添加用户部门API请求失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 移除用户部门
+ * @param userId 用户ID
+ * @returns API响应结果
+ */
+export const deleteUserDepartment = async (userId: number): Promise<BaseApiResponse> => {
+  try {
+    const url = `/api/power/user/deleteDepartment/${userId}`;
+    
+    console.log('移除用户部门API请求URL:', url);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: BaseApiResponse = await response.json();
+    console.log('移除用户部门API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('移除用户部门API请求失败:', error);
+    throw error;
+  }
+};
+
+
 
 /**
  * 获取用户IC卡列表
@@ -563,6 +640,8 @@ export default {
   addUser,
   updateUser,
   deleteUser,
+  addUserDepartment, 
+  deleteUserDepartment, 
   getUserIcCards,
   addUserIcCard,
   deleteUserIcCard,
