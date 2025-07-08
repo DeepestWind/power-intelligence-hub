@@ -37,6 +37,22 @@ export const useUserStore = defineStore("pure-user", {
     // 登录页的免登录存储几天，默认7天
     loginDay: 7
   }),
+
+  getters: {
+    // 🔥 新增：获取当前用户ID
+    getCurrentUserId: (state) => state.id,
+    // 🔥 新增：获取当前用户信息
+    getCurrentUserInfo: (state) => ({
+      id: state.id,
+      userName: state.userName,
+      department: state.department,
+      employeeId: state.employeeId,
+      userType: state.userType
+    }),
+    // 🔥 新增：检查用户是否已登录
+    isLoggedIn: (state) => !!state.id
+  },
+
   actions: {
     /** 存储头像 */
     SET_ID(id: any) {
@@ -45,6 +61,21 @@ export const useUserStore = defineStore("pure-user", {
     /** 存储用户名 */
     SET_USERNAME(userName: any) {
       this.userName = userName;
+    },
+    
+    // 🔥 新增：设置用户完整信息的方法
+    setUserInfo(userInfo: {
+      id?: any;
+      userName?: any;
+      department?: any;
+      employeeId?: any;
+      userType?: any;
+    }) {
+      if (userInfo.id !== undefined) this.SET_ID(userInfo.id);
+      if (userInfo.userName !== undefined) this.SET_USERNAME(userInfo.userName);
+      if (userInfo.department !== undefined) this.SET_department(userInfo.department);
+      if (userInfo.employeeId !== undefined) this.SET_employeeId(userInfo.employeeId);
+      if (userInfo.userType !== undefined) this.SET_userType(userInfo.userType);
     },
     /** 存储昵称 */
     SET_department(department: any) {

@@ -7,6 +7,7 @@ import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
+import { useUserStoreHook } from '@/store/modules/user';
 //import { transformPcaToTree } from "@/utils/area";
 
 // 🔥 新增：导入 API 方法和类型
@@ -33,6 +34,10 @@ import {
   type CabinetListItem
 } from '@/api/userManage';
 
+import { 
+  getDepartmentByCurrentUser // 导入部门 API
+} from '@/api/department';
+
 defineOptions({
   name: "UserManagement"
 });
@@ -44,6 +49,10 @@ const tableData = ref<UserData[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+
+// 部门下拉框相关数据
+const departmentOptions = ref<Array<{ label: string; value: string }>>([]);
+const departmentLoading = ref(false);
 
 
 // 🔥 使用页面搜索工具类
@@ -265,6 +274,44 @@ const cabinetLoading = ref(false);
 const addCabinetVisible = ref(false);
 const newCabinetId = ref('');
 const newCabinetName = ref('');
+
+
+// 🔥 新增：获取部门下拉选项
+const loadDepartmentOptions = async () => {
+  departmentLoading.value = true;
+  try {
+
+    // 🔥 修改：从 store 中获取当前用户ID
+    const userStore = useUserStoreHook();
+    const currentUserId = userStore.getCurrentUserId;
+    
+    if (!currentUserId) {
+      ElMessage.error('无法获取当前用户信息');
+      departmentOptions.value = [];
+      return;
+    }
+    
+    const result = await getDepartmentByCurrentUser(currentUserId);
+    
+    if (result.code === 200) {
+      departmentOptions.value = Object.entries(result.data).map(([id, name]) => ({
+        label: name,
+        value: name // 🔥 使用部门名称作为搜索值
+      }));
+      console.log('获取部门选项成功:', departmentOptions.value);
+    } else {
+      ElMessage.error(result.msg || '获取部门选项失败');
+      departmentOptions.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取部门选项失败，请检查网络连接');
+    console.error('获取部门选项错误:', error);
+    departmentOptions.value = [];
+  } finally {
+    departmentLoading.value = false;
+  }
+};
 
 // 🔥 修改：获取用户列表（使用 API 方法）
 const getUserList = async () => {
@@ -1064,6 +1111,9 @@ onMounted(async () => {
   // 🔥 使用工具类初始化权限数据
   await initAreaSelectData();
   
+  // 🔥 新增：加载部门选项
+  await loadDepartmentOptions();
+
   // 获取用户列表
   getUserList();
 });
@@ -1087,12 +1137,20 @@ onMounted(async () => {
               />
             </el-form-item>
             <el-form-item label="部门">
-              <el-input 
-                v-model="searchForm.department" 
-                placeholder="请输入部门" 
+              <el-select
+                v-model="searchForm.department"
+                placeholder="请选择部门"
                 clearable
-                style="width: 150px"
-              />
+                :loading="departmentLoading"
+                style="width: 200px"
+              >
+                <el-option
+                  v-for="option in departmentOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleSearch">

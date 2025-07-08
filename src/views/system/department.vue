@@ -61,7 +61,7 @@ const {
 
 
 // 表单数据
-const formData = ref<DepartmentFormData>({
+const formData = ref({
   departmentName: '',
   province: '',
   city: '',
@@ -112,11 +112,11 @@ const formRules = {
     { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   city: [
-    { required: true, message: '请选择城市', trigger: 'change' },
+    //{ required: true, message: '请选择城市', trigger: 'change' },
     { validator: validateAreaPermissionRule, trigger: 'change' }
   ],
   district: [
-    { required: true, message: '请选择区域', trigger: 'change' },
+    //{ required: true, message: '请选择区域', trigger: 'change' },
     { validator: validateAreaPermissionRule, trigger: 'change' }
   ]
 };
@@ -139,30 +139,24 @@ const handleSubmit = async () => {
 
     // 修改：根据操作类型构建不同的提交数据
     let submitData: DepartmentFormData;
-    // 构建提交数据
-    // const submitData = {
-    //   ...formData.value,
-    //   // 新增时设置创建时间和更新时间为当前时间
-    //   ...(isEdit.value ? {} : {
-    //     createTime: new Date().toISOString(),
-    //     updatedTime: new Date().toISOString()
-    //   }),
-    //   // 编辑时只更新更新时间
-    //   ...(isEdit.value ? {
-    //     updatedTime: new Date().toISOString()
-    //   } : {})
-    // };
+
     
     if (isEdit.value) {
       // 编辑时包含ID
       submitData = {
         id: currentEditId.value!,
-        ...formData.value
+        departmentName: formData.value.departmentName,
+        province: formData.value.province,
+        ...(formData.value.city && formData.value.city.trim() && { city: formData.value.city }),
+        ...(formData.value.district && formData.value.district.trim() && { district: formData.value.district })
       };
     } else {
       // 新增时不包含ID
       submitData = {
-        ...formData.value
+        departmentName: formData.value.departmentName,
+        province: formData.value.province,
+        ...(formData.value.city && formData.value.city.trim() && { city: formData.value.city }),
+        ...(formData.value.district && formData.value.district.trim() && { district: formData.value.district })
       };
     }
     
@@ -516,6 +510,7 @@ onMounted(async () => {
             style="width: 100%"
             :disabled="!formData.province"
             @change="handleFormCityChange"
+            clearable
           >
             <el-option
               v-for="option in cityOptions"
@@ -532,6 +527,7 @@ onMounted(async () => {
             placeholder="请选择区域"
             style="width: 100%"
             :disabled="!formData.city"
+            clearable
           >
             <el-option
               v-for="option in districtOptions"
