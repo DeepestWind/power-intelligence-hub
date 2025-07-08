@@ -23,6 +23,11 @@ import {
   type CabinetQueryParams
 } from '@/api/cabinet';
 
+// 🔥 新增：导入物品相关API
+import { 
+  getMaterialsByCabinetId as getMaterialsByCabinetIdApi 
+} from '@/api/item';
+
 defineOptions({
   name: "CabinetManagement"
 });
@@ -111,6 +116,56 @@ const deviceFormRules = {
 };
 const deviceFormRef = ref();
 
+// 🔥 新增：查看柜子物品相关数据
+const viewDialogVisible = ref(false);
+const currentViewCabinet = ref<CabinetData | null>(null);
+const cabinetMaterials = ref<string[]>([]);
+const materialsLoading = ref(false);
+
+// 🔥 新增：查看柜子功能
+const handleView = async (row: CabinetData) => {
+  try {
+    console.log('查看设备:', row);
+    currentViewCabinet.value = { ...row };
+    viewDialogVisible.value = true;
+    
+    // 加载柜子物品
+    await loadCabinetMaterials(row.id);
+    
+  } catch (error) {
+    console.error('查看设备详情错误:', error);
+    ElMessage.error('加载设备详情失败');
+    viewDialogVisible.value = false;
+  }
+};
+// 🔥 新增：加载柜子物品列表
+const loadCabinetMaterials = async (cabinetId: number) => {
+  materialsLoading.value = true;
+  try {
+    const result = await getMaterialsByCabinetIdApi(cabinetId);
+    
+    if (result.code === 200) {
+      cabinetMaterials.value = result.data;
+      console.log('获取柜子物品成功:', cabinetMaterials.value);
+    } else {
+      ElMessage.error(result.msg || '获取柜子物品失败');
+      cabinetMaterials.value = [];
+    }
+    
+  } catch (error) {
+    ElMessage.error('获取柜子物品失败，请检查网络连接');
+    console.error('获取柜子物品错误:', error);
+    cabinetMaterials.value = [];
+  } finally {
+    materialsLoading.value = false;
+  }
+};
+// 🔥 新增：关闭查看弹窗
+const closeViewDialog = () => {
+  viewDialogVisible.value = false;
+  currentViewCabinet.value = null;
+  cabinetMaterials.value = [];
+};
 
 // 更新设备在线状态（使用 API 方法）
 const updateDeviceOnlineStatus = async () => {
@@ -562,6 +617,14 @@ onMounted(async () => {
             <el-table-column label="操作" min-width="300" fixed="right">
               <template #default="{ row }">
                 <el-button 
+                  type="primary" 
+                  size="small" 
+                  :icon="View"
+                  @click="handleView(row)"
+                >
+                  查看
+                </el-button>                
+                <el-button 
                   type="info" 
                   size="small" 
                   :icon="View"
@@ -711,6 +774,61 @@ onMounted(async () => {
         <div class="dialog-footer">
           <el-button @click="handleCancel">取消</el-button>
           <el-button type="primary" @click="handleConfirm">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>   
+
+    <!-- 🔥 新增：查看柜子物品弹窗 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      :title="`${currentViewCabinet?.cabinetName || ''} - 柜子详情`"
+      width="700px"
+      :close-on-click-modal="false"
+      @close="closeViewDialog"
+    >
+      <div class="cabinet-view-container">
+        <!-- 柜子基本信息 -->
+        <div class="cabinet-info-section">
+        <!-- 柜子信息待添加 -->
+        </div>
+        
+        <!-- 物品列表 -->
+        <div class="materials-section">
+          <div class="section-header">
+            <h3 class="section-title">物品列表</h3>
+            <el-tag type="info" size="small">
+              共 {{ cabinetMaterials.length }} 件物品
+            </el-tag>
+          </div>
+          
+          <div class="materials-content" v-loading="materialsLoading">
+            <div v-if="cabinetMaterials.length > 0" class="materials-list">
+              <div 
+                v-for="(material, index) in cabinetMaterials" 
+                :key="index"
+                class="material-item"
+              >
+                <div class="material-icon">
+                  <el-icon><Box /></el-icon>
+                </div>
+                <div class="material-info">
+                  <span class="material-name">{{ material }}</span>
+                  <span class="material-index">{{ index + 1 }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div v-else class="empty-materials">
+              <el-icon class="empty-icon"><Box /></el-icon>
+              <span class="empty-text">该柜子暂无物品</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeViewDialog">关闭</el-button>
         </div>
       </template>
     </el-dialog>    

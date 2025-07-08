@@ -1,6 +1,7 @@
 // ==================== 类型定义 ====================
 
 import { number } from "echarts/types/src/echarts.all.js";
+import { get } from "sortablejs";
 
 // 物料数据接口
 export interface MaterialData {
@@ -70,6 +71,13 @@ export interface MaterialApiResponse {
     size: number;
     pages: number;
   };
+}
+
+// 🔥 新增：根据柜子ID查询物品响应接口
+export interface MaterialByCabinetResponse {
+  code: number;
+  msg: string;
+  data: string[]; // 物品名称数组
 }
 
 // 通用API响应接口
@@ -237,6 +245,40 @@ export const offlineMaterial = async (params: MaterialOfflineParams): Promise<Ba
     throw error;
   }
 };
+
+/**
+ * 根据柜子ID查询物品
+ * @param cabinetId 柜子ID
+ * @returns 物品名称列表响应数据
+ */
+export const getMaterialsByCabinetId = async (cabinetId: number): Promise<MaterialByCabinetResponse> => {
+  try {
+    const url = `/api/power/material/cabinet/${cabinetId}`;
+    
+    console.log('根据柜子ID查询物品API请求URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result: MaterialByCabinetResponse = await response.json();
+    console.log('根据柜子ID查询物品API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('根据柜子ID查询物品API请求失败:', error);
+    throw error;
+  }
+};
+
+
 // export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
 //   try {
 //     const response = await fetch(`/api/power/material/${id}`, {
@@ -266,5 +308,6 @@ export default {
   getMaterialList,
   addMaterial,
   updateMaterial,
-  offlineMaterial
+  offlineMaterial,
+  getMaterialsByCabinetId
 };
