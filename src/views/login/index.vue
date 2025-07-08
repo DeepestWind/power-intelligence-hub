@@ -68,7 +68,7 @@ const onLogin = async (formEl: FormInstance | undefined) => {
           }
         })
         .catch(error => {
-          // 🔥 添加权限校验逻辑
+          // 添加权限校验逻辑
           console.error('登录错误:', error);
           
           // 检查是否是普通用户无权登录的错误
@@ -103,7 +103,7 @@ const onLogin = async (formEl: FormInstance | undefined) => {
             }
           }
           
-          // 🔥 其他类型的登录错误处理
+          // 其他类型的登录错误处理
           if (error.response && error.response.status === 500) {
             // 服务器内部错误
             message("服务器内部错误，请稍后重试", { type: "error" });

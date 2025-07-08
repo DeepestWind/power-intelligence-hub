@@ -10,7 +10,7 @@ export interface CabinetData {
   district: string;
   address: string;
   onlineStatus?: number | null;
-  // 🔥 新增：温湿度相关字段
+  // 温湿度相关字段
   maxTemperature?: number | null;
   minTemperature?: number | null;
   maxHumidity?: number | null;

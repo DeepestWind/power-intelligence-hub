@@ -210,7 +210,7 @@ export const updateMaterial = async (data: MaterialFormData): Promise<BaseApiRes
  */
 export const offlineMaterial = async (params: MaterialOfflineParams): Promise<BaseApiResponse> => {
   try {
-    // 🔥 修改：将 remark 作为查询参数添加到 URL 中
+    // 将 remark 作为查询参数添加到 URL 中
     const url = `/api/power/material/status/${params.id}?remark=${encodeURIComponent(params.remark)}`;
     
     
@@ -221,7 +221,7 @@ export const offlineMaterial = async (params: MaterialOfflineParams): Promise<Ba
       headers: {
         'Content-Type': 'application/json',
       }
-      // 🔥 修改：移除 body，因为 remark 现在在 URL 查询参数中
+      // 移除 body，因为 remark 现在在 URL 查询参数中
     });
 
     if (!response.ok) {

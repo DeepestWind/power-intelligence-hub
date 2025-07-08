@@ -190,7 +190,7 @@ export const exportReturnRecords = async (params: ExportParams): Promise<void> =
   }
 };
 
-// 🔥 新增：导出领用归还总表
+// 导出领用归还总表
 /**
  * 导出领用归还总表
  * @param params 导出参数
@@ -387,7 +387,7 @@ export const getQuantityDifference = (usageQuantity: number, returnQuantity: num
 export default {
   getReturnRecordsList,
   exportReturnRecords,
-  exportBorrowReturnSummary, // 🔥 新增：导出领用归还总表
+  exportBorrowReturnSummary, // 导出领用归还总表
   calculateUsageDuration,
   isFullyReturned,
   formatDateTime,

@@ -66,7 +66,7 @@ export const transformPcaToTree = (): AreaNode[] => {
 
       const districts = cities[cityName];
 
-      // 🔥 现在 districts 类型明确为 string[]
+      // 现在 districts 类型明确为 string[]
       districts.forEach((districtName: string, districtIndex: number) => {
         const districtCode = `${cityCode.substring(0, 4)}${(districtIndex + 1).toString().padStart(2, "0")}`;
         const districtNode: AreaNode = {
@@ -107,12 +107,12 @@ export const getAreaDataByUserType = (areaType: any, areaCode: any): AreaNode[] 
       return [];
   }
 };
-// 🔥 新增：获取完整的区域数据（超级管理员使用）
+// 获取完整的区域数据（超级管理员使用）
 export const getAllAreaData = (): AreaNode[] => {
   return transformPcaToTree();
 };
 
-// 🔥 新增：根据用户权限获取数据的统一入口
+// 根据用户权限获取数据的统一入口
 export const getAreaDataByUserPermission = (
   userType: number | null,
   areaType: any,
@@ -136,7 +136,7 @@ export const getAreaDataByUserPermission = (
   return [];
 };
 
-// 🔥 新增：检查用户是否有权限访问某个区域
+// 检查用户是否有权限访问某个区域
 export const hasAreaPermission = (
   targetAreaCode: string,
   userType: number | null,

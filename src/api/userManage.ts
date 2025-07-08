@@ -70,7 +70,7 @@ export interface UserApiResponse {
   };
 }
 
-// 🔥 新增：用户部门操作参数接口
+// 用户部门操作参数接口
 export interface UserDepartmentParams {
   userId: number;
   departmentId: number;
@@ -525,7 +525,7 @@ export const deleteUserCabinet = async (userId: number, cabinetId: number): Prom
  */
 export const getCabinetList = async (params: any = {}): Promise<CabinetListApiResponse> => {
   try {
-    // 🔥 直接调用cabinet.ts中的方法
+    // 直接调用cabinet.ts中的方法
     const result = await getCabinetListFromCabinet(params);
     console.log('复用柜子列表API响应:', result);
     return result;

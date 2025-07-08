@@ -45,7 +45,7 @@ export interface BaseApiResponse {
   data?: any;
 }
 
-// 🔥 新增：导出参数接口
+// 导出参数接口
 export interface ExportParams {
   startDate: string;
   endDate: string;
@@ -169,7 +169,7 @@ export const exportShelfRecords = async (startDate: string, endDate: string): Pr
   }
 };
 
-// 🔥 新增：工具函数
+// 工具函数
 
 /**
  * 计算上架时长（从上架到现在）

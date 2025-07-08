@@ -39,9 +39,9 @@ export const useUserStore = defineStore("pure-user", {
   }),
 
   getters: {
-    // 🔥 新增：获取当前用户ID
+    // 获取当前用户ID
     getCurrentUserId: (state) => state.id,
-    // 🔥 新增：获取当前用户信息
+    // 获取当前用户信息
     getCurrentUserInfo: (state) => ({
       id: state.id,
       userName: state.userName,
@@ -49,7 +49,7 @@ export const useUserStore = defineStore("pure-user", {
       employeeId: state.employeeId,
       userType: state.userType
     }),
-    // 🔥 新增：检查用户是否已登录
+    // 检查用户是否已登录
     isLoggedIn: (state) => !!state.id
   },
 
@@ -63,7 +63,7 @@ export const useUserStore = defineStore("pure-user", {
       this.userName = userName;
     },
     
-    // 🔥 新增：设置用户完整信息的方法
+    // 设置用户完整信息的方法
     setUserInfo(userInfo: {
       id?: any;
       userName?: any;
@@ -117,7 +117,7 @@ export const useUserStore = defineStore("pure-user", {
                   data.extra.userVo.district
                 );
                 //areaStore.setUserType(data.extra.userVo.adminLevel, areaCode);
-                // 🔥 使用新的方法，传入完整信息
+                // 使用新的方法，传入完整信息
                 areaStore.setUserType(
                   data.extra.userVo.adminLevel, 
                   areaCode,

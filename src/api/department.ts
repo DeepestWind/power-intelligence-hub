@@ -114,7 +114,7 @@ export const getDepartmentList = async (params: DepartmentQueryParams = {}): Pro
  */
 export const addDepartment = async (data: DepartmentFormData): Promise<BaseApiResponse> => {
   try {
-    // 🔥 修改：构建请求数据，只包含有值的字段
+    // 构建请求数据，只包含有值的字段
     const requestData: any = {
       departmentName: data.departmentName,
       province: data.province,
@@ -122,7 +122,7 @@ export const addDepartment = async (data: DepartmentFormData): Promise<BaseApiRe
       updatedTime: new Date().toISOString()
     };
     
-    // 🔥 新增：只有当城市和区域有值时才添加到请求数据中
+    // 只有当城市和区域有值时才添加到请求数据中
     if (data.city && data.city.trim()) {
       requestData.city = data.city;
     }
@@ -161,7 +161,7 @@ export const addDepartment = async (data: DepartmentFormData): Promise<BaseApiRe
  */
 export const updateDepartment = async (data: DepartmentFormData): Promise<BaseApiResponse> => {
   try {
-    // 🔥 修改：构建请求数据，只包含有值的字段
+    // 构建请求数据，只包含有值的字段
     const requestData: any = {
       id: data.id,
       departmentName: data.departmentName,
@@ -169,7 +169,7 @@ export const updateDepartment = async (data: DepartmentFormData): Promise<BaseAp
       updatedTime: new Date().toISOString()
     };
     
-    // 🔥 新增：只有当城市和区域有值时才添加到请求数据中
+    // 只有当城市和区域有值时才添加到请求数据中
     if (data.city && data.city.trim()) {
       requestData.city = data.city;
     }

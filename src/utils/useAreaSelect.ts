@@ -39,7 +39,7 @@ export interface UseAreaSelectReturn {
 export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn {
   const areaStore = useAreaStore();
 
-  // 🔥 权限范围内的区域数据
+  // 权限范围内的区域数据
   const areaData = computed(() => {
     const userAreaData = areaStore.getCurrentAreaData;
     
@@ -51,12 +51,12 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     return userAreaData;
   });
 
-  // 🔥 是否有权限数据
+  // 是否有权限数据
   const hasPermissionData = computed(() => {
     return areaData.value.length > 0;
   });
 
-  // 🔥 省份选项
+  // 省份选项
   const provinceOptions = computed(() => {
     const userAreaData = areaData.value;
     
@@ -70,7 +70,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     }));
   });
 
-  // 🔥 城市选项（基于表单中的省份）
+  // 城市选项（基于表单中的省份）
   const cityOptions = computed(() => {
     if (!formData.value.province) return [];
     
@@ -88,7 +88,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     }));
   });
 
-  // 🔥 区域选项（基于表单中的省份和城市）
+  // 区域选项（基于表单中的省份和城市）
   const districtOptions = computed(() => {
     if (!formData.value.province || !formData.value.city) return [];
     
@@ -108,7 +108,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     }));
   });
 
-  // 🔥 省份改变时清空城市和区域
+  // 省份改变时清空城市和区域
   const handleProvinceChange = (form: AreaFormData) => {
     form.city = '';
     form.district = '';
@@ -117,7 +117,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     console.log('可选城市:', cityOptions.value);
   };
 
-  // 🔥 城市改变时清空区域
+  // 城市改变时清空区域
   const handleCityChange = (form: AreaFormData) => {
     form.district = '';
     
@@ -125,7 +125,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     console.log('可选区域:', districtOptions.value);
   };
 
-  // 🔥 权限验证函数
+  // 权限验证函数
   const validateAreaPermission = (province: string, city?: string, district?: string): boolean => {
     const userAreaData = areaData.value;
     
@@ -160,7 +160,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
     return !!districtNode;
   };
 
-  // 🔥 初始化权限数据
+  // 初始化权限数据
   const initAreaSelectData = async () => {
     try {
       const userType = areaStore.getCurrentUserType;
@@ -207,7 +207,7 @@ export function useAreaSelect(formData: Ref<AreaFormData>): UseAreaSelectReturn 
   };
 }
 
-// 🔥 创建权限验证的独立函数（不依赖表单数据）
+// 创建权限验证的独立函数（不依赖表单数据）
 export function useAreaPermissionCheck() {
   const areaStore = useAreaStore();
 

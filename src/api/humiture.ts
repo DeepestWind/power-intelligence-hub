@@ -65,7 +65,7 @@ export interface BaseApiResponse {
  */
 export const getHumitureList = async (params: HumitureQueryParams = {}): Promise<HumitureApiResponse> => {
   try {
-    // 🔥 复用柜子API，传递相同的查询参数
+    // 复用柜子API，传递相同的查询参数
     const response = await getCabinetListApi(params);
     
     // 将柜子数据转换为温湿度设备数据格式
@@ -75,7 +75,7 @@ export const getHumitureList = async (params: HumitureQueryParams = {}): Promise
       data: {
         records: response.data.records.map(item => ({
           ...item,
-          // 🔥 修复：使用 ?? 空值合并运算符而不是 || 逻辑或运算符
+          // 修复：使用 ?? 空值合并运算符而不是 || 逻辑或运算符
           maxTemperature: item.maxTemperature ?? null,
           minTemperature: item.minTemperature ?? null,
           maxHumidity: item.maxHumidity ?? null,

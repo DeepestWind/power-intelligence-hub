@@ -107,7 +107,7 @@ export const getOffshelvingList = async (params: OffshelvingQueryParams = {}): P
     
     const data: OffshelvingApiResponse = await response.json();
     
-    // 🔥 数据处理：为每个记录添加 reason 字段（备注的别名）
+    // 数据处理：为每个记录添加 reason 字段（备注的别名）
     if (data.data && data.data.records) {
       data.data.records = data.data.records.map(record => ({
         ...record,
@@ -140,7 +140,7 @@ export const exportOffshelvingRecords = async (params: ExportParams): Promise<vo
     
     console.log('导出下架记录API请求URL:', url);
     
-    // 🔥 简化：直接使用原有的下载逻辑
+    // 直接使用原有的下载逻辑
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -152,14 +152,14 @@ export const exportOffshelvingRecords = async (params: ExportParams): Promise<vo
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // 🔥 简化：获取文件blob并直接下载
+    // 获取文件blob并直接下载
     const blob = await response.blob();
     
     // 创建下载链接
     const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = '下架记录.xlsx'; // 🔥 使用固定的文件名
+    link.download = '下架记录.xlsx'; // 使用固定的文件名
     
     // 触发下载
     document.body.appendChild(link);

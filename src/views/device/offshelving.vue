@@ -8,7 +8,7 @@ import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入 API 方法和类型
+// 导入 API 方法和类型
 import { 
   getOffshelvingList as getOffshelvingListApi, 
   exportOffshelvingRecords as exportOffshelvingRecordsApi,
@@ -45,7 +45,7 @@ const exportForm = ref<ExportParams>({
 });
 const exportLoading = ref(false);
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -69,11 +69,11 @@ const {
 );
 
 
-// 🔥 修改：获取下架记录列表（使用 API 方法）
+// 获取下架记录列表（使用 API 方法）
 const getOffshelvingList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型
+    // 使用 API 方法和类型
     const params: OffshelvingQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -108,18 +108,18 @@ const handleView = (row: OffshelvingData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
-// 🔥 修改：导出记录（使用工具函数）
+// 导出记录（使用工具函数）
 const handleExport = () => {
   // 打开导出弹窗
   exportDialogVisible.value = true;
   
-  // 🔥 使用工具函数获取默认日期范围
+  // 使用工具函数获取默认日期范围
   exportForm.value = getDefaultExportDateRange();
 };
 
-// 🔥 修改：确认导出（使用 API 方法和验证工具函数）
+// 确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
-  // 🔥 使用工具函数验证参数
+  // 使用工具函数验证参数
   const validation = validateExportParams(exportForm.value);
   if (!validation.valid) {
     ElMessage.error(validation.message);
@@ -128,7 +128,7 @@ const confirmExport = async () => {
   
   try {
     exportLoading.value = true;
-    // 🔥 使用 API 方法导出
+    // 使用 API 方法导出
     await exportOffshelvingRecordsApi(exportForm.value);
     exportDialogVisible.value = false;
     ElMessage.success('导出成功');
@@ -171,7 +171,7 @@ onMounted(() => {
 
 <template>
   <div class="offshelf-records-container">
-    <!-- 🔥 可以启用区域选择器，因为API已支持 -->
+    <!-- 可以启用区域选择器，因为API已支持 -->
     <!-- <div>
       <AreaSelect @area-search="handleAreaSearch" />
     </div> -->

@@ -7,7 +7,7 @@ import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入归还记录 API
+// 导入归还记录 API
 import { 
   getReturnRecordsList as getReturnRecordsListApi,
   exportReturnRecords as exportReturnRecordsApi,
@@ -47,7 +47,7 @@ const exportForm = ref<ExportParams>({
 });
 const exportLoading = ref(false);
 
-// 🔥 新增：导出总表相关的响应式数据
+// 导出总表相关的响应式数据
 const summaryExportDialogVisible = ref(false);
 const summaryExportForm = ref<ExportParams>({
   startDate: '',
@@ -55,7 +55,7 @@ const summaryExportForm = ref<ExportParams>({
 });
 const summaryExportLoading = ref(false);
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -85,11 +85,11 @@ const {
 );
 
 
-// 🔥 修改：获取归还记录列表（使用 API 方法）
+// 获取归还记录列表（使用 API 方法）
 const getReturnRecordsList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型，包含区域筛选
+    // 使用 API 方法和类型，包含区域筛选
     const params: ReturnRecordQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -124,27 +124,27 @@ const handleView = (row: ReturnRecordData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
-// 🔥 修改：导出记录（使用工具函数）
+// 导出记录（使用工具函数）
 const handleExport = () => {
   // 打开导出弹窗
   exportDialogVisible.value = true;
   
-  // 🔥 使用工具函数获取默认日期范围
+  // 使用工具函数获取默认日期范围
   exportForm.value = getDefaultExportDateRange();
 };
 
-// 🔥 新增：导出领用归还总表
+// 导出领用归还总表
 const handleSummaryExport = () => {
   // 打开导出总表弹窗
   summaryExportDialogVisible.value = true;
   
-  // 🔥 使用工具函数获取默认日期范围
+  // 使用工具函数获取默认日期范围
   summaryExportForm.value = getDefaultExportDateRange();
 };
 
-// 🔥 修改：确认导出（使用 API 方法和验证工具函数）
+// 确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
-  // 🔥 使用工具函数验证参数
+  // 使用工具函数验证参数
   const validation = validateExportParams(exportForm.value);
   if (!validation.valid) {
     ElMessage.error(validation.message);
@@ -153,7 +153,7 @@ const confirmExport = async () => {
   
   try {
     exportLoading.value = true;
-    // 🔥 使用 API 方法导出
+    // 使用 API 方法导出
     await exportReturnRecordsApi(exportForm.value);
     exportDialogVisible.value = false;
     ElMessage.success('导出成功');
@@ -165,9 +165,9 @@ const confirmExport = async () => {
   }
 };
 
-// 🔥 新增：确认导出领用归还总表
+// 确认导出领用归还总表
 const confirmSummaryExport = async () => {
-  // 🔥 使用工具函数验证参数
+  // 使用工具函数验证参数
   const validation = validateExportParams(summaryExportForm.value);
   if (!validation.valid) {
     ElMessage.error(validation.message);
@@ -176,7 +176,7 @@ const confirmSummaryExport = async () => {
   
   try {
     summaryExportLoading.value = true;
-    // 🔥 使用 API 方法导出总表
+    // 使用 API 方法导出总表
     await exportBorrowReturnSummaryApi(summaryExportForm.value);
     summaryExportDialogVisible.value = false;
     ElMessage.success('导出领用归还总表成功');
@@ -197,7 +197,7 @@ const cancelExport = () => {
   };
 };
 
-// 🔥 新增：取消导出领用归还总表
+// 取消导出领用归还总表
 const cancelSummaryExport = () => {
   summaryExportDialogVisible.value = false;
   summaryExportForm.value = {
@@ -504,7 +504,7 @@ onMounted(() => {
       </div>
     </template>
   </el-dialog>
-    <!-- 🔥 新增：导出领用归还总表弹窗 -->
+    <!-- 导出领用归还总表弹窗 -->
     <el-dialog
       v-model="summaryExportDialogVisible"
       title="导出领用归还总表"

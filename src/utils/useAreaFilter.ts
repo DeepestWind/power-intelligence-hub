@@ -23,14 +23,14 @@ export interface UseAreaFilterReturn {
  */
 export function useAreaFilter(onSearch?: () => void): UseAreaFilterReturn {
   
-  // 🔥 区域筛选数据
+  // 区域筛选数据
   const areaFilter = ref<AreaFilterData>({
     province: '',
     city: '',
     district: ''
   });
 
-  // 🔥 根据区域代码设置筛选条件
+  // 根据区域代码设置筛选条件
   const fillAreaFilter = (area: AreaNode) => {
     const code = area.code;
     const label = area.label;
@@ -53,7 +53,7 @@ export function useAreaFilter(onSearch?: () => void): UseAreaFilterReturn {
     }
   };
 
-  // 🔥 处理区域搜索事件
+  // 处理区域搜索事件
   const handleAreaSearch = (area: AreaNode, onSearchComplete?: () => void) => {
     try {
       // 设置区域筛选条件
@@ -73,7 +73,7 @@ export function useAreaFilter(onSearch?: () => void): UseAreaFilterReturn {
     }
   };
 
-  // 🔥 清空区域筛选
+  // 清空区域筛选
   const clearAreaFilter = () => {
     areaFilter.value = {
       province: '',
@@ -83,7 +83,7 @@ export function useAreaFilter(onSearch?: () => void): UseAreaFilterReturn {
     console.log('已清空区域筛选');
   };
 
-  // 🔥 重置区域筛选（同clearAreaFilter，提供语义化的别名）
+  // 重置区域筛选（同clearAreaFilter，提供语义化的别名）
   const resetAreaFilter = () => {
     clearAreaFilter();
   };
@@ -96,7 +96,7 @@ export function useAreaFilter(onSearch?: () => void): UseAreaFilterReturn {
   };
 }
 
-// 🔥 创建通用的搜索表单工具
+// 创建通用的搜索表单工具
 export interface SearchFormData {
   [key: string]: any;
 }
@@ -121,10 +121,10 @@ export function useSearchForm<T extends SearchFormData>(
   areaFilter?: Ref<AreaFilterData>
 ): UseSearchFormReturn<T> {
   
-  // 🔥 修复：使用明确的类型标注
+  // 使用明确的类型标注
   const searchForm = ref<T>({ ...initialData }) as Ref<T>;
 
-  // 🔥 执行搜索
+  // 执行搜索
   const handleSearch = () => {
     try {
       onSearch();
@@ -135,14 +135,14 @@ export function useSearchForm<T extends SearchFormData>(
     }
   };
 
-  // 🔥 重置搜索表单
+  // 重置搜索表单
   const handleReset = () => {
     searchForm.value = { ...initialData } as T;
     handleSearch();
     console.log('搜索表单已重置');
   };
 
-  // 🔥 清空所有筛选条件
+  // 清空所有筛选条件
   const handleClearAll = () => {
     // 重置搜索表单
     searchForm.value = { ...initialData } as T;
@@ -168,7 +168,7 @@ export function useSearchForm<T extends SearchFormData>(
   };
 }
 
-// 🔥 创建整合的页面搜索工具
+// 创建整合的页面搜索工具
 export interface UsePageSearchReturn<T extends SearchFormData> extends UseAreaFilterReturn, UseSearchFormReturn<T> {
   // 合并后的返回类型
 }
@@ -190,7 +190,7 @@ export function usePageSearch<T extends SearchFormData>(
   // 创建搜索表单工具
   const searchFormTool = useSearchForm(initialSearchData, onSearch, areaFilterTool.areaFilter);
   
-  // 🔥 重写handleClearAll以整合两个工具
+  // 重写handleClearAll以整合两个工具
   const handleClearAll = () => {
     searchFormTool.searchForm.value = { ...initialSearchData } as T;
     areaFilterTool.clearAreaFilter();

@@ -8,7 +8,7 @@ import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
 import { usePageSearch } from "@/utils/useAreaFilter";
 
-// 🔥 新增：导入领用记录 API
+// 导入领用记录 API
 import { 
   getBorrowRecordsList as getBorrowRecordsListApi,
   exportBorrowRecords as exportBorrowRecordsApi,
@@ -45,7 +45,7 @@ const exportForm = ref<ExportParams>({
 });
 const exportLoading = ref(false);
 
-// 🔥 使用页面搜索工具类
+// 使用页面搜索工具类
 const {
   areaFilter,
   searchForm,
@@ -75,11 +75,11 @@ const {
 
 
 
-// 🔥 修改：获取领用记录列表（使用 API 方法）
+// 获取领用记录列表（使用 API 方法）
 const getBorrowRecordsList = async () => {
   loading.value = true;
   try {
-    // 🔥 使用 API 方法和类型，包含区域筛选
+    // 使用 API 方法和类型，包含区域筛选
     const params: BorrowRecordQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -114,18 +114,18 @@ const handleView = (row: BorrowRecordData) => {
   // 这里可以打开详情弹窗或跳转到详情页
 };
 
-// 🔥 修改：导出记录（使用工具函数）
+// 导出记录（使用工具函数）
 const handleExport = () => {
   // 打开导出弹窗
   exportDialogVisible.value = true;
   
-  // 🔥 使用工具函数获取默认日期范围
+  // 使用工具函数获取默认日期范围
   exportForm.value = getDefaultExportDateRange();
 };
 
-// 🔥 修改：确认导出（使用 API 方法和验证工具函数）
+// 确认导出（使用 API 方法和验证工具函数）
 const confirmExport = async () => {
-  // 🔥 使用工具函数验证参数
+  // 使用工具函数验证参数
   const validation = validateExportParams(exportForm.value);
   if (!validation.valid) {
     ElMessage.error(validation.message);
@@ -134,7 +134,7 @@ const confirmExport = async () => {
   
   try {
     exportLoading.value = true;
-    // 🔥 使用 API 方法导出
+    // 使用 API 方法导出
     await exportBorrowRecordsApi(exportForm.value);
     exportDialogVisible.value = false;
     ElMessage.success('导出成功');

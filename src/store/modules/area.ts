@@ -13,8 +13,7 @@ interface AreaState {
   areaCode: any; // 存储了（区域代码）
   areaData: AreaNode[]; // 存储了（权限范围内的省市区数据）
   selectedArea: AreaNode | null; // 存储了（当前选中的区域）
-  // 🔥 新增：用户详细信息
-  // 🔥 新增字段 - 向下兼容
+  // 用户详细信息
   userType?: number | null;      // 用户类型（可选，向下兼容）
   province?: string;             // 省份名称
   city?: string;                 // 城市名称
@@ -28,7 +27,7 @@ export const useAreaStore = defineStore("area", {
     areaCode: storageLocal().getItem<AreaState>(areaKey)?.areaCode ?? "",
     areaData: [],
     selectedArea: null,
-    // 🔥 新增字段 - 从localStorage恢复或设置默认值
+    // 新增字段 - 从localStorage恢复或设置默认值
     userType: storageLocal().getItem<AreaState>(areaKey)?.userType ?? null,
     province: storageLocal().getItem<AreaState>(areaKey)?.province ?? "",
     city: storageLocal().getItem<AreaState>(areaKey)?.city ?? "",
@@ -45,13 +44,13 @@ export const useAreaStore = defineStore("area", {
     // 判断是否有区域数据
     hasAreaData: state => state.areaData.length > 0,
 
-    // 🔥 新增 getters
+    // 新增 getters
     getCurrentUserType: state => state.userType,
     getCurrentProvince: state => state.province || "",
     getCurrentCity: state => state.city || "",
     getCurrentDistrict: state => state.district || "",
     getCurrentDepartment: state => state.department || "",
-    // 🔥 组合信息
+    // 组合信息
     getFullAddress: state => {
       return [state.province, state.city, state.district]
         .filter(Boolean)
@@ -74,7 +73,7 @@ export const useAreaStore = defineStore("area", {
       this.areaCode = areaCode;
     },
 
-    // 🔥 新增 actions
+    // 新增 actions
     SET_UserType(userType: number) {
       this.userType = userType;
     },
@@ -90,7 +89,7 @@ export const useAreaStore = defineStore("area", {
     SET_Department(department: string) {
       this.department = department;
     },
-    // 🔥 批量设置方法
+    // 批量设置方法
     setUserInfo(userInfo: {
       userType?: number;
       province?: string;
@@ -107,7 +106,7 @@ export const useAreaStore = defineStore("area", {
       // 更新localStorage
       this.updateStorage();
     },
-    // 🔥 更新localStorage的方法
+    // 更新localStorage的方法
     updateStorage() {
       const storeData = {
         areaType: this.areaType,
@@ -127,7 +126,7 @@ export const useAreaStore = defineStore("area", {
       console.log('Store中设置区域数据:', areaData);
     },    
 
-    // 🔥 修改现有的 setUserType 方法
+    // 修改现有的 setUserType 方法
     setUserType(areaType, areaCode, additionalInfo?: {
       userType?: number;
       province?: string;
@@ -167,7 +166,7 @@ export const useAreaStore = defineStore("area", {
           district: this.district 
         });
         
-        // 🔥 修改：直接传递参数，避免循环依赖
+        // 修改：直接传递参数，避免循环依赖
         const areaData = getAreaDataByUserPermission(
           this.userType,
           type,
@@ -178,7 +177,7 @@ export const useAreaStore = defineStore("area", {
         
         console.log('成功加载区域数据:', areaData);
         
-        // 🔥 根据用户类型设置不同的提示
+        // 根据用户类型设置不同的提示
         if (this.userType === 2) {
           console.log('超级管理员：已加载全部区域数据', areaData.length, '个省份');
         } else {
@@ -190,7 +189,7 @@ export const useAreaStore = defineStore("area", {
         this.areaData = [];
       }
     },
-    // 🔥 新增：强制重新加载区域数据
+    // 强制重新加载区域数据
     reloadAreaData() {
       this.loadAreaData(this.areaType, this.areaCode);
     },
