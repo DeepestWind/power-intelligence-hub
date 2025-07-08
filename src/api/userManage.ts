@@ -32,7 +32,6 @@ export interface UserData {
 export interface UserFormData {
   id?: number;
   userName: string;
-  department: string;
   departmentId?: number | null; 
   departmentName?: string | null; 
   employeeId: string;

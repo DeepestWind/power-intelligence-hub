@@ -282,8 +282,8 @@ const handleAdminLevelChange = () => {
 
 
 // 🔥 添加查看弹窗相关数据
-const viewDialogVisible = ref(false);
-const currentViewUser = ref<UserData | null>(null);
+const manageDialogVisible = ref(false);
+const currentManageUser = ref<UserData | null>(null);
 // 🔥 IC卡管理相关数据
 const userIcCards = ref<UserIcCard[]>([]);
 const icCardLoading = ref(false);
@@ -629,9 +629,17 @@ const isDisabledByAdminLevel = (level: 'city' | 'district') => {
   return false;
 };
 
+// 🔥 新增：查看用户功能
+const handleView = (row: UserData) => {
+  // 这里实现新的查看功能
+  ElMessage.info(`查看用户: ${row.userName}`);
+  console.log('查看用户:', row);
+  // TODO: 实现新的查看功能逻辑
+};
+
 
 // 查看用户 现有功能为IC卡管理和绑定柜子管理和部门管理
-const handleView = async (row: UserData) => {
+const handleManage = async (row: UserData) => {
   try {
     console.log('查看用户详情:', row);
     
@@ -640,8 +648,8 @@ const handleView = async (row: UserData) => {
       return;
     }
     
-    currentViewUser.value = { ...row };
-    viewDialogVisible.value = true;
+    currentManageUser.value = { ...row };
+    manageDialogVisible.value = true;
     
     // 🔥 分别加载数据，避免Promise.all可能的问题
     await loadUserIcCards(row.id);
@@ -651,7 +659,7 @@ const handleView = async (row: UserData) => {
   } catch (error) {
     console.error('查看用户详情错误:', error);
     ElMessage.error('加载用户详情失败');
-    viewDialogVisible.value = false;
+    manageDialogVisible.value = false;
   }
 };
 
@@ -660,10 +668,10 @@ const loadUserDepartments = async (userId: number) => {
   departmentManageLoading.value = true;
   try {
     // 🔥 修改：从当前查看用户中获取部门信息
-    if (currentViewUser.value?.departmentId && currentViewUser.value?.departmentName) {
+    if (currentManageUser.value?.departmentId && currentManageUser.value?.departmentName) {
       userDepartments.value = [{
-        id: currentViewUser.value.departmentId.toString(),
-        name: currentViewUser.value.departmentName
+        id: currentManageUser.value.departmentId.toString(),
+        name: currentManageUser.value.departmentName
       }];
     } else {
       userDepartments.value = [];
@@ -717,7 +725,7 @@ const handleConfirmAddDepartment = async () => {
     return;
   }
   
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
@@ -725,7 +733,7 @@ const handleConfirmAddDepartment = async () => {
   try {
     // 🔥 使用新的API方法
     const result = await addUserDepartmentApi(
-      currentViewUser.value.id,
+      currentManageUser.value.id,
       parseInt(selectedDepartment.value.id),
       selectedDepartment.value.name
     );
@@ -736,12 +744,12 @@ const handleConfirmAddDepartment = async () => {
       selectedDepartment.value = null;
 
       // 🔥 修改：更新当前查看用户的部门信息
-      if (currentViewUser.value) {
-        currentViewUser.value.departmentId = parseInt(selectedDepartment.value.id);
-        currentViewUser.value.departmentName = selectedDepartment.value.name;
+      if (currentManageUser.value) {
+        currentManageUser.value.departmentId = parseInt(selectedDepartment.value.id);
+        currentManageUser.value.departmentName = selectedDepartment.value.name;
       }
 
-      await loadUserDepartments(currentViewUser.value.id);
+      await loadUserDepartments(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || '部门绑定失败');
     }
@@ -753,7 +761,7 @@ const handleConfirmAddDepartment = async () => {
 };
 // 🔥 新增：删除用户部门
 const handleDeleteUserDepartment = async () => {
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
@@ -770,17 +778,17 @@ const handleDeleteUserDepartment = async () => {
     );
     
     // 🔥 使用新的API方法
-    const result = await deleteUserDepartmentApi(currentViewUser.value.id);
+    const result = await deleteUserDepartmentApi(currentManageUser.value.id);
     
     if (result.code === 200) {
       ElMessage.success('部门绑定移除成功');
       // 🔥 修改：清空当前查看用户的部门信息
-      if (currentViewUser.value) {
-        currentViewUser.value.departmentId = null;
-        currentViewUser.value.departmentName = null;
+      if (currentManageUser.value) {
+        currentManageUser.value.departmentId = null;
+        currentManageUser.value.departmentName = null;
       }
 
-      await loadUserDepartments(currentViewUser.value.id);
+      await loadUserDepartments(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || '部门绑定移除失败');
     }
@@ -795,14 +803,14 @@ const handleDeleteUserDepartment = async () => {
 
 // 🔥 新增：打开添加部门弹窗
 const handleAddDepartment = async () => {
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
   
   selectedDepartment.value = null; // 🔥 新增：重置选择状态
   addDepartmentVisible.value = true;
-  await loadAvailableDepartments(currentViewUser.value.id);
+  await loadAvailableDepartments(currentManageUser.value.id);
 };
 
 // 🔥 修改：加载用户IC卡信息（使用 API 方法）
@@ -843,15 +851,15 @@ const handleConfirmAddIcCard = async () => {
     return;
   }
   
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
   
   try {
     const cardData = {
-      userId: currentViewUser.value.id,
-      userName: currentViewUser.value.userName,
+      userId: currentManageUser.value.id,
+      userName: currentManageUser.value.userName,
       icCard: newIcCard.value.trim()
     };
     
@@ -862,7 +870,7 @@ const handleConfirmAddIcCard = async () => {
       ElMessage.success('IC卡添加成功');
       addIcCardVisible.value = false;
       newIcCard.value = '';
-      await loadUserIcCards(currentViewUser.value.id);
+      await loadUserIcCards(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || 'IC卡添加失败');
     }
@@ -875,7 +883,7 @@ const handleConfirmAddIcCard = async () => {
 
 // 🔥 修改：删除IC卡（使用 API 方法）
 const handleDeleteIcCard = async (icCard: UserIcCard) => {
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
@@ -892,11 +900,11 @@ const handleDeleteIcCard = async (icCard: UserIcCard) => {
     );
     
     // 🔥 使用 API 方法
-    const result = await deleteUserIcCardApi(currentViewUser.value.id, icCard.icCard);
+    const result = await deleteUserIcCardApi(currentManageUser.value.id, icCard.icCard);
     
     if (result.code === 200) {
       ElMessage.success('IC卡删除成功');
-      await loadUserIcCards(currentViewUser.value.id);
+      await loadUserIcCards(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || 'IC卡删除失败');
     }
@@ -1004,14 +1012,14 @@ const handleConfirmAddCabinet = async () => {
     return;
   }
   
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
   
   try {
     const cabinetData = {
-      userId: currentViewUser.value.id,
+      userId: currentManageUser.value.id,
       cabinetId: selectedCabinet.value.id,
       cabinetName: selectedCabinet.value.cabinetName
     };
@@ -1024,7 +1032,7 @@ const handleConfirmAddCabinet = async () => {
       addCabinetVisible.value = false;
       selectedCabinet.value = null;
       cabinetListData.value = [];
-      await loadUserCabinets(currentViewUser.value.id);
+      await loadUserCabinets(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || '柜子绑定失败');
     }
@@ -1037,7 +1045,7 @@ const handleConfirmAddCabinet = async () => {
 
 // 🔥 修改：删除绑定柜子（使用 API 方法）
 const handleDeleteCabinet = async (cabinet: UserCabinet) => {
-  if (!currentViewUser.value) {
+  if (!currentManageUser.value) {
     ElMessage.error('用户信息异常');
     return;
   }
@@ -1054,11 +1062,11 @@ const handleDeleteCabinet = async (cabinet: UserCabinet) => {
     );
     
     // 🔥 使用 API 方法
-    const result = await deleteUserCabinetApi(currentViewUser.value.id, cabinet.cabinetId);
+    const result = await deleteUserCabinetApi(currentManageUser.value.id, cabinet.cabinetId);
     
     if (result.code === 200) {
       ElMessage.success('柜子绑定解除成功');
-      await loadUserCabinets(currentViewUser.value.id);
+      await loadUserCabinets(currentManageUser.value.id);
     } else {
       ElMessage.error(result.msg || '柜子绑定解除失败');
     }
@@ -1071,9 +1079,9 @@ const handleDeleteCabinet = async (cabinet: UserCabinet) => {
   }
 };
 // 🔥 关闭查看弹窗
-const closeViewDialog = () => {
-  viewDialogVisible.value = false;
-  currentViewUser.value = null;
+const closeManageDialog = () => {
+  manageDialogVisible.value = false;
+  currentManageUser.value = null;
   userIcCards.value = [];
   userCabinets.value = []; 
   userDepartments.value = [];
@@ -1431,7 +1439,7 @@ onMounted(async () => {
                 {{ new Date(row.createTime).toLocaleString() }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="350" fixed="right">
+            <el-table-column label="操作" width="420" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
@@ -1441,6 +1449,14 @@ onMounted(async () => {
                 >
                   查看
                 </el-button>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  :icon="Setting"
+                  @click="handleManage(row)"
+                >
+                  管理
+                </el-button>                
                 <el-button 
                   type="success" 
                   size="small" 
@@ -1734,11 +1750,11 @@ onMounted(async () => {
     </el-dialog>    
     <!-- 🔥 用户详情查看弹窗 -->
     <el-dialog
-      v-model="viewDialogVisible"
-      :title="`${currentViewUser?.userName || ''} - 用户详情`"
+      v-model="manageDialogVisible"
+      :title="`${currentManageUser?.userName || ''} - 用户管理`"
       width="1200px"
       :close-on-click-modal="false"
-      @close="closeViewDialog"
+      @close="closeManageDialog"
     >
       <div class="user-detail-container">
         <!-- 顶部绑定部门管理 -->
@@ -1910,7 +1926,7 @@ onMounted(async () => {
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="closeViewDialog">关闭</el-button>
+          <el-button @click="closeManageDialog">关闭</el-button>
         </div>
       </template>
     </el-dialog>
