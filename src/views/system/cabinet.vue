@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Edit, Delete, View, Setting } from '@element-plus/icons-vue';
+import { Edit, Delete, View, Setting, Box } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area"; // 导入 AreaStore
@@ -25,7 +25,8 @@ import {
 
 // 🔥 新增：导入物品相关API
 import { 
-  getMaterialsByCabinetId as getMaterialsByCabinetIdApi 
+  getMaterialDetailsByCabinetId as getMaterialDetailsByCabinetIdApi,
+  type MaterialData
 } from '@/api/item';
 
 defineOptions({
@@ -119,7 +120,7 @@ const deviceFormRef = ref();
 // 🔥 新增：查看柜子物品相关数据
 const viewDialogVisible = ref(false);
 const currentViewCabinet = ref<CabinetData | null>(null);
-const cabinetMaterials = ref<string[]>([]);
+const cabinetMaterials = ref<MaterialData[]>([]);
 const materialsLoading = ref(false);
 
 // 🔥 新增：查看柜子功能
@@ -142,11 +143,12 @@ const handleView = async (row: CabinetData) => {
 const loadCabinetMaterials = async (cabinetId: number) => {
   materialsLoading.value = true;
   try {
-    const result = await getMaterialsByCabinetIdApi(cabinetId);
+    const result = await getMaterialDetailsByCabinetIdApi(cabinetId);
     
     if (result.code === 200) {
-      cabinetMaterials.value = result.data;
-      console.log('获取柜子物品成功:', cabinetMaterials.value);
+      // 🔥 修改：过滤掉已删除的物品
+      cabinetMaterials.value = result.data.filter(item => item.isDelete === 1);
+      console.log('获取柜子物品详细信息成功:', cabinetMaterials.value);
     } else {
       ElMessage.error(result.msg || '获取柜子物品失败');
       cabinetMaterials.value = [];
@@ -160,6 +162,19 @@ const loadCabinetMaterials = async (cabinetId: number) => {
     materialsLoading.value = false;
   }
 };
+
+const formatDateTime = (dateTime: string) => {
+  if (!dateTime) return '-';
+  return new Date(dateTime).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
 // 🔥 新增：关闭查看弹窗
 const closeViewDialog = () => {
   viewDialogVisible.value = false;
@@ -782,14 +797,35 @@ onMounted(async () => {
     <el-dialog
       v-model="viewDialogVisible"
       :title="`${currentViewCabinet?.cabinetName || ''} - 柜子详情`"
-      width="700px"
+      width="800px"
       :close-on-click-modal="false"
       @close="closeViewDialog"
     >
       <div class="cabinet-view-container">
         <!-- 柜子基本信息 -->
         <div class="cabinet-info-section">
-        <!-- 柜子信息待添加 -->
+          <div class="cabinet-basic-info">
+            <div class="info-row">
+              <div class="info-item">
+                <span class="label">设备编号:</span>
+                <span class="value">{{ currentViewCabinet?.cabinetCode }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">设备名称:</span>
+                <span class="value">{{ currentViewCabinet?.cabinetName }}</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-item">
+                <span class="label">所在地区:</span>
+                <span class="value">{{ currentViewCabinet?.province }}{{ currentViewCabinet?.city }}{{ currentViewCabinet?.district }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">具体地址:</span>
+                <span class="value">{{ currentViewCabinet?.address }}</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- 物品列表 -->
@@ -805,15 +841,31 @@ onMounted(async () => {
             <div v-if="cabinetMaterials.length > 0" class="materials-list">
               <div 
                 v-for="(material, index) in cabinetMaterials" 
-                :key="index"
+                :key="material.id"
                 class="material-item"
               >
                 <div class="material-icon">
                   <el-icon><Box /></el-icon>
                 </div>
                 <div class="material-info">
-                  <span class="material-name">{{ material }}</span>
-                  <span class="material-index">{{ index + 1 }}</span>
+                  <div class="material-header">
+                    <span class="material-name">{{ material.materialName }}</span>
+                    <el-tag type="primary" size="small">{{ material.materialCode }}</el-tag>
+                  </div>
+                  <div class="material-details">
+                    <div class="detail-item">
+                      <span class="detail-label">RFID:</span>
+                      <span class="detail-value">{{ material.rfid }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">实验日期:</span>
+                      <span class="detail-value">{{ material.experimentDate }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">创建时间:</span>
+                      <span class="detail-value">{{ formatDateTime(material.createTime) }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -831,7 +883,7 @@ onMounted(async () => {
           <el-button @click="closeViewDialog">关闭</el-button>
         </div>
       </template>
-    </el-dialog>    
+    </el-dialog>  
   </div>
 </template>
 
@@ -886,6 +938,157 @@ onMounted(async () => {
           margin-top: 20px;
           display: flex;
           justify-content: center;
+        }
+      }
+    }
+  }
+}
+
+.cabinet-view-container {
+  .cabinet-info-section {
+    margin-bottom: 20px;
+    
+    .cabinet-basic-info {
+      background-color: #f8f9fa;
+      padding: 16px;
+      border-radius: 8px;
+      
+      .info-row {
+        display: flex;
+        margin-bottom: 12px;
+        gap: 40px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .info-item {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          
+          .label {
+            color: #606266;
+            font-weight: 500;
+            margin-right: 8px;
+            min-width: 80px;
+          }
+          
+          .value {
+            color: #303133;
+            font-weight: 400;
+          }
+        }
+      }
+    }
+  }
+  
+  .materials-section {
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      
+      .section-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+    
+    .materials-content {
+      .materials-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+        
+        .material-item {
+          background-color: #ffffff;
+          border: 1px solid #e4e7ed;
+          border-radius: 8px;
+          padding: 16px;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-color: #409eff;
+          }
+          
+          .material-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #f0f9ff;
+            border-radius: 50%;
+            margin-bottom: 12px;
+            
+            .el-icon {
+              font-size: 20px;
+              color: #409eff;
+            }
+          }
+          
+          .material-info {
+            .material-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+              
+              .material-name {
+                font-weight: 500;
+                color: #303133;
+                font-size: 14px;
+              }
+            }
+            
+            .material-details {
+              .detail-item {
+                display: flex;
+                margin-bottom: 6px;
+                
+                &:last-child {
+                  margin-bottom: 0;
+                }
+                
+                .detail-label {
+                  color: #909399;
+                  font-size: 12px;
+                  min-width: 70px;
+                }
+                
+                .detail-value {
+                  color: #606266;
+                  font-size: 12px;
+                  flex: 1;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .empty-materials {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        color: #909399;
+        
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+        
+        .empty-text {
+          font-size: 14px;
         }
       }
     }

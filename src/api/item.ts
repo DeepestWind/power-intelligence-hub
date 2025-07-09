@@ -79,6 +79,12 @@ export interface MaterialByCabinetResponse {
   msg: string;
   data: string[]; // 物品名称数组
 }
+// 🔥 新增：根据柜子ID查询物品详细信息响应接口
+export interface MaterialDetailByCabinetResponse {
+  code: number;
+  msg: string;
+  data: MaterialData[]; // 物品详细信息数组
+}
 
 // 通用API响应接口
 export interface BaseApiResponse {
@@ -278,6 +284,38 @@ export const getMaterialsByCabinetId = async (cabinetId: number): Promise<Materi
   }
 };
 
+/**
+ * 根据柜子ID查询物品详细信息
+ * @param cabinetId 柜子ID
+ * @returns 物品详细信息列表响应数据
+ */
+export const getMaterialDetailsByCabinetId = async (cabinetId: number): Promise<MaterialDetailByCabinetResponse> => {
+  try {
+    const url = `/api/power/material/cabinets/${cabinetId}`;
+    
+    console.log('根据柜子ID查询物品详细信息API请求URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result: MaterialDetailByCabinetResponse = await response.json();
+    console.log('根据柜子ID查询物品详细信息API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('根据柜子ID查询物品详细信息API请求失败:', error);
+    throw error;
+  }
+};
+
 
 // export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
 //   try {
@@ -309,5 +347,6 @@ export default {
   addMaterial,
   updateMaterial,
   offlineMaterial,
-  getMaterialsByCabinetId
+  getMaterialsByCabinetId,
+  getMaterialDetailsByCabinetId
 };

@@ -29,6 +29,8 @@ import {
 // 导入物料列表 API
 import { 
   getMaterialList as getMaterialListApi,
+  getMaterialsByCabinetId as getMaterialsByCabinetIdApi,
+  getMaterialDetailsByCabinetId as getMaterialDetailsByCabinetIdApi,
   type MaterialData
 } from '@/api/item';
 
@@ -178,7 +180,6 @@ const handleAdd = async () => {
   
   // 加载柜子和物料选项
   await loadCabinetOptions();
-  await loadMaterialOptions();
   
   dialogVisible.value = true;
 };
@@ -205,7 +206,10 @@ const handleEdit = async (row: PurchaseRecordData) => {
   
   // 加载选项
   await loadCabinetOptions();
-  await loadMaterialOptions();
+  if (row.cabinetId) {
+    await loadMaterialsByCabinet(row.cabinetId);
+  }  
+  //await loadMaterialOptions();
   
   dialogVisible.value = true;
   
@@ -261,11 +265,43 @@ const loadMaterialOptions = async () => {
 };
 
 // 柜子选择变化
-const handleCabinetChange = (cabinetId: number) => {
+const handleCabinetChange = async (cabinetId: number) => {
   const selectedCabinet = cabinetOptions.value.find(item => item.id === cabinetId);
   if (selectedCabinet) {
     formData.value.cabinetCode = selectedCabinet.cabinetCode;
     formData.value.cabinetName = selectedCabinet.cabinetName;
+
+    // 🔥 新增：根据柜子ID加载该柜子的物品列表
+    await loadMaterialsByCabinet(cabinetId);
+    
+    // 🔥 新增：清空之前选择的物料
+    formData.value.materialId = 0;
+    formData.value.materialCode = '';
+    formData.value.materialName = '';
+  }
+};
+// 在 loadMaterialOptions 方法后添加：
+// 🔥 新增：根据柜子ID加载物品列表
+const loadMaterialsByCabinet = async (cabinetId: number) => {
+  materialLoading.value = true;
+  try {
+    const response = await getMaterialDetailsByCabinetIdApi(cabinetId);
+    
+    if (response.code === 200) {
+      // 🔥 直接使用返回的完整物料数据
+      materialOptions.value = response.data.filter(item => item.isDelete === 1); // 只显示未删除的物料
+      
+      console.log('根据柜子ID获取的物料详细信息:', materialOptions.value);
+    } else {
+      ElMessage.error(response.msg || '获取柜子物品列表失败');
+      materialOptions.value = [];
+    }
+  } catch (error) {
+    ElMessage.error('获取柜子物品列表失败，请检查网络连接');
+    console.error('获取柜子物品列表错误:', error);
+    materialOptions.value = [];
+  } finally {
+    materialLoading.value = false;
   }
 };
 
@@ -562,23 +598,25 @@ onMounted(() => {
             </el-col>
             
             <el-col :span="12">
-            <el-form-item label="选择物料" prop="materialId">
-                <el-select
-                v-model="formData.materialId"
-                placeholder="请选择物料"
-                filterable
-                :loading="materialLoading"
-                @change="handleMaterialChange"
-                style="width: 100%"
-                >
-                <el-option
-                    v-for="material in materialOptions"
-                    :key="material.id"
-                    :label="`${material.materialCode} - ${material.materialName}`"
-                    :value="material.id"
-                />
-                </el-select>
-            </el-form-item>
+                <el-form-item label="选择物料" prop="materialId">
+                    <el-select
+                    v-model="formData.materialId"
+                    placeholder="请先选择柜子"
+                    filterable
+                    :loading="materialLoading"
+                    :disabled="!formData.cabinetId"
+                    @change="handleMaterialChange"
+                    style="width: 100%"
+                    >
+                    <el-option
+                        v-for="material in materialOptions"
+                        :key="material.id"
+                        :label="material.materialName"
+                        :value="material.id"
+                    />
+                    
+                    </el-select>
+                </el-form-item>
             </el-col>
         </el-row>
         
