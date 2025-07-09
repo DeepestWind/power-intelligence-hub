@@ -36,6 +36,15 @@ export default {
       }
     },
     {
+      path: "/device/maintain",
+      name: "MaintainRecord",
+      component: () => import("@/views/device/maintain.vue"),
+      meta: {
+        title: "维修记录", 
+        icon: "ep:document-checked"
+      }
+    },
+    {
       path: "/device/overtime",
       name: "OvertimeRecord",
       component: () => import("@/views/device/overtime.vue"),
