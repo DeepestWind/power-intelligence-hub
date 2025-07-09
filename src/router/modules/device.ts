@@ -9,6 +9,15 @@ export default {
   },
   children: [
     {
+      path: "/device/purchase",
+      name: "PurchaseRecord",
+      component: () => import("@/views/device/purchase.vue"),
+      meta: {
+        title: "购买记录",
+        icon: "ep:shopping-cart"
+      }
+    },
+    {
       path: "/device/shelving",
       name: "ShelvingRecord",
       component: () => import("@/views/device/shelving.vue"),
