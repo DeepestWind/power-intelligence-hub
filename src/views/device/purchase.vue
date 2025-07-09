@@ -3,7 +3,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules, FormInstance } from 'element-plus';
-import { View, Download, Search, ShoppingCart, Plus, Edit, Close } from '@element-plus/icons-vue';
+import { View, Download, Search, ShoppingCart, Plus, Edit, Close, Delete } from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area";
 import { useAreaStore } from "@/store/modules/area";
@@ -15,6 +15,7 @@ import {
   getPurchaseRecordList as getPurchaseRecordListApi,
   addPurchaseRecord as addPurchaseRecordApi,
   updatePurchaseRecord as updatePurchaseRecordApi,
+  deletePurchaseRecord as deletePurchaseRecordApi,
   type PurchaseRecordData,
   type PurchaseRecordFormData,
   type PurchaseRecordQueryParams
@@ -394,6 +395,38 @@ const handleClose = () => {
   resetForm();
 };
 
+// 删除购买记录
+const handleDelete = async (row: PurchaseRecordData) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除购买记录"${row.materialName}"吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+    
+    const result = await deletePurchaseRecordApi(row.id);
+    
+    if (result.code === 200) {
+      ElMessage.success('购买记录删除成功');
+      await getPurchaseRecordList();
+    } else {
+      ElMessage.error(result.msg || '删除失败');
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除购买记录失败，请检查网络连接');
+      console.error('删除购买记录错误:', error);
+    }
+  }
+};
+
+
+
 // 分页改变
 const handlePageChange = (page: number) => {
   currentPage.value = page;
@@ -526,7 +559,7 @@ onMounted(() => {
                 {{ formatDateTime(row.updatedTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column label="操作" width="240" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
@@ -543,7 +576,15 @@ onMounted(() => {
                 @click="handleEdit(row)"
                 >
                 编辑
-                </el-button>                
+                </el-button>      
+                <el-button 
+                type="danger" 
+                size="small" 
+                :icon="Delete"
+                @click="handleDelete(row)"
+                >
+                删除
+                </el-button>                          
               </template>
             </el-table-column>
           </el-table>

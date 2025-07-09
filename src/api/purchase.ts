@@ -190,11 +190,44 @@ export const updatePurchaseRecord = async (data: PurchaseRecordFormData): Promis
   }
 };
 
+/**
+ * 删除购买记录
+ * @param id 购买记录ID
+ * @returns API响应结果
+ */
+export const deletePurchaseRecord = async (id: number): Promise<BaseApiResponse> => {
+  try {
+    const url = `/api/power/purchase-records/delete/${id}`;
+    
+    console.log('删除购买记录API请求URL:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result: BaseApiResponse = await response.json();
+    console.log('删除购买记录API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('删除购买记录API请求失败:', error);
+    throw error;
+  }
+};
+
 
 // ==================== 默认导出 ====================
 
 export default {
   getPurchaseRecordList,
   addPurchaseRecord,
-  updatePurchaseRecord
+  updatePurchaseRecord,
+  deletePurchaseRecord 
 };
