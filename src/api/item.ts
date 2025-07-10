@@ -73,6 +73,23 @@ export interface MaterialApiResponse {
   };
 }
 
+/**
+ * 物品生命周期数据接口
+ */
+export interface MaterialLifecycleData {
+  purchaseRemark: string | null;
+  purchaseName: string | null;
+  shelfTime: string | null;
+  shelfName: string | null;
+  borrowedName: string | null;
+  borrowedTime: string | null;
+  returnedName: string | null;
+  returnedTime: string | null;
+  shelfOutTime: string | null;
+  shelfOutName: string | null;
+  status: number; //物品状态 1在，0 借出,2 维修
+}
+
 // 🔥 新增：根据柜子ID查询物品响应接口
 export interface MaterialByCabinetResponse {
   code: number;
@@ -84,6 +101,15 @@ export interface MaterialDetailByCabinetResponse {
   code: number;
   msg: string;
   data: MaterialData[]; // 物品详细信息数组
+}
+
+/**
+ * 物品生命周期API响应接口
+ */
+export interface MaterialLifecycleResponse {
+  code: number;
+  msg: string;
+  data: MaterialLifecycleData;
 }
 
 // 通用API响应接口
@@ -316,6 +342,38 @@ export const getMaterialDetailsByCabinetId = async (cabinetId: number): Promise<
   }
 };
 
+/**
+ * 获取物品全生命周期信息
+ * @param id 物品ID
+ * @returns 物品生命周期数据
+ */
+export const getMaterialLifecycle = async (id: number): Promise<MaterialLifecycleResponse> => {
+  try {
+    const url = `/api/power/material/view/${id}`;
+    
+    console.log('获取物品生命周期API请求URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result: MaterialLifecycleResponse = await response.json();
+    console.log('获取物品生命周期API响应:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('获取物品生命周期API请求失败:', error);
+    throw error;
+  }
+};
+
 
 // export const deleteMaterial = async (id: number): Promise<BaseApiResponse> => {
 //   try {
@@ -348,5 +406,6 @@ export default {
   updateMaterial,
   offlineMaterial,
   getMaterialsByCabinetId,
-  getMaterialDetailsByCabinetId
+  getMaterialDetailsByCabinetId,
+  getMaterialLifecycle
 };

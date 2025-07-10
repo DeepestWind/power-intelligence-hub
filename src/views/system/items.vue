@@ -1,7 +1,9 @@
 <script setup lang='ts'>
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Edit, Delete, View, Setting, Plus } from '@element-plus/icons-vue';
+import { Edit, Delete, View, Setting, Plus, 
+  ShoppingCart, TopRight, Promotion, CircleCheck, BottomLeft  
+} from '@element-plus/icons-vue';
 import AreaSelect from "@/components/AreaSelect/index.vue";
 import type { AreaNode } from "@/utils/area"; // 添加类型导入
 import { useAreaStore } from "@/store/modules/area";
@@ -16,10 +18,12 @@ import {
   addMaterial as addMaterialApi, 
   updateMaterial as updateMaterialApi, 
   offlineMaterial as offlineMaterialApi, 
+  getMaterialLifecycle as getMaterialLifecycleApi,
   type MaterialData,
   type MaterialFormData,
   type MaterialQueryParams,
-  type MaterialOfflineParams // 新增：下架参数类型
+  type MaterialOfflineParams, // 新增：下架参数类型
+  type MaterialLifecycleData // 新增：导入生命周期数据类型
 } from '@/api/item';
 
 // 导入柜子相关的 API 方法和类型（复用）
@@ -73,6 +77,12 @@ const cabinetLoading = ref(false);
 const cabinetCurrentPage = ref(1);
 const cabinetPageSize = ref(10);
 const cabinetTotal = ref(0);
+
+// 添加生命周期查看相关变量
+const lifecycleDialogVisible = ref(false);
+const lifecycleLoading = ref(false);
+const lifecycleData = ref<MaterialLifecycleData | null>(null);
+const currentViewItem = ref<MaterialData | null>(null);
 
 // 柜子搜索表单
 const cabinetSearchForm = ref({
@@ -526,9 +536,55 @@ const handleEdit = (row: MaterialData) => {
   dialogVisible.value = true;
 };
 
-// 查看物料详情
-const handleView = (row: MaterialData) => {
-  ElMessage.info(`查看物料: ${row.materialName}`);
+// 查看物料详情 现为查看物品全生命周期
+const handleView = async (row: MaterialData) => {
+  try {
+    lifecycleLoading.value = true;
+    currentViewItem.value = row;
+    
+    // 调用API获取物品生命周期数据
+    const response = await getMaterialLifecycleApi(row.id);
+    
+    if (response.code === 200) {
+      lifecycleData.value = response.data;
+      lifecycleDialogVisible.value = true;
+    } else {
+      ElMessage.error(response.msg || '获取物品生命周期数据失败');
+    }
+  } catch (error) {
+    ElMessage.error('获取物品生命周期失败，请检查网络连接');
+    console.error('获取物品生命周期错误:', error);
+  } finally {
+    lifecycleLoading.value = false;
+  }
+};
+// 格式化状态展示
+const formatLifecycleStatus = (status: number) => {
+  switch (status) {
+    case 0:
+      return { text: '借出', type: 'warning' };
+    case 1:
+      return { text: '在柜', type: 'success' };
+    case 2:
+      return { text: '维修中', type: 'danger' };
+    default:
+      return { text: '未知', type: 'info' };
+  }
+};
+// 格式化日期时间
+const formatDateTime = (dateStr: string | null) => {
+  if (!dateStr) return '无';
+  
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString();
+  } catch (e) {
+    return dateStr;
+  }
+};
+// 格式化人员名称
+const formatPersonName = (name: string | null) => {
+  return name || '无';
 };
 
 // 分页改变
@@ -666,7 +722,7 @@ onMounted(async () => {
             stripe
             border
           >
-            <!-- <el-table-column prop="id" label="ID" width="60" /> -->
+            <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="cabinetCode" label="柜子编号" width="120" />
             <el-table-column prop="cabinetName" label="柜子名称" width="150" />
             <el-table-column prop="materialCode" label="物料编号" width="120" />
@@ -1132,7 +1188,168 @@ onMounted(async () => {
           @current-change="handleCabinetPageChange"
         />
       </div>
-    </el-dialog>    
+    </el-dialog>  
+
+    <!-- 添加物品生命周期查看弹窗 -->
+    <el-dialog
+      v-model="lifecycleDialogVisible"
+      title="物品全生命周期"
+      width="600px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="true"
+    >
+      <div v-loading="lifecycleLoading" class="lifecycle-container">
+        <div v-if="lifecycleData && currentViewItem" class="lifecycle-content">
+          <!-- 物品基本信息 -->
+          <div class="item-basic-info">
+            <el-descriptions 
+              title="物品基本信息" 
+              :column="1" 
+              border 
+              size="small"
+            >
+              <el-descriptions-item label="物品编号">
+                {{ currentViewItem.materialCode }}
+              </el-descriptions-item>
+              <el-descriptions-item label="物品名称">
+                {{ currentViewItem.materialName }}
+              </el-descriptions-item>
+              <el-descriptions-item label="RFID标签">
+                {{ currentViewItem.rfid }}
+              </el-descriptions-item>
+              <el-descriptions-item label="实验日期">
+                {{ new Date(currentViewItem.experimentDate).toLocaleDateString() }}
+              </el-descriptions-item>
+              <el-descriptions-item label="所属柜子">
+                {{ currentViewItem.cabinetName }}
+              </el-descriptions-item>
+              <el-descriptions-item label="当前状态">
+                <el-tag :type="formatLifecycleStatus(lifecycleData.status).type">
+                  {{ formatLifecycleStatus(lifecycleData.status).text }}
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+          
+          <!-- 生命周期时间线 -->
+          <div class="lifecycle-timeline">
+            <h3 class="timeline-title">生命周期历程</h3>
+            
+            <el-timeline>
+              <!-- 购买记录 -->
+              <el-timeline-item 
+                v-if="lifecycleData.purchaseName || lifecycleData.purchaseRemark" 
+                type="primary" 
+                size="large"
+                icon="ShoppingCart"
+              >
+                <h4 class="timeline-item-title">购买记录</h4>
+                <p class="timeline-item-content">
+                  购买经办人: {{ formatPersonName(lifecycleData.purchaseName) }}
+                </p>
+                <p class="timeline-item-content" v-if="lifecycleData.purchaseRemark">
+                  购买备注: {{ lifecycleData.purchaseRemark }}
+                </p>
+              </el-timeline-item>
+              <el-timeline-item v-else type="info" size="large" icon="ShoppingCart">
+                <h4 class="timeline-item-title">购买记录</h4>
+                <p class="timeline-item-content">无购买记录</p>
+              </el-timeline-item>
+              
+              <!-- 上架记录 -->
+              <el-timeline-item 
+                v-if="lifecycleData.shelfTime" 
+                type="success" 
+                size="large"
+                icon="TopRight"
+              >
+                <h4 class="timeline-item-title">上架记录</h4>
+                <p class="timeline-item-content">
+                  上架时间: {{ formatDateTime(lifecycleData.shelfTime) }}
+                </p>
+                <p class="timeline-item-content">
+                  上架经办人: {{ formatPersonName(lifecycleData.shelfName) }}
+                </p>
+              </el-timeline-item>
+              <el-timeline-item v-else type="info" size="large" icon="TopRight">
+                <h4 class="timeline-item-title">上架记录</h4>
+                <p class="timeline-item-content">无上架记录</p>
+              </el-timeline-item>
+              
+              <!-- 借出记录 -->
+              <el-timeline-item 
+                v-if="lifecycleData.borrowedTime" 
+                type="warning" 
+                size="large"
+                icon="Promotion"
+              >
+                <h4 class="timeline-item-title">借出记录</h4>
+                <p class="timeline-item-content">
+                  借出时间: {{ formatDateTime(lifecycleData.borrowedTime) }}
+                </p>
+                <p class="timeline-item-content">
+                  借出经办人: {{ formatPersonName(lifecycleData.borrowedName) }}
+                </p>
+              </el-timeline-item>
+              <el-timeline-item v-else type="info" size="large" icon="Promotion">
+                <h4 class="timeline-item-title">借出记录</h4>
+                <p class="timeline-item-content">无借出记录</p>
+              </el-timeline-item>
+              
+              <!-- 归还记录 -->
+              <el-timeline-item 
+                v-if="lifecycleData.returnedTime" 
+                type="success" 
+                size="large"
+                icon="CircleCheck"
+              >
+                <h4 class="timeline-item-title">归还记录</h4>
+                <p class="timeline-item-content">
+                  归还时间: {{ formatDateTime(lifecycleData.returnedTime) }}
+                </p>
+                <p class="timeline-item-content">
+                  归还经办人: {{ formatPersonName(lifecycleData.returnedName) }}
+                </p>
+              </el-timeline-item>
+              <el-timeline-item v-else type="info" size="large" icon="CircleCheck">
+                <h4 class="timeline-item-title">归还记录</h4>
+                <p class="timeline-item-content">无归还记录</p>
+              </el-timeline-item>
+              
+              <!-- 下架记录 -->
+              <el-timeline-item 
+                v-if="lifecycleData.shelfOutTime" 
+                type="danger" 
+                size="large"
+                icon="BottomLeft"
+              >
+                <h4 class="timeline-item-title">下架记录</h4>
+                <p class="timeline-item-content">
+                  下架时间: {{ formatDateTime(lifecycleData.shelfOutTime) }}
+                </p>
+                <p class="timeline-item-content">
+                  下架经办人: {{ formatPersonName(lifecycleData.shelfOutName) }}
+                </p>
+              </el-timeline-item>
+              <el-timeline-item v-else type="info" size="large" icon="BottomLeft">
+                <h4 class="timeline-item-title">下架记录</h4>
+                <p class="timeline-item-content">无下架记录</p>
+              </el-timeline-item>
+            </el-timeline>
+          </div>
+        </div>
+        
+        <div v-else class="empty-lifecycle">
+          <el-empty description="暂无生命周期数据"></el-empty>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="lifecycleDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>      
 
   </div>
 </template>
@@ -1260,6 +1477,45 @@ onMounted(async () => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+// 添加生命周期弹窗样式
+.lifecycle-container {
+  .lifecycle-content {
+    .item-basic-info {
+      margin-bottom: 24px;
+    }
+    
+    .lifecycle-timeline {
+      .timeline-title {
+        margin-top: 16px;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+        border-left: 4px solid #409eff;
+        padding-left: 10px;
+      }
+      
+      .timeline-item-title {
+        font-size: 15px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        color: #303133;
+      }
+      
+      .timeline-item-content {
+        font-size: 13px;
+        color: #606266;
+        margin: 4px 0;
+        line-height: 1.4;
+      }
+    }
+  }
+  
+  .empty-lifecycle {
+    padding: 40px 0;
+  }
 }
 
 // 表格样式调整
