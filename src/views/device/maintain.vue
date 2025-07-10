@@ -160,14 +160,14 @@ onMounted(() => {
 <template>
   <div class="maintain-records-container">
     <!-- 左侧区域选择器 -->
-    <!-- <div>
+    <div>
       <AreaSelect @area-search="handleAreaSearch" />
-    </div> -->
+    </div>
     
     <div class="content">
       <div class="main-content">
         <!-- 搜索区域 -->
-        <!-- <el-card class="search-card">
+        <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
             <el-form-item label="柜子编码">
               <el-input
@@ -239,7 +239,7 @@ onMounted(() => {
               </el-button>
             </el-form-item>
           </el-form>
-        </el-card> -->
+        </el-card>
 
         <!-- 表格区域 -->
         <el-card class="table-card">

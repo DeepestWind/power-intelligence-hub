@@ -83,8 +83,8 @@ const {
 // 用户表单数据
 const userForm = ref({
   userName: '',
-  departmentId: null,
-  departmentName: '',
+  //departmentId: null,
+  //departmentName: '',
   employeeId: '',
   password: '',
   userType: 1,
@@ -398,8 +398,8 @@ const handleAddUser = () => {
 const resetUserForm = () => {
   userForm.value = {
     userName: '',
-    departmentId: null, 
-    departmentName: '', 
+    //departmentId: null, 
+    //departmentName: '', 
     employeeId: '',
     password: '',
     userType: 1,
@@ -549,8 +549,8 @@ const handleEdit = (row: UserData) => {
   // 填充表单数据
   userForm.value = {
     userName: row.userName,
-    departmentId: row.departmentId,
-    departmentName: row.departmentName || '', 
+    //departmentId: row.departmentId,
+    //departmentName: row.departmentName || '', 
     employeeId: row.employeeId,
     password: row.password,
     userType: row.userType,
@@ -1524,7 +1524,7 @@ onMounted(async () => {
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <!-- <el-col :span="12">
             <el-form-item label="部门" prop="departmentName">
               <el-input
                 v-model="userForm.departmentName"
@@ -1532,7 +1532,7 @@ onMounted(async () => {
                 clearable
               />
             </el-form-item>
-          </el-col>
+          </el-col> -->
         </el-row>
 
         <el-row :gutter="20">
