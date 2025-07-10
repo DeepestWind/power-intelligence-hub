@@ -1,0 +1,277 @@
+[
+  {
+    "id": 1,
+    "chineseName": "绝缘手套",
+    "englishName": "glove"
+  },
+  {
+    "id": 2,
+    "chineseName": "护目镜",
+    "englishName": "goggles"
+  },
+  {
+    "id": 3,
+    "chineseName": "安全帽-防寒",
+    "englishName": "cold_helment"
+  },
+  {
+    "id": 4,
+    "chineseName": "安全帽-普通",
+    "englishName": "standard_helment"
+  },
+  {
+    "id": 5,
+    "chineseName": "安全带",
+    "englishName": "harness"
+  },
+  {
+    "id": 6,
+    "chineseName": "绝缘靴",
+    "englishName": "boots"
+  },
+  {
+    "id": 7,
+    "chineseName": "防毒面具",
+    "englishName": "mask"
+  },
+  {
+    "id": 8,
+    "chineseName": "正压式呼吸器",
+    "englishName": "breathing"
+  },
+  {
+    "id": 9,
+    "chineseName": "绝缘操作杆",
+    "englishName": "rod"
+  },
+  {
+    "id": 10,
+    "chineseName": "绝缘绳",
+    "englishName": "rope"
+  },
+  {
+    "id": 11,
+    "chineseName": "脚扣",
+    "englishName": "spikes"
+  },
+  {
+    "id": 12,
+    "chineseName": "验电笔表-接地导线类",
+    "englishName": "ground"
+  },
+  {
+    "id": 13,
+    "chineseName": "验电笔表-绝缘导线类",
+    "englishName": "insulation"
+  },
+  {
+    "id": 14,
+    "chineseName": "携带型短路接地线高压",
+    "englishName": "high_voltage"
+  },
+  {
+    "id": 15,
+    "chineseName": "携带型短路接地线低压",
+    "englishName": "low_voltage"
+  },
+  {
+    "id": 16,
+    "chineseName": "无接触接地线",
+    "englishName": "rodless"
+  },
+  {
+    "id": 17,
+    "chineseName": "安全围网",
+    "englishName": "net"
+  },
+  {
+    "id": 18,
+    "chineseName": "标识牌",
+    "englishName": "sign"
+  },
+  {
+    "id": 19,
+    "chineseName": "验电器-高压",
+    "englishName": "high_tester"
+  },
+  {
+    "id": 20,
+    "chineseName": "验电器-低压",
+    "englishName": "low_tester"
+  },
+  {
+    "id": 21,
+    "chineseName": "绝缘服",
+    "englishName": "clothing"
+  },
+  {
+    "id": 22,
+    "chineseName": "绝缘肩套",
+    "englishName": "shoulder_cover"
+  },
+  {
+    "id": 23,
+    "chineseName": "绝缘裤",
+    "englishName": "pants"
+  },
+  {
+    "id": 24,
+    "chineseName": "绝缘毯",
+    "englishName": "blanket"
+  },
+  {
+    "id": 25,
+    "chineseName": "绝缘软管套",
+    "englishName": "tube"
+  },
+  {
+    "id": 26,
+    "chineseName": "导电部保护罩",
+    "englishName": "conductor_cover"
+  },
+  {
+    "id": 27,
+    "chineseName": "绝缘部保护罩",
+    "englishName": "insulated_cover"
+  },
+  {
+    "id": 28,
+    "chineseName": "绝缘手套",
+    "englishName": "sleeve"
+  },
+  {
+    "id": 29,
+    "chineseName": "绝缘横担",
+    "englishName": "crossarm"
+  },
+  {
+    "id": 30,
+    "chineseName": "绝缘梯",
+    "englishName": "ladder"
+  },
+  {
+    "id": 31,
+    "chineseName": "绝缘剪刀",
+    "englishName": "scissors"
+  },
+  {
+    "id": 32,
+    "chineseName": "挡高板",
+    "englishName": "board"
+  },
+  {
+    "id": 33,
+    "chineseName": "电杆保护罩",
+    "englishName": "pole_cover"
+  },
+  {
+    "id": 34,
+    "chineseName": "金属工具检测器",
+    "englishName": "metal_tools"
+  },
+  {
+    "id": 35,
+    "chineseName": "工具箱",
+    "englishName": "toolbox"
+  },
+  {
+    "id": 36,
+    "chineseName": "SF6防护服",
+    "englishName": "SF6suit"
+  },
+  {
+    "id": 37,
+    "chineseName": "安全警示带",
+    "englishName": "tape"
+  },
+  {
+    "id": 38,
+    "chineseName": "安全围栏",
+    "englishName": "fence"
+  },
+  {
+    "id": 39,
+    "chineseName": "不锈钢软质围栏",
+    "englishName": "stainless_fence"
+  },
+  {
+    "id": 40,
+    "chineseName": "便携检测装置",
+    "englishName": "device"
+  },
+  {
+    "id": 41,
+    "chineseName": "高压发生器",
+    "englishName": "generator"
+  },
+  {
+    "id": 42,
+    "chineseName": "个人保安线",
+    "englishName": "personnal_wire"
+  },
+  {
+    "id": 43,
+    "chineseName": "相序器",
+    "englishName": "phase"
+  },
+  {
+    "id": 44,
+    "chineseName": "红布帘",
+    "englishName": "red_curtain"
+  },
+  {
+    "id": 45,
+    "chineseName": "防坠落安全器",
+    "englishName": "shock_absorbing"
+  },
+  {
+    "id": 46,
+    "chineseName": "急救包",
+    "englishName": "aid"
+  },
+  {
+    "id": 47,
+    "chineseName": "绝缘垫",
+    "englishName": "mat"
+  },
+  {
+    "id": 48,
+    "chineseName": "绝缘档板",
+    "englishName": "insulated_board"
+  },
+  {
+    "id": 49,
+    "chineseName": "绝缘夹钳",
+    "englishName": "clamp"
+  },
+  {
+    "id": 50,
+    "chineseName": "绝缘低帮鞋",
+    "englishName": "shoes"
+  },
+  {
+    "id": 51,
+    "chineseName": "绝缘软梯",
+    "englishName": "flexible_ladder"
+  },
+  {
+    "id": 52,
+    "chineseName": "气体检测器",
+    "englishName": "gas"
+  },
+  {
+    "id": 53,
+    "chineseName": "速差自控器",
+    "englishName": "lifeline"
+  },
+  {
+    "id": 54,
+    "chineseName": "应急灯",
+    "englishName": "light"
+  },
+  {
+    "id": 55,
+    "chineseName": "锥形交通锥",
+    "englishName": "traffic_cone"
+  }
+]
