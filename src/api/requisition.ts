@@ -24,10 +24,8 @@ export interface BorrowRecordQueryParams {
   materialCode?: string;
   materialName?: string;
   borrowName?: string;
-  createTimeStart?: string;
-  createTimeEnd?: string;
-  usageQuantityMin?: number | null;
-  usageQuantityMax?: number | null;
+  startTime?: string;
+  endTime?: string;
   province?: string;
   city?: string;
   district?: string;
@@ -73,7 +71,15 @@ export const getBorrowRecordsList = async (params: BorrowRecordQueryParams = {})
     // 添加分页参数
     if (params.pageNum) queryParams.append('pageNum', params.pageNum.toString());
     if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-    
+    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+    if (params.materialName) queryParams.append('materialName', params.materialName);
+    // 使用startTime/endTime参数
+    if (params.startTime) queryParams.append('startTime', params.startTime);
+    if (params.endTime) queryParams.append('endTime', params.endTime);    
+    // 添加地区筛选参数
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.district) queryParams.append('district', params.district);
     // 添加搜索参数（暂时注释，因为后端未设置）
     // if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
     // if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);

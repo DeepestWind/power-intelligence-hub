@@ -260,7 +260,7 @@ onMounted(() => {
             <el-table-column label="上架数量" width="100" align="center">
               <template #default="{ row }">
                 <el-tag type="success" size="large">
-                  {{ row.shelfQuantity }}
+                  {{ row.quantity }}
                 </el-tag>
               </template>
             </el-table-column>

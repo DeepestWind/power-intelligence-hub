@@ -45,6 +45,9 @@ export interface MaintainRecordQueryParams {
   maintainName?: string;
   startTime?: string;
   endTime?: string;
+  province?: string;
+  city?: string;
+  district?: string;
 }
 
 // ==================== API 方法 ====================
@@ -67,6 +70,9 @@ export const getMaintainRecordList = async (params: MaintainRecordQueryParams = 
     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
     if (params.materialName) queryParams.append('materialName', params.materialName);
     if (params.maintainName) queryParams.append('maintainName', params.maintainName);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.district) queryParams.append('district', params.district);
     if (params.startTime) queryParams.append('startTime', params.startTime);
     if (params.endTime) queryParams.append('endTime', params.endTime);
     

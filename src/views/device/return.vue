@@ -72,10 +72,8 @@ const {
     materialName: '',
     borrowName: '',
     returnName: '',
-    lentOutTimeStart: '',
-    lentOutTimeEnd: '',
-    actualReturnTimeStart: '',
-    actualReturnTimeEnd: ''
+    startTime: '',
+    endTime: ''
   },
   // 搜索回调函数
   () => {
@@ -238,14 +236,14 @@ onMounted(() => {
         <!-- 搜索区域 -->
         <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
-            <el-form-item label="柜子编号">
+            <!-- <el-form-item label="柜子编号">
               <el-input 
                 v-model="searchForm.cabinetCode" 
                 placeholder="请输入柜子编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="柜子名称">
               <el-input 
                 v-model="searchForm.cabinetName" 
@@ -254,14 +252,14 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="物料编号">
+            <!-- <el-form-item label="物料编号">
               <el-input 
                 v-model="searchForm.materialCode" 
                 placeholder="请输入物料编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="物料名称">
               <el-input 
                 v-model="searchForm.materialName" 
@@ -270,7 +268,7 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="借用人">
+            <!-- <el-form-item label="借用人">
               <el-input 
                 v-model="searchForm.borrowName" 
                 placeholder="请输入借用人" 
@@ -285,8 +283,8 @@ onMounted(() => {
                 clearable
                 style="width: 120px"
               />
-            </el-form-item>
-            <el-form-item label="借出时间">
+            </el-form-item> -->
+            <!-- <el-form-item label="借出时间">
               <el-date-picker
                 v-model="searchForm.lentOutTimeStart"
                 type="datetime"
@@ -325,7 +323,28 @@ onMounted(() => {
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 180px"
               />
+            </el-form-item> -->
+
+            <el-form-item label="开始时间">
+              <el-date-picker
+                v-model="searchForm.startTime"
+                type="date"
+                placeholder="选择开始时间"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                style="width: 180px"
+              />
             </el-form-item>
+            <el-form-item label="结束时间">
+              <el-date-picker
+                v-model="searchForm.endTime"
+                type="date"
+                placeholder="选择结束时间"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                style="width: 180px"
+              />
+            </el-form-item>            
             <el-form-item>
               <el-button type="primary" :icon="Search" @click="handleSearch">
                 搜索

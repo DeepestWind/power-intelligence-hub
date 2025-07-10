@@ -184,7 +184,7 @@ const itemFormRef = ref();
 const offlineFormRules = {
   remark: [
     { required: true, message: '请输入下架备注', trigger: 'blur' },
-    { min: 2, max: 200, message: '2-200个字符', trigger: 'blur' }
+    { min: 2, max: 20, message: '2-20个字符', trigger: 'blur' }
   ]
 };
 
@@ -562,13 +562,13 @@ const handleView = async (row: MaterialData) => {
 const formatLifecycleStatus = (status: number) => {
   switch (status) {
     case 0:
-      return { text: '借出', type: 'warning' };
+      return { text: '借出', type: 'warning' as const };
     case 1:
-      return { text: '在柜', type: 'success' };
+      return { text: '在柜', type: 'success' as const };
     case 2:
-      return { text: '维修中', type: 'danger' };
+      return { text: '维修中', type: 'danger' as const };
     default:
-      return { text: '未知', type: 'info' };
+      return { text: '未知', type: 'info' as const };
   }
 };
 // 格式化日期时间
@@ -639,14 +639,14 @@ onMounted(async () => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="物料编号">
+            <!-- <el-form-item label="物料编号">
               <el-input 
                 v-model="searchForm.materialCode" 
                 placeholder="请输入物料编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="物料名称">
               <el-input 
                 v-model="searchForm.materialName" 
@@ -1063,10 +1063,10 @@ onMounted(async () => {
           <el-input
             v-model="offlineForm.remark"
             type="textarea"
-            :rows="4"
-            placeholder="请输入下架原因或备注信息（5-200字符）"
+            :rows="2"
+            placeholder="请输入下架原因或备注信息（2-20字符）"
             show-word-limit
-            maxlength="200"
+            maxlength="20"
           />
         </el-form-item>
       </el-form>

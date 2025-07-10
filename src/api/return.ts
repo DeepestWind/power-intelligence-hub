@@ -29,10 +29,8 @@ export interface ReturnRecordQueryParams {
   materialName?: string;
   borrowName?: string;
   returnName?: string;
-  lentOutTimeStart?: string;
-  lentOutTimeEnd?: string;
-  actualReturnTimeStart?: string;
-  actualReturnTimeEnd?: string;
+  startTime?: string;
+  endTime?: string;
   province?: string;
   city?: string;
   district?: string;
@@ -81,14 +79,16 @@ export const getReturnRecordsList = async (params: ReturnRecordQueryParams = {})
     
     // 添加搜索参数（暂时注释，因为后端未设置）
     // if (params.cabinetCode) queryParams.append('cabinetCode', params.cabinetCode);
-    // if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
+    if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
     // if (params.materialCode) queryParams.append('materialCode', params.materialCode);
-    // if (params.materialName) queryParams.append('materialName', params.materialName);
+    if (params.materialName) queryParams.append('materialName', params.materialName);
     // if (params.borrowName) queryParams.append('borrowName', params.borrowName);
     // if (params.returnName) queryParams.append('returnName', params.returnName);
-    // if (params.province) queryParams.append('province', params.province);
-    // if (params.city) queryParams.append('city', params.city);
-    // if (params.district) queryParams.append('district', params.district);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.district) queryParams.append('district', params.district);
+    if (params.startTime) queryParams.append('startTime', params.startTime);
+    if (params.endTime) queryParams.append('endTime', params.endTime);
     // if (params.lentOutTimeStart) queryParams.append('lentOutTimeStart', params.lentOutTimeStart);
     // if (params.lentOutTimeEnd) queryParams.append('lentOutTimeEnd', params.lentOutTimeEnd);
     // if (params.actualReturnTimeStart) queryParams.append('actualReturnTimeStart', params.actualReturnTimeStart);

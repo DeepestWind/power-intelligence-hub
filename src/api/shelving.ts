@@ -23,6 +23,9 @@ export interface ShelfRecordQueryParams {
   cabinetName?: string;
   startTime?: string;
   endTime?: string;
+  province?: string;
+  city?: string;
+  district?: string;
 }
 
 // 上架记录列表API响应接口
@@ -71,6 +74,9 @@ export const getShelfRecordsList = async (params: ShelfRecordQueryParams = {}): 
     if (params.cabinetName) queryParams.append('cabinetName', params.cabinetName);
     if (params.startTime) queryParams.append('startTime', params.startTime);
     if (params.endTime) queryParams.append('endTime', params.endTime);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.district) queryParams.append('district', params.district);
     
     // 构建完整的URL
     const baseUrl = `/api/power/shelf-records/page`;

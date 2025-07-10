@@ -391,7 +391,7 @@ onMounted(async () => {
             border
           >
             <!-- <el-table-column prop="id" label="ID" width="80" /> -->
-            <el-table-column prop="departmentName" label="部门名称" min-width="150" />
+            <el-table-column prop="departmentName" label="部门名称" min-width="100" />
             <el-table-column prop="province" label="省份" width="100">
               <template #default="{ row }">
                 {{ row.province || '-' }}
@@ -418,7 +418,7 @@ onMounted(async () => {
                 {{ formatDateTime(row.updatedTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="300" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 

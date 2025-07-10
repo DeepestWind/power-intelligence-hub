@@ -60,12 +60,14 @@ const getMaintainRecordList = async () => {
     const queryParams: MaintainRecordQueryParams = {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
-      cabinetCode: searchForm.value.cabinetCode || undefined,
-      cabinetName: searchForm.value.cabinetName || undefined,
-      materialName: searchForm.value.materialName || undefined,
-      maintainName: searchForm.value.maintainName || undefined,
-      startTime: timeRange.value?.[0] || undefined,
-      endTime: timeRange.value?.[1] || undefined
+      ...areaFilter.value,
+      ...searchForm.value      
+      // cabinetCode: searchForm.value.cabinetCode || undefined,
+      // cabinetName: searchForm.value.cabinetName || undefined,
+      // materialName: searchForm.value.materialName || undefined,
+      // maintainName: searchForm.value.maintainName || undefined,
+      // startTime: timeRange.value?.[0] || undefined,
+      // endTime: timeRange.value?.[1] || undefined
     };
 
     const response = await getMaintainRecordListApi(queryParams);
@@ -169,14 +171,14 @@ onMounted(() => {
         <!-- 搜索区域 -->
         <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
-            <el-form-item label="柜子编码">
+            <!-- <el-form-item label="柜子编码">
               <el-input
                 v-model="searchForm.cabinetCode"
                 placeholder="请输入柜子编码"
                 clearable
                 style="width: 200px"
               />
-            </el-form-item>
+            </el-form-item> -->
             
             <el-form-item label="柜子名称">
               <el-input
@@ -196,14 +198,14 @@ onMounted(() => {
               />
             </el-form-item>
             
-            <el-form-item label="维修人员">
+            <!-- <el-form-item label="维修人员">
               <el-input
                 v-model="searchForm.maintainName"
                 placeholder="请输入维修人员姓名"
                 clearable
                 style="width: 200px"
               />
-            </el-form-item>
+            </el-form-item> -->
             
             <el-form-item label="开始时间">
               <el-date-picker

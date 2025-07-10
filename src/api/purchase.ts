@@ -63,6 +63,8 @@ export interface PurchaseRecordQueryParams {
   province?: string;
   city?: string;
   district?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 // ==================== API 方法 ====================
@@ -86,6 +88,8 @@ export const getPurchaseRecordList = async (params: PurchaseRecordQueryParams = 
     if (params.province) queryParams.append('province', params.province);
     if (params.city) queryParams.append('city', params.city);
     if (params.district) queryParams.append('district', params.district);
+    if (params.startTime) queryParams.append('startTime', params.startTime);
+    if (params.endTime) queryParams.append('endTime', params.endTime);
     
     const url = `/api/power/purchase-records/purchaseRecords${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     

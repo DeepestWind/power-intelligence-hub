@@ -61,8 +61,8 @@ const {
     materialCode: '',
     materialName: '',
     borrowName: '',
-    createTimeStart: '',
-    createTimeEnd: '',
+    startTime: '',
+    endTime: '',
     usageQuantityMin: null as number | null,
     usageQuantityMax: null as number | null
   },
@@ -188,14 +188,14 @@ onMounted(() => {
         <!-- 搜索区域 -->
         <el-card class="search-card">
           <el-form :model="searchForm" :inline="true" class="search-form">
-            <el-form-item label="柜子编号">
+            <!-- <el-form-item label="柜子编号">
               <el-input 
                 v-model="searchForm.cabinetCode" 
                 placeholder="请输入柜子编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="柜子名称">
               <el-input 
                 v-model="searchForm.cabinetName" 
@@ -204,14 +204,14 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="物料编号">
+            <!-- <el-form-item label="物料编号">
               <el-input 
                 v-model="searchForm.materialCode" 
                 placeholder="请输入物料编号" 
                 clearable
                 style="width: 150px"
               />
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="物料名称">
               <el-input 
                 v-model="searchForm.materialName" 
@@ -220,15 +220,15 @@ onMounted(() => {
                 style="width: 150px"
               />
             </el-form-item>
-            <el-form-item label="领用人">
+            <!-- <el-form-item label="领用人">
               <el-input 
                 v-model="searchForm.borrowName" 
                 placeholder="请输入领用人" 
                 clearable
                 style="width: 120px"
               />
-            </el-form-item>
-            <el-form-item label="领用数量">
+            </el-form-item> -->
+            <!-- <el-form-item label="领用数量">
               <el-input-number
                 v-model="searchForm.usageQuantityMin"
                 placeholder="最小数量"
@@ -245,24 +245,24 @@ onMounted(() => {
                 :controls="false"
                 style="width: 100px"
               />
-            </el-form-item>
-            <el-form-item label="领用时间">
+            </el-form-item> -->
+            <el-form-item label="开始时间">
               <el-date-picker
-                v-model="searchForm.createTimeStart"
-                type="datetime"
-                placeholder="开始时间"
-                format="YYYY-MM-DD HH:mm"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                v-model="searchForm.startTime"
+                type="date"
+                placeholder="选择开始时间"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
                 style="width: 180px"
               />
             </el-form-item>
-            <el-form-item label="至">
+            <el-form-item label="结束时间">
               <el-date-picker
-                v-model="searchForm.createTimeEnd"
-                type="datetime"
-                placeholder="结束时间"
-                format="YYYY-MM-DD HH:mm"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                v-model="searchForm.endTime"
+                type="date"
+                placeholder="选择结束时间"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
                 style="width: 180px"
               />
             </el-form-item>

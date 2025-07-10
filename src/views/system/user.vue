@@ -1439,16 +1439,16 @@ onMounted(async () => {
                 {{ new Date(row.createTime).toLocaleString() }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="420" fixed="right">
+            <el-table-column label="操作" width="390" fixed="right">
               <template #default="{ row }">
-                <el-button 
+                <!-- <el-button 
                   type="primary" 
                   size="small" 
                   :icon="View"
                   @click="handleView(row)"
                 >
                   查看
-                </el-button>
+                </el-button> -->
                 <el-button 
                   type="primary" 
                   size="small" 
