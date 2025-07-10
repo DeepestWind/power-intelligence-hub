@@ -390,7 +390,7 @@ onMounted(async () => {
             stripe
             border
           >
-            <el-table-column prop="id" label="ID" width="80" />
+            <!-- <el-table-column prop="id" label="ID" width="80" /> -->
             <el-table-column prop="departmentName" label="部门名称" min-width="150" />
             <el-table-column prop="province" label="省份" width="100">
               <template #default="{ row }">

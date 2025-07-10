@@ -7,6 +7,8 @@ import type { AreaNode } from "@/utils/area"; // 添加类型导入
 import { useAreaStore } from "@/store/modules/area";
 import { useAreaSelect } from "@/utils/useAreaSelect";
 import { usePageSearch } from "@/utils/useAreaFilter";
+// 导入物品选择列表：
+import { itemEnglishNames } from "@/utils/items";
 
 // 导入物料相关的 API 方法和类型
 import { 
@@ -154,9 +156,9 @@ const itemFormRules = {
     { required: true, message: '请输入物料编号', trigger: 'blur' },
     { min: 3, max: 20, message: '物料编号长度为3-20个字符', trigger: 'blur' }
   ],
+  // 物料名称改为选择
   materialName: [
-    { required: true, message: '请输入物料名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '物料名称长度为2-50个字符', trigger: 'blur' }
+    { required: true, message: '请选择物品名称', trigger: 'change' }
   ],
   rfid: [
     { required: true, message: '请输入RFID标签', trigger: 'blur' }
@@ -664,7 +666,7 @@ onMounted(async () => {
             stripe
             border
           >
-            <el-table-column prop="id" label="ID" width="60" />
+            <!-- <el-table-column prop="id" label="ID" width="60" /> -->
             <el-table-column prop="cabinetCode" label="柜子编号" width="120" />
             <el-table-column prop="cabinetName" label="柜子名称" width="150" />
             <el-table-column prop="materialCode" label="物料编号" width="120" />
@@ -839,11 +841,21 @@ onMounted(async () => {
           </el-col>
           <el-col :span="12">
             <el-form-item label="物料名称" prop="materialName">
-              <el-input
+              <!-- 替换为下拉选择框 -->
+              <el-select
                 v-model="itemForm.materialName"
-                placeholder="请输入物料名称"
+                placeholder="请选择物品名称"
+                filterable
                 clearable
-              />
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="name in itemEnglishNames"
+                  :key="name"
+                  :label="name"
+                  :value="name"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>

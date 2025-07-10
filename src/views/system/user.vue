@@ -1384,7 +1384,7 @@ onMounted(async () => {
             stripe
             border
           >
-            <el-table-column prop="id" label="ID" width="60" />
+            <!-- <el-table-column prop="id" label="ID" width="60" /> -->
             <el-table-column prop="userName" label="用户名" width="100" />
             <el-table-column prop="departmentName" label="部门" width="120">
               <template #default="{ row }">

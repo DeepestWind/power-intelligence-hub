@@ -267,7 +267,7 @@ onMounted(() => {
             border
             empty-text="暂无维修记录"
           >
-            <el-table-column prop="id" label="记录ID" width="80" />
+            <!-- <el-table-column prop="id" label="记录ID" width="80" /> -->
             <el-table-column prop="cabinetCode" label="柜子编号" width="120" />
             <el-table-column prop="cabinetName" label="柜子名称" width="150" show-overflow-tooltip />
             <el-table-column prop="materialCode" label="物料编号" width="120" />
