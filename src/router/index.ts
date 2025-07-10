@@ -128,7 +128,8 @@ router.beforeEach((to: ToRouteType, _from, next) => {
   if (!externalLink) {
     to.matched.some(item => {
       if (!item.meta.title) return "";
-      const Title = getConfig().Title;
+      //const Title = getConfig().Title;
+      const Title = "电力智能柜"; // 使用自定义标题
       if (Title) document.title = `${item.meta.title} | ${Title}`;
       else document.title = item.meta.title as string;
     });

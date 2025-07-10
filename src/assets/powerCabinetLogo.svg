@@ -1,0 +1,29 @@
+<!-- 📁 文件位置：src/assets/powerCabinetLogo.svg -->
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="powerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#409eff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976d2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 配电柜外框 -->
+  <rect x="4" y="6" width="24" height="20" rx="2" ry="2" 
+        fill="none" stroke="url(#powerGradient)" stroke-width="2"/>
+  
+  <!-- 配电柜门 -->
+  <rect x="6" y="8" width="10" height="16" rx="1" ry="1" 
+        fill="none" stroke="url(#powerGradient)" stroke-width="1.5"/>
+  
+  <!-- 电源指示灯 -->
+  <circle cx="20" cy="12" r="2" fill="#67c23a"/>
+  <circle cx="24" cy="12" r="2" fill="#e6a23c"/>
+  
+  <!-- 电线/连接线 -->
+  <path d="M8 26 Q12 28 16 26 Q20 24 24 26" 
+        stroke="url(#powerGradient)" stroke-width="2" fill="none"/>
+  
+  <!-- 闪电符号 -->
+  <path d="M10 14 L14 10 L12 12 L16 12 L12 18 L14 16 L10 16 Z" 
+        fill="url(#powerGradient)"/>
+</svg>

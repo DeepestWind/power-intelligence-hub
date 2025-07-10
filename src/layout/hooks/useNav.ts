@@ -1,7 +1,7 @@
 import { storeToRefs } from "pinia";
 import { getConfig } from "@/config";
 import { emitter } from "@/utils/mitt";
-import Avatar from "@/assets/user.jpg";
+import Avatar from "@/assets/user.png";
 import { getTopMenu } from "@/router/utils";
 import { useFullscreen } from "@vueuse/core";
 import type { routeMetaType } from "../types";
@@ -14,6 +14,8 @@ import { useGlobal, isAllEmpty } from "@pureadmin/utils";
 import { usePermissionStoreHook } from "@/store/modules/permission";
 import ExitFullscreen from "~icons/ri/fullscreen-exit-fill";
 import Fullscreen from "~icons/ri/fullscreen-fill";
+//导入电力柜logo
+import powerCabinetLogoUrl from "@/assets/powerCabinetLogo.svg?url";
 
 const errorInfo =
   "The current routing configuration is incorrect, please check the configuration";
@@ -69,12 +71,14 @@ export function useNav() {
   });
 
   const title = computed(() => {
-    return $config.Title;
+    return "电力智能柜";
+    //return $config.Title;
   });
 
   /** 动态title */
   function changeTitle(meta: routeMetaType) {
-    const Title = getConfig().Title;
+    //const Title = getConfig().Title;
+    const Title = "电力智能柜"; 
     if (Title) document.title = `${meta.title} | ${Title}`;
     else document.title = meta.title;
   }
@@ -123,7 +127,8 @@ export function useNav() {
 
   /** 获取`logo` */
   function getLogo() {
-    return new URL("/logo.svg", import.meta.url).href;
+    //return new URL("/logo.svg", import.meta.url).href;
+    return powerCabinetLogoUrl; // 使用电力柜logo
   }
 
   return {
