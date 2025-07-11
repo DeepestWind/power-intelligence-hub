@@ -51,11 +51,6 @@ export interface OffshelvingApiResponse {
   };
 }
 
-// 导出参数接口
-export interface ExportParams {
-  startDate: string;
-  endDate: string;
-}
 
 // 通用API响应接口
 export interface BaseApiResponse {
@@ -123,59 +118,6 @@ export const getOffshelvingList = async (params: OffshelvingQueryParams = {}): P
   }
 };
 
-/**
- * 导出下架记录
- * @param params 导出参数
- * @returns 下载文件的Promise
- */
-export const exportOffshelvingRecords = async (params: ExportParams): Promise<void> => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    queryParams.append('startDate', params.startDate);
-    queryParams.append('endDate', params.endDate);
-    
-    // 构建完整的URL
-    const url = `/api/power/shelf-out-records/download/shelfOut?${queryParams.toString()}`;
-    
-    console.log('导出下架记录API请求URL:', url);
-    
-    // 直接使用原有的下载逻辑
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    // 获取文件blob并直接下载
-    const blob = await response.blob();
-    
-    // 创建下载链接
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = '下架记录.xlsx'; // 使用固定的文件名
-    
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-    
-    console.log('文件下载成功');
-    
-  } catch (error) {
-    console.error('导出下架记录API请求失败:', error);
-    throw error;
-  }
-};
 
 // ==================== 工具函数 ====================
 
@@ -232,54 +174,12 @@ export const getReasonType = (remark: string): { type: 'success' | 'info' | 'war
   }
 };
 
-/**
- * 验证导出参数
- * @param params 导出参数
- * @returns 验证结果
- */
-export const validateExportParams = (params: ExportParams): { valid: boolean; message?: string } => {
-  if (!params.startDate || !params.endDate) {
-    return { valid: false, message: '请选择导出日期范围' };
-  }
-  
-  const startDate = new Date(params.startDate);
-  const endDate = new Date(params.endDate);
-  
-  if (startDate > endDate) {
-    return { valid: false, message: '开始日期不能大于结束日期' };
-  }
-  
-  // 验证日期范围不超过365天
-  const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays > 365) {
-    return { valid: false, message: '导出日期范围不能超过365天' };
-  }
-  
-  return { valid: true };
-};
-
-/**
- * 获取默认导出日期范围（最近30天）
- * @returns 默认日期范围
- */
-export const getDefaultExportDateRange = (): ExportParams => {
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  
-  return {
-    startDate: thirtyDaysAgo.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0]
-  };
-};
 
 // ==================== 默认导出 ====================
 
 export default {
   getOffshelvingList,
-  exportOffshelvingRecords,
   calculateOffshelfDuration,
   formatDateTime,
   getReasonType,
-  validateExportParams,
-  getDefaultExportDateRange
 };

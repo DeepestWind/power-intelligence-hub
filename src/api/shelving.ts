@@ -49,10 +49,10 @@ export interface BaseApiResponse {
 }
 
 // 导出参数接口
-export interface ExportParams {
-  startDate: string;
-  endDate: string;
-}
+// export interface ExportParams {
+//   startDate: string;
+//   endDate: string;
+// }
 
 // ==================== API 方法 ====================
 
@@ -104,76 +104,6 @@ export const getShelfRecordsList = async (params: ShelfRecordQueryParams = {}): 
   }
 };
 
-/**
- * 导出上架记录
- * @param startDate 开始日期
- * @param endDate 结束日期
- * @returns 文件下载
- */
-export const exportShelfRecords = async (startDate: string, endDate: string): Promise<void> => {
-  try {
-    // 构建查询参数
-    const queryParams = new URLSearchParams();
-    queryParams.append('startDate', startDate);
-    queryParams.append('endDate', endDate);
-    
-    // 构建完整的URL
-    const url = `/api/power/shelf-records/download/shelf?${queryParams.toString()}`;
-    
-    console.log('导出上架记录API请求URL:', url);
-    
-    // 发送GET请求
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    // 获取文件名
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let fileName = '上架记录.xlsx'; // 默认文件名
-    
-    if (contentDisposition) {
-      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (fileNameMatch && fileNameMatch[1]) {
-        fileName = fileNameMatch[1].replace(/['"]/g, '');
-      }
-    }
-    
-    // 如果文件名没有扩展名，添加.xlsx
-    if (!fileName.includes('.')) {
-      fileName += '.xlsx';
-    }
-    
-    // 获取文件blob
-    const blob = await response.blob();
-    
-    // 创建下载链接
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    
-    // 清理
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-    
-    console.log('文件下载成功:', fileName);
-    
-  } catch (error) {
-    console.error('导出上架记录API请求失败:', error);
-    throw error;
-  }
-};
 
 // 工具函数
 
@@ -211,73 +141,72 @@ export const formatDateTime = (dateTime: string): string => {
   });
 };
 
-/**
- * 根据上架时长判断状态
- * @param createTime 上架时间
- * @returns 状态类型和文本
- */
-export const getShelfStatus = (createTime: string): { type: 'success' | 'info' | 'warning' | 'danger' | 'primary', text: string } => {
-  const shelved = new Date(createTime);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - shelved.getTime()) / (1000 * 60 * 60 * 24));
+// /**
+//  * 根据上架时长判断状态
+//  * @param createTime 上架时间
+//  * @returns 状态类型和文本
+//  */
+// export const getShelfStatus = (createTime: string): { type: 'success' | 'info' | 'warning' | 'danger' | 'primary', text: string } => {
+//   const shelved = new Date(createTime);
+//   const now = new Date();
+//   const diffDays = Math.floor((now.getTime() - shelved.getTime()) / (1000 * 60 * 60 * 24));
   
-  if (diffDays <= 7) {
-    return { type: 'success', text: '新上架' };
-  } else if (diffDays <= 30) {
-    return { type: 'primary', text: '正常' };
-  } else {
-    return { type: 'warning', text: '长期' };
-  }
-};
+//   if (diffDays <= 7) {
+//     return { type: 'success', text: '新上架' };
+//   } else if (diffDays <= 30) {
+//     return { type: 'primary', text: '正常' };
+//   } else {
+//     return { type: 'warning', text: '长期' };
+//   }
+// };
 
-/**
- * 验证导出参数
- * @param params 导出参数
- * @returns 验证结果
- */
-export const validateExportParams = (params: ExportParams): { valid: boolean; message?: string } => {
-  if (!params.startDate || !params.endDate) {
-    return { valid: false, message: '请选择导出日期范围' };
-  }
+// /**
+//  * 验证导出参数
+//  * @param params 导出参数
+//  * @returns 验证结果
+//  */
+// export const validateExportParams = (params: ExportParams): { valid: boolean; message?: string } => {
+//   if (!params.startDate || !params.endDate) {
+//     return { valid: false, message: '请选择导出日期范围' };
+//   }
   
-  const startDate = new Date(params.startDate);
-  const endDate = new Date(params.endDate);
+//   const startDate = new Date(params.startDate);
+//   const endDate = new Date(params.endDate);
   
-  if (startDate > endDate) {
-    return { valid: false, message: '开始日期不能大于结束日期' };
-  }
+//   if (startDate > endDate) {
+//     return { valid: false, message: '开始日期不能大于结束日期' };
+//   }
   
-  // 验证日期范围不超过365天
-  const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays > 365) {
-    return { valid: false, message: '导出日期范围不能超过365天' };
-  }
+//   // 验证日期范围不超过365天
+//   const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+//   if (diffDays > 365) {
+//     return { valid: false, message: '导出日期范围不能超过365天' };
+//   }
   
-  return { valid: true };
-};
+//   return { valid: true };
+// };
 
-/**
- * 获取默认导出日期范围（最近30天）
- * @returns 默认日期范围
- */
-export const getDefaultExportDateRange = (): ExportParams => {
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+// /**
+//  * 获取默认导出日期范围（最近30天）
+//  * @returns 默认日期范围
+//  */
+// export const getDefaultExportDateRange = (): ExportParams => {
+//   const today = new Date();
+//   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
   
-  return {
-    startDate: thirtyDaysAgo.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0]
-  };
-};
+//   return {
+//     startDate: thirtyDaysAgo.toISOString().split('T')[0],
+//     endDate: today.toISOString().split('T')[0]
+//   };
+// };
 
 // ==================== 默认导出 ====================
 
 export default {
   getShelfRecordsList,
-  exportShelfRecords,
   calculateShelfDuration,
   formatDateTime,
-  getShelfStatus,
-  validateExportParams,
-  getDefaultExportDateRange
+  // getShelfStatus,
+  //validateExportParams,
+  //getDefaultExportDateRange
 };
