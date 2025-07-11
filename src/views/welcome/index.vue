@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
 import { useUserStoreHook } from '@/store/modules/user';
 import { useAreaStore } from '@/store/modules/area';
 import { useNav } from '@/layout/hooks/useNav';
@@ -8,18 +9,28 @@ import {
   CreditCard, 
   Location, 
   User, 
-  CircleCheck 
+  CircleCheck,
+  Warning 
 } from '@element-plus/icons-vue';
+import { 
+  getOvertimeRecordsList as getOvertimeRecordsListApi,
+  calculateOvertimeDuration,
+  formatDateTime,
+  type OvertimeRecordData,
+  type OvertimeRecordQueryParams
+} from '@/api/overtime';
 
 // 获取用户信息
 const userStore = useUserStoreHook();
 const areaStore = useAreaStore();
-
 // 从 useNav 中获取头像
 const { userAvatar } = useNav();
-
 // 用户信息
 const userInfo = computed(() => userStore.getCurrentUserInfo);
+
+// 超时记录相关数据
+const overtimeLoading = ref(false);
+const overtimeData = ref<OvertimeRecordData[]>([]);
 
 
 // 格式化用户类型
@@ -37,7 +48,6 @@ const formatUserType = (userType: string | number) => {
   
   return typeMap[typeNumber] || '-';
 };
-
 // 格式化地区信息
 const formatAreaInfo = computed(() => {
   const province = areaStore.getCurrentProvince;
@@ -51,6 +61,39 @@ const formatAreaInfo = computed(() => {
   
   return parts.join('');
 });
+
+// 获取超时记录列表
+const getOvertimeRecords = async () => {
+  overtimeLoading.value = true;
+  try {
+    const params: OvertimeRecordQueryParams = {
+      pageNum: 1,
+      pageSize: 10 // 只显示前10条
+    };
+    
+    const response = await getOvertimeRecordsListApi(params);
+    
+    if (response.code === 200) {
+      overtimeData.value = response.data.records;
+      console.log('获取超时记录成功:', overtimeData.value);
+    } else {
+      ElMessage.error(response.msg || '获取超时记录失败');
+    }
+  } catch (error) {
+    console.error('获取超时记录失败:', error);
+    ElMessage.error('获取超时记录失败，请检查网络连接');
+  } finally {
+    overtimeLoading.value = false;
+  }
+};
+
+// 在生命周期钩子中调用
+onMounted(() => {
+  getOvertimeRecords();
+});
+
+
+
 </script>
 
 
@@ -124,9 +167,56 @@ const formatAreaInfo = computed(() => {
       
       <!-- 右侧区域 -->
       <div class="right-column">
-        <!-- 右侧竖框 -->
+        <!-- 右侧竖框 - 消息通知 -->
         <div class="panel notification-panel">
-          <!-- 消息通知将在这里展示 -->
+          <div class="notification-header">
+            <h3>消息通知</h3>
+            <!-- <el-button type="primary" text size="small">查看全部</el-button> -->
+          </div>
+          
+          <!-- 超时记录作为消息内容 -->
+          <div class="notification-content">
+            <div class="message-section">
+              <div class="message-title">
+                <el-icon><Warning /></el-icon>
+                <span>超时记录</span>
+              </div>
+              
+              <div class="message-content" v-loading="overtimeLoading">
+                <div v-if="overtimeData.length === 0" class="empty-message">
+                  <el-empty description="暂无超时记录" :image-size="60" />
+                </div>
+                <div v-else class="overtime-table-container">
+                  <el-table 
+                    :data="overtimeData" 
+                    size="default"
+                    stripe
+                    style="width: 100%"
+                    :max-height="400"
+                  >
+                    <el-table-column prop="cabinetName" label="柜子名" min-width="120" show-overflow-tooltip />
+                    <el-table-column prop="materialName" label="物品名" min-width="120" show-overflow-tooltip />
+                    <el-table-column prop="operatorName" label="借用人" min-width="100" />
+                    <el-table-column label="归还时间" min-width="140">
+                      <template #default="{ row }">
+                        <span v-if="row.actualReturnTime">
+                          {{ formatDateTime(row.actualReturnTime) }}
+                        </span>
+                        <el-tag v-else type="warning" size="small">未归还</el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="超时时长" min-width="120">
+                      <template #default="{ row }">
+                        <el-tag type="danger" size="small">
+                          {{ calculateOvertimeDuration(row.plannedReturnTime, row.actualReturnTime) }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -191,7 +281,92 @@ const formatAreaInfo = computed(() => {
 }
 
 .notification-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   height: 100%;
+}
+
+.notification-header {
+  padding: 20px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #303133;
+    font-weight: 600;
+  }
+}
+
+.notification-content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+
+.message-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  
+  .message-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: #E6A23C;
+    font-size: 16px;
+    font-weight: 500;
+    
+    .el-icon {
+      font-size: 18px;
+    }
+  }
+  
+  .message-content {
+    flex: 1;
+    
+    .empty-message {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+    
+    .overtime-table-container {
+      width: 100%;
+      
+      .el-table {
+        font-size: 14px;
+        
+        .el-table__header {
+          .el-table__cell {
+            background-color: #fafafa;
+            color: #606266;
+            font-weight: 600;
+          }
+        }
+        
+        .el-table__body {
+          .el-table__cell {
+            padding: 12px 0;
+          }
+        }
+        
+        .el-tag {
+          font-size: 12px;
+          padding: 4px 8px;
+          height: auto;
+          line-height: 1.2;
+        }
+      }
+    }
+  }
 }
 
 /* 用户信息样式 */
@@ -241,7 +416,6 @@ const formatAreaInfo = computed(() => {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 }
-
 /* 基本信息区域样式 */
 .info-section {
   justify-content: flex-start;
