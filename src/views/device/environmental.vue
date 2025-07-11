@@ -7,7 +7,7 @@ defineOptions({
 <template>
   <div class="environmental-record">
     <h2>环控记录</h2>
-    <p>这里是环控记录页面</p>
+    <p>这里是环控记录页面，暂未实现</p>
   </div>
 </template>
 

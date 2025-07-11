@@ -14,7 +14,7 @@ export interface HumitureData extends CabinetData {
   minTemperature: number | null;
   maxHumidity: number | null;
   minHumidity: number | null;
-  operationMode: number; // 0-自动模式, 1-手动模式
+  //operationMode: number; // 0-自动模式, 1-手动模式
   maxTemperatureDifference: number | null;
 }
 
@@ -33,8 +33,8 @@ export interface HumitureApiResponse {
 
 // 温湿度设备查询参数接口（扩展柜子查询参数）
 export interface HumitureQueryParams extends CabinetQueryParams {
-  operationMode?: number | string;
-  onlineStatus?: number | string;
+  //operationMode?: number | string;
+  //onlineStatus?: number | string;
 }
 
 // 温湿度设置表单数据接口
@@ -44,7 +44,7 @@ export interface HumitureFormData {
   minTemperature: number | null;
   maxHumidity: number | null;
   minHumidity: number | null;
-  operationMode: number;
+  //operationMode: number;
   maxTemperatureDifference: number | null;
   updatedTime?: string;
 }
@@ -80,7 +80,7 @@ export const getHumitureList = async (params: HumitureQueryParams = {}): Promise
           minTemperature: item.minTemperature ?? null,
           maxHumidity: item.maxHumidity ?? null,
           minHumidity: item.minHumidity ?? null,
-          operationMode: item.operationMode ?? 0,
+          //operationMode: item.operationMode ?? 0,
           maxTemperatureDifference: item.maxTemperatureDifference ?? null
         } as HumitureData)),
         total: response.data.total,
@@ -112,7 +112,7 @@ export const updateHumiture = async (data: HumitureFormData): Promise<BaseApiRes
       minTemperature: data.minTemperature,
       maxHumidity: data.maxHumidity,
       minHumidity: data.minHumidity,
-      operationMode: data.operationMode,
+      //operationMode: data.operationMode,
       maxTemperatureDifference: data.maxTemperatureDifference,
       updatedTime: new Date().toISOString()
     };
@@ -143,30 +143,30 @@ export const updateHumiture = async (data: HumitureFormData): Promise<BaseApiRes
 
 // ==================== 常量定义 ====================
 
-// 运行模式选项
-export const OPERATION_MODE_OPTIONS = [
-  { label: '自动模式', value: 0 },
-  { label: '手动模式', value: 1 }
-];
+// // 运行模式选项
+// export const OPERATION_MODE_OPTIONS = [
+//   { label: '自动模式', value: 0 },
+//   { label: '手动模式', value: 1 }
+// ];
 
-// 在线状态选项
-export const ONLINE_STATUS_OPTIONS = [
-  { label: '在线', value: 1 },
-  { label: '离线', value: 0 },
-  { label: '未知', value: null }
-];
+// // 在线状态选项
+// export const ONLINE_STATUS_OPTIONS = [
+//   { label: '在线', value: 1 },
+//   { label: '离线', value: 0 },
+//   { label: '未知', value: null }
+// ];
 
 // ==================== 工具函数 ====================
 
-/**
- * 格式化运行模式
- * @param mode 运行模式值
- * @returns 运行模式标签
- */
-export const formatOperationMode = (mode: number): string => {
-  const option = OPERATION_MODE_OPTIONS.find(opt => opt.value === mode);
-  return option ? option.label : '未知';
-};
+// /**
+//  * 格式化运行模式
+//  * @param mode 运行模式值
+//  * @returns 运行模式标签
+//  */
+// export const formatOperationMode = (mode: number): string => {
+//   const option = OPERATION_MODE_OPTIONS.find(opt => opt.value === mode);
+//   return option ? option.label : '未知';
+// };
 
 /**
  * 验证温湿度设置参数
@@ -219,8 +219,8 @@ export const validateHumitureData = (data: HumitureFormData): { valid: boolean; 
 export default {
   getHumitureList,
   updateHumiture,
-  formatOperationMode,
+  //formatOperationMode,
   validateHumitureData,
-  OPERATION_MODE_OPTIONS,
-  ONLINE_STATUS_OPTIONS
+  //OPERATION_MODE_OPTIONS,
+  //ONLINE_STATUS_OPTIONS
 };

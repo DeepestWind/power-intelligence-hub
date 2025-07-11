@@ -71,14 +71,15 @@ export default {
         icon: "ep:download"
       }
     },
-    {
-      path: "/device/environmental",
-      name: "EnvironmentalRecord",
-      component: () => import("@/views/device/environmental.vue"),
-      meta: {
-        title: "环控记录",
-        icon: "ep:aim"
-      }
-    }
+    //环控记录暂未实现
+    // {
+    //   path: "/device/environmental",
+    //   name: "EnvironmentalRecord",
+    //   component: () => import("@/views/device/environmental.vue"),
+    //   meta: {
+    //     title: "环控记录",
+    //     icon: "ep:aim"
+    //   }
+    // }
   ]
 } satisfies RouteConfigsTable;

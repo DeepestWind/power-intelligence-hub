@@ -10,10 +10,10 @@ import { usePageSearch } from "@/utils/useAreaFilter";
 import { 
   getHumitureList as getHumitureListApi, 
   updateHumiture as updateHumitureApi,
-  formatOperationMode,
+  //formatOperationMode,
   validateHumitureData,
-  OPERATION_MODE_OPTIONS,
-  ONLINE_STATUS_OPTIONS,
+  //OPERATION_MODE_OPTIONS,
+  //ONLINE_STATUS_OPTIONS,
   type HumitureData,
   type HumitureFormData,
   type HumitureQueryParams
@@ -45,8 +45,8 @@ const {
   {
     cabinetCode: '',
     cabinetName: '',
-    operationMode: '',
-    onlineStatus: ''
+    //operationMode: '',
+    //onlineStatus: ''
   },
   // 搜索回调函数
   () => {
@@ -67,7 +67,7 @@ const humitureForm = ref<HumitureFormData>({
   minTemperature: null,
   maxHumidity: null,
   minHumidity: null,
-  operationMode: 0,
+  //operationMode: 0,
   maxTemperatureDifference: null
 });
 // 设备信息（用于弹窗显示）
@@ -97,9 +97,9 @@ const humitureFormRules = ref<FormRules<HumitureFormData>>({
     { required: true, message: '请输入最大温差', trigger: 'blur' },
     { type: 'number', min: 0, max: 50, message: '温差范围为0°C到50°C', trigger: 'blur' }
   ],
-  operationMode: [
-    { required: true, message: '请选择运行模式', trigger: 'change' }
-  ]
+  // operationMode: [
+  //   { required: true, message: '请选择运行模式', trigger: 'change' }
+  // ]
 });
 
 const humitureFormRef = ref<FormInstance>();
@@ -155,7 +155,7 @@ const handleEditHumiture = (row: HumitureData) => {
     minTemperature: row.minTemperature,
     maxHumidity: row.maxHumidity,
     minHumidity: row.minHumidity,
-    operationMode: row.operationMode,
+    //operationMode: row.operationMode,
     maxTemperatureDifference: row.maxTemperatureDifference
   };
   
@@ -170,7 +170,7 @@ const resetHumitureForm = () => {
     minTemperature: null,
     maxHumidity: null,
     minHumidity: null,
-    operationMode: 0,
+    //operationMode: 0,
     maxTemperatureDifference: null
   };
   
@@ -326,7 +326,7 @@ onMounted(() => {
                 style="width: 180px"
               />
             </el-form-item>
-            <el-form-item label="运行模式">
+            <!-- <el-form-item label="运行模式">
               <el-select 
                 v-model="searchForm.operationMode" 
                 placeholder="请选择运行模式"
@@ -340,8 +340,8 @@ onMounted(() => {
                   :value="option.value"
                 />
               </el-select>
-            </el-form-item>
-            <el-form-item label="在线状态">
+            </el-form-item> -->
+            <!-- <el-form-item label="在线状态">
               <el-select 
                 v-model="searchForm.onlineStatus" 
                 placeholder="请选择状态"
@@ -355,7 +355,7 @@ onMounted(() => {
                   :value="option.value"
                 />
               </el-select>
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item>
               <el-button type="primary" @click="handleSearch">
                 搜索
@@ -417,14 +417,14 @@ onMounted(() => {
                 <span v-else class="text-muted">-</span>
               </template>
             </el-table-column>
-            <el-table-column label="运行模式" width="100" align="center">
+            <!-- <el-table-column label="运行模式" width="100" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.operationMode === 0 ? 'success' : 'warning'">
                   {{ formatOperationMode(row.operationMode) }}
                 </el-tag>
               </template>
-            </el-table-column>
-            <el-table-column label="在线状态" width="100" align="center">
+            </el-table-column> -->
+            <!-- <el-table-column label="在线状态" width="100" align="center">
               <template #default="{ row }">
                 <el-tag 
                   :type="row.onlineStatus === 1 ? 'success' : row.onlineStatus === 0 ? 'danger' : 'info'"
@@ -432,22 +432,22 @@ onMounted(() => {
                   {{ row.onlineStatus === 1 ? '在线' : row.onlineStatus === 0 ? '离线' : '未知' }}
                 </el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column label="更新时间" width="160">
               <template #default="{ row }">
                 {{ row.updatedTime ? new Date(row.updatedTime).toLocaleString() : '--' }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="100" fixed="right">
               <template #default="{ row }">
-                <el-button 
+                <!-- <el-button 
                   type="primary" 
                   size="small" 
                   :icon="View"
                   @click="handleView(row)"
                 >
                   查看
-                </el-button>
+                </el-button> -->
                 <el-button 
                   type="success" 
                   size="small" 
@@ -599,16 +599,16 @@ onMounted(() => {
         </el-row>
         
         <!-- 运行模式设置 -->
-        <el-row>
+        <!-- <el-row>
           <el-col :span="24">
             <el-divider content-position="left">
               <el-icon><Setting /></el-icon>
               运行模式
             </el-divider>
           </el-col>
-        </el-row>
+        </el-row> -->
         
-        <el-row>
+        <!-- <el-row>
           <el-col :span="12">
             <el-form-item label="运行模式" prop="operationMode">
               <el-select 
@@ -616,7 +616,6 @@ onMounted(() => {
                 placeholder="请选择运行模式"
                 style="width: 100%"
               >
-                <!-- 使用导入的常量 -->
                 <el-option
                   v-for="option in OPERATION_MODE_OPTIONS"
                   :key="option.value"
@@ -626,10 +625,10 @@ onMounted(() => {
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
         
         <!-- 参数说明 -->
-        <el-row>
+        <!-- <el-row>
           <el-col :span="24">
             <el-alert
               title="参数说明"
@@ -648,7 +647,7 @@ onMounted(() => {
               </template>
             </el-alert>
           </el-col>
-        </el-row>
+        </el-row> -->
       </el-form>
       
       <template #footer>
