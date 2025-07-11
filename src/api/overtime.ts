@@ -223,30 +223,30 @@ export const calculateOvertimeDuration = (plannedReturnTime: string, actualRetur
   }
 };
 
-/**
- * 获取超时严重程度
- * @param plannedReturnTime 计划归还时间
- * @param actualReturnTime 实际归还时间
- * @returns 状态类型和文本
- */
-export const getOvertimeSeverity = (plannedReturnTime: string, actualReturnTime: string | null): { type: 'success' | 'warning' | 'danger', text: string } => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
+// /**
+//  * 获取超时严重程度
+//  * @param plannedReturnTime 计划归还时间
+//  * @param actualReturnTime 实际归还时间
+//  * @returns 状态类型和文本
+//  */
+// export const getOvertimeSeverity = (plannedReturnTime: string, actualReturnTime: string | null): { type: 'success' | 'warning' | 'danger', text: string } => {
+//   const planned = new Date(plannedReturnTime);
+//   const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
   
-  if (actual <= planned) {
-    return { type: 'success', text: '未超时' };
-  }
+//   if (actual <= planned) {
+//     return { type: 'success', text: '未超时' };
+//   }
   
-  const diffHours = (actual.getTime() - planned.getTime()) / (1000 * 60 * 60);
+//   const diffHours = (actual.getTime() - planned.getTime()) / (1000 * 60 * 60);
   
-  if (diffHours <= 2) {
-    return { type: 'warning', text: '轻微超时' };
-  } else if (diffHours <= 24) {
-    return { type: 'danger', text: '严重超时' };
-  } else {
-    return { type: 'danger', text: '极度超时' };
-  }
-};
+//   if (diffHours <= 2) {
+//     return { type: 'warning', text: '轻微超时' };
+//   } else if (diffHours <= 24) {
+//     return { type: 'danger', text: '严重超时' };
+//   } else {
+//     return { type: 'danger', text: '极度超时' };
+//   }
+// };
 
 /**
  * 格式化物料状态
@@ -354,7 +354,7 @@ export default {
   getOvertimeRecordsList,
   exportOvertimeRecords,
   calculateOvertimeDuration,
-  getOvertimeSeverity,
+  // getOvertimeSeverity,
   formatMaterialStatus,
   formatDateTime,
   validateExportParams,

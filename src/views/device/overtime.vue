@@ -13,7 +13,7 @@ import {
   getOvertimeRecordsList as getOvertimeRecordsListApi,
   exportOvertimeRecords as exportOvertimeRecordsApi,
   calculateOvertimeDuration,
-  getOvertimeSeverity,
+  // getOvertimeSeverity,
   formatMaterialStatus,
   formatDateTime,
   validateExportParams,
@@ -264,7 +264,7 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="超时程度" width="120" align="center">
+            <!-- <el-table-column label="超时程度" width="120" align="center">
               <template #default="{ row }">
                 <el-tag 
                   :type="getOvertimeSeverity(row.plannedReturnTime, row.actualReturnTime).type"
@@ -273,7 +273,7 @@ onMounted(() => {
                   {{ getOvertimeSeverity(row.plannedReturnTime, row.actualReturnTime).text }}
                 </el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column label="超时时长" width="130" align="center">
               <template #default="{ row }">
                 <el-tag 
