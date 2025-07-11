@@ -191,10 +191,10 @@ const offlineFormRules = {
 const offlineFormRef = ref();
 
 // 状态选项
-const deleteStatusOptions = [
-  { label: '正常', value: 1 },
-  { label: '已删除', value: 0 }
-];
+// const deleteStatusOptions = [
+//   { label: '正常', value: 1 },
+//   { label: '已删除', value: 0 }
+// ];
 
 
 // 获取物料列表（使用 API 方法）
@@ -739,13 +739,13 @@ onMounted(async () => {
               </template>
             </el-table-column>
             <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
-            <el-table-column label="状态" width="80" align="center">
+            <!-- <el-table-column label="状态" width="80" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.isDelete === 1 ? 'success' : 'danger'">
                   {{ formatDeleteStatus(row.isDelete) }}
                 </el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column label="创建时间" width="160">
               <template #default="{ row }">
                 {{ new Date(row.createTime).toLocaleString() }}

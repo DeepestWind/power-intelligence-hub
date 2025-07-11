@@ -629,7 +629,7 @@ onMounted(async () => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" min-width="300" fixed="right">
+            <el-table-column label="操作" min-width="250" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 

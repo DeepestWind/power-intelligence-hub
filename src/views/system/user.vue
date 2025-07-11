@@ -1439,7 +1439,7 @@ onMounted(async () => {
                 {{ new Date(row.createTime).toLocaleString() }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="390" fixed="right">
+            <el-table-column label="操作" width="340" fixed="right">
               <template #default="{ row }">
                 <!-- <el-button 
                   type="primary" 
