@@ -321,7 +321,7 @@ onMounted(() => {
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="已借用时长" width="120" align="center">
+            <!-- <el-table-column label="已借用时长" width="120" align="center">
               <template #default="{ row }">
                 <el-tag 
                   :type="getBorrowStatus(row.createTime).type" 
@@ -330,8 +330,8 @@ onMounted(() => {
                   {{ calculateBorrowDuration(row.createTime) }}
                 </el-tag>
               </template>
-            </el-table-column>
-            <el-table-column label="借用状态" width="100" align="center">
+            </el-table-column> -->
+            <!-- <el-table-column label="借用状态" width="100" align="center">
               <template #default="{ row }">
                 <el-tag 
                   :type="getBorrowStatus(row.createTime).type"
@@ -339,13 +339,13 @@ onMounted(() => {
                   {{ getBorrowStatus(row.createTime).text }}
                 </el-tag>
               </template>
-            </el-table-column>
-            <el-table-column label="更新时间" width="160">
+            </el-table-column> -->
+            <!-- <el-table-column label="更新时间" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.updatedTime) }}
               </template>
-            </el-table-column>
-            <el-table-column label="操作" width="120" fixed="right">
+            </el-table-column> -->
+            <!-- <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
@@ -356,7 +356,7 @@ onMounted(() => {
                   查看详情
                 </el-button>
               </template>
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
 
           <!-- 分页 -->

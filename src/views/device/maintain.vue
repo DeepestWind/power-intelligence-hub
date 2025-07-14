@@ -248,7 +248,7 @@ onMounted(() => {
           <template #header>
             <div class="card-header">
               <span class="title">维修记录列表</span>
-              <div class="header-actions">
+              <!-- <div class="header-actions">
                 <el-button 
                   type="primary" 
                   size="small" 
@@ -257,7 +257,7 @@ onMounted(() => {
                 >
                   刷新
                 </el-button>
-              </div>
+              </div> -->
             </div>
           </template>
 
@@ -288,12 +288,12 @@ onMounted(() => {
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="更新时间" width="160">
+            <!-- <el-table-column label="更新时间" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.updatedTime) }}
               </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right" align="center">
+            </el-table-column> -->
+            <!-- <el-table-column label="操作" width="200" fixed="right" align="center">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
@@ -312,7 +312,7 @@ onMounted(() => {
                   编辑
                 </el-button>
               </template>
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
 
           <!-- 分页 -->
