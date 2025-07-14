@@ -197,12 +197,12 @@ onMounted(() => {
                     <el-table-column prop="cabinetName" label="柜子名" min-width="120" show-overflow-tooltip />
                     <el-table-column prop="materialName" label="物品名" min-width="120" show-overflow-tooltip />
                     <el-table-column prop="operatorName" label="借用人" min-width="100" />
-                    <el-table-column label="归还时间" min-width="140">
+                    <el-table-column label="借出时间" min-width="140">
                       <template #default="{ row }">
-                        <span v-if="row.actualReturnTime">
-                          {{ formatDateTime(row.actualReturnTime) }}
+                        <span v-if="row.lentOutTime">
+                          {{ formatDateTime(row.lentOutTime) }}
                         </span>
-                        <el-tag v-else type="warning" size="small">未归还</el-tag>
+                        <el-tag v-else type="warning" size="small">-</el-tag>
                       </template>
                     </el-table-column>
                     <el-table-column label="超时时长" min-width="120">

@@ -245,15 +245,15 @@ onMounted(() => {
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="计划归还时间" width="160">
+            <!-- <el-table-column label="计划归还时间" width="160">
               <template #default="{ row }">
                 <div class="time-info planned-time">
                   <el-icon><Clock /></el-icon>
                   <span>{{ formatDateTime(row.plannedReturnTime) }}</span>
                 </div>
               </template>
-            </el-table-column>
-            <el-table-column label="实际归还时间" width="160">
+            </el-table-column> -->
+            <!-- <el-table-column label="实际归还时间" width="160">
               <template #default="{ row }">
                 <div class="time-info" v-if="row.actualReturnTime">
                   <el-icon><Clock /></el-icon>
@@ -263,7 +263,7 @@ onMounted(() => {
                   未归还
                 </el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
             <!-- <el-table-column label="超时程度" width="120" align="center">
               <template #default="{ row }">
                 <el-tag 
@@ -288,12 +288,12 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="创建时间" width="160">
+            <!-- <el-table-column label="创建时间" width="160">
               <template #default="{ row }">
                 {{ formatDateTime(row.createTime) }}
               </template>
-            </el-table-column>
-            <el-table-column label="操作" width="120" fixed="right">
+            </el-table-column> -->
+            <!-- <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button 
                   type="primary" 
@@ -304,7 +304,7 @@ onMounted(() => {
                   查看详情
                 </el-button>
               </template>
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
 
           <!-- 分页 -->
