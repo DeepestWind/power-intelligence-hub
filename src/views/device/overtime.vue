@@ -279,9 +279,9 @@ onMounted(() => {
                 <el-tag 
                   type="danger" 
                   size="small"
-                  v-if="calculateOvertimeDuration(row.plannedReturnTime, row.actualReturnTime) !== '未超时'"
+                  v-if="calculateOvertimeDuration(row.lentOutTime) !== '未超时'"
                 >
-                  {{ calculateOvertimeDuration(row.plannedReturnTime, row.actualReturnTime) }}
+                  {{ calculateOvertimeDuration(row.lentOutTime) }}
                 </el-tag>
                 <el-tag type="success" size="small" v-else>
                   未超时

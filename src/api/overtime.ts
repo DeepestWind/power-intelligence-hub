@@ -197,29 +197,53 @@ export const exportOvertimeRecords = async (params: ExportParams): Promise<void>
 
 /**
  * 计算超时时长
- * @param plannedReturnTime 计划归还时间
- * @param actualReturnTime 实际归还时间
+ * @param lentOutTime 计划归还时间
  * @returns 时长描述
  */
-export const calculateOvertimeDuration = (plannedReturnTime: string, actualReturnTime: string | null): string => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
-  
-  if (actual <= planned) {
-    return '未超时';
-  }
-  
-  const diffMs = actual.getTime() - planned.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (diffDays > 0) {
-    return `${diffDays}天${diffHours}小时`;
-  } else if (diffHours > 0) {
-    return `${diffHours}小时${diffMinutes}分钟`;
-  } else {
-    return `${diffMinutes}分钟`;
+export const calculateOvertimeDuration = (lentOutTime: string): string => {
+  try {
+    const lentOut = new Date(lentOutTime);
+    const now = new Date();
+    
+    // 验证日期是否有效
+    if (isNaN(lentOut.getTime())) {
+      console.error('借出时间格式错误:', lentOutTime);
+      return '时间格式错误';
+    }
+    
+    const diffMs = now.getTime() - lentOut.getTime();
+
+
+    
+    // 如果时间差为负数，说明借出时间在未来
+    if (diffMs < 0) {
+      return '时间异常';
+    }
+
+    const eightHoursMs = 8 * 60 * 60 * 1000;
+
+    // 如果还没超过8小时，显示未超时
+    if (diffMs <= eightHoursMs) {
+      return '未超时';
+    }    
+    
+    const overtimeDiffMs = diffMs - eightHoursMs;
+    
+    const diffDays = Math.floor(overtimeDiffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((overtimeDiffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((overtimeDiffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffDays > 0) {
+      return `${diffDays}天${diffHours}小时`;
+    } else if (diffHours > 0) {
+      return `${diffHours}小时${diffMinutes}分钟`;
+    } else {
+      return `${diffMinutes}分钟`;
+    }
+    
+  } catch (error) {
+    console.error('计算超时时长出错:', error, { lentOutTime });
+    return '计算异常';
   }
 };
 
@@ -325,11 +349,25 @@ export const getDefaultExportDateRange = (): ExportParams => {
  * @param actualReturnTime 实际归还时间
  * @returns 是否超时
  */
-export const isOvertime = (plannedReturnTime: string, actualReturnTime: string | null): boolean => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
-  return actual > planned;
+export const isOvertime = (lentOutTime: string): boolean => {
+  try {
+    const lentOut = new Date(lentOutTime);
+    const now = new Date();
+    
+    if (isNaN(lentOut.getTime())) {
+      return false;
+    }
+    
+    const diffMs = now.getTime() - lentOut.getTime();
+    const eightHoursMs = 8 * 60 * 60 * 1000;
+    
+    return diffMs > eightHoursMs;
+  } catch (error) {
+    console.error('检查是否超时出错:', error);
+    return false;
+  }
 };
+
 
 /**
  * 获取超时天数
@@ -337,15 +375,28 @@ export const isOvertime = (plannedReturnTime: string, actualReturnTime: string |
  * @param actualReturnTime 实际归还时间
  * @returns 超时天数
  */
-export const getOvertimeDays = (plannedReturnTime: string, actualReturnTime: string | null): number => {
-  const planned = new Date(plannedReturnTime);
-  const actual = actualReturnTime ? new Date(actualReturnTime) : new Date();
-  
-  if (actual <= planned) {
+export const getOvertimeDays = (lentOutTime: string): number => {
+  try {
+    const lentOut = new Date(lentOutTime);
+    const now = new Date();
+    
+    if (isNaN(lentOut.getTime())) {
+      return 0;
+    }
+    
+    const totalDiffMs = now.getTime() - lentOut.getTime();
+    const eightHoursMs = 8 * 60 * 60 * 1000;
+    
+    if (totalDiffMs <= eightHoursMs) {
+      return 0;
+    }
+    
+    const overtimeDiffMs = totalDiffMs - eightHoursMs;
+    return Math.floor(overtimeDiffMs / (1000 * 60 * 60 * 24));
+  } catch (error) {
+    console.error('获取超时天数出错:', error);
     return 0;
   }
-  
-  return Math.floor((actual.getTime() - planned.getTime()) / (1000 * 60 * 60 * 24));
 };
 
 // ==================== 默认导出 ====================
